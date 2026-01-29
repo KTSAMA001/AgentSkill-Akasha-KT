@@ -10,5 +10,10 @@ Affected Commits:
   Updated Author: KTSAMA <wangyi1@wedobest.com.cn>
   Message: Update experience doc: standardize author name to KTSAMA
 
-Method: git filter-branch
-Status: Successfully updated
+Method: git filter-branch (applied twice due to rebase)
+Status: Successfully updated and verified
+
+Verification:
+- All commits by 王燚 have been changed to KTSAMA
+- No remaining commits by 王燚 in the current branch
+- Force push required to update remote repository
