@@ -24,6 +24,8 @@
 git clone https://github.com/KTSAMA001/KT-s-Agent-Skills.git ~/.copilot
 
 # Windows (PowerShell)
+# Windows (PowerShell)
+# 注意：$HOME 代表用户主目录 (例如 C:\Users\Admin)
 git clone https://github.com/KTSAMA001/KT-s-Agent-Skills.git $HOME\.copilot
 ```
 
@@ -107,4 +109,5 @@ git pull
 
 ---
 *Created by KT's Copilot Agent*
+
 
