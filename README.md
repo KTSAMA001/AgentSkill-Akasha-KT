@@ -37,10 +37,10 @@ flowchart TB
     Search -->|找到| Format
     Search -->|未找到| Web
     Web --> Format
-    Format --> |需要保存| Save
+    Format -->|需要保存| Save
     Save --> KB
     KB <--> Git
-    Format --> |返回答案| User
+    Format -->|返回答案| User
 ```
 
 ## ✨ 核心特性
