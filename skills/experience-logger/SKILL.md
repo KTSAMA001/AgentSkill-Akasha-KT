@@ -2,9 +2,6 @@
 name: experience-logger
 description: 当解决问题或讨论得出结论时，自动将经验和结论按分类记录到对应的 Markdown 文档中。当用户说"记录一下"、"总结经验"、"保存结论"、"归档这个问题"或讨论结束需要保存时使用此 Skill。
 license: MIT
-metadata:
-  author: ktsama
-  version: "2.2"
 ---
 
 # 经验记录 Skill
