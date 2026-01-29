@@ -66,7 +66,7 @@ float3 UnitySHAr() {
 #pragma multi_compile _ _LIGHT_LAYERS
 `
 
-**影响**：单 Shader 变体数量可从十万级降至百级。
+**影响**：移除不必要宏可以很大程度减少变体数量，提升编译效率。
 
 ### 5. 资源清理
 
