@@ -291,4 +291,69 @@ git pull
 ```
 
 ---
+
+## 🤖 AI Agent 操作指南
+
+> 本节供 AI Agent（如 Copilot、Claude Code）在帮助用户部署此仓库时参考。
+
+### 安装检查清单
+
+**步骤 1：检查目标目录**
+```bash
+[ -d ~/.copilot ] && echo "⚠️ 目录已存在，请先备份或删除" || echo "✅ 可以安装"
+```
+
+**步骤 2：克隆仓库**
+```bash
+git clone https://github.com/KTSAMA001/KT-s-Agent-Skills.git ~/.copilot
+```
+
+**步骤 3：配置 Claude Code 支持（如需要）**
+```bash
+mkdir -p ~/.claude/skills
+ln -sf ~/.copilot/skills/experience-logger ~/.claude/skills/experience-logger
+ln -sf ~/.copilot/CLAUDE.md ~/.claude/CLAUDE.md
+```
+
+**步骤 4：验证安装**
+```bash
+ls ~/.copilot/skills/experience-logger/SKILL.md && echo "✅ VS Code Copilot 配置成功"
+ls ~/.claude/skills/experience-logger/SKILL.md 2>/dev/null && echo "✅ Claude Code 配置成功"
+```
+
+### 关键路径速查
+
+| 用途 | 路径 |
+|------|------|
+| Skills 定义 | `~/.copilot/skills/experience-logger/SKILL.md` |
+| 经验数据目录 | `~/.copilot/experiences/` |
+| Claude Code 全局指令 | `~/.copilot/CLAUDE.md` |
+| Claude Code 设置 | `~/.claude/settings.json` |
+
+### 经验记录操作
+
+**记录新经验后必须同步**：
+```bash
+cd ~/.copilot && git pull && git add . && git commit -m "update: [描述]" && git push origin main
+```
+
+**读取经验时**：优先检索 `~/.copilot/experiences/` 目录下对应分类的 `.md` 文件。
+
+### 常见问题处理
+
+| 问题 | 解决方案 |
+|------|---------|
+| 符号链接已存在 | 使用 `ln -sf` 参数强制覆盖 |
+| Git 推送冲突 | 先执行 `git pull --rebase` 再推送 |
+| 权限问题 | 检查目录权限，必要时使用 `chmod` |
+| 目录已存在 | 备份后删除，或使用 `git pull` 更新 |
+
+### 操作原则
+
+1. **修改前先同步**：任何修改前执行 `git pull`
+2. **修改后立即推送**：确保多设备数据一致
+3. **符号链接优先**：Claude Code 配置使用符号链接，保持单一数据源
+4. **验证操作结果**：每步操作后检查是否成功
+
+---
 *Created by KT's Copilot Agent*
