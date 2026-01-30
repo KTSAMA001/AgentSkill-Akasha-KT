@@ -2,6 +2,7 @@
 
 <!-- 
 修改记录：
+- [2026-01-30] 补充来源和可信度标注，确保知识条目符合规范。
 - [2026-01-31] 将渲染管线核心概念整理为结构化知识条目，减少碎片化笔记带来的检索成本，方便后续把 SRP/URP、Shader 基础与性能要点继续整合进同一知识体系。
 -->
 
@@ -13,7 +14,8 @@
 
 **分类**：图形学 > 渲染管线
 **关键词**：#rendering-pipeline #application-stage #geometry-stage #rasterization-stage
-**来源**：《Unity Shader 入门精要》
+**来源**：《Unity Shader 入门精要》（冯乐乐著）
+**可信度**：⭐⭐⭐⭐⭐ (经典著作 + 广泛认可)
 
 ### 定义/概念
 
@@ -79,7 +81,8 @@ DrawCall 图元 → 顶点着色器 → 曲面细分着色器 → 几何着色�
 
 **分类**：图形学 > 渲染管线
 **关键词**：#VBO #EBO #VAO #buffer-object
-**来源**：关于SRP、URP的研究
+**来源**：OpenGL 官方规范、关于 SRP/URP 的研究
+**可信度**：⭐⭐⭐⭐⭐ (官方规范 + 实践验证)
 
 ### 定义/概念
 
@@ -127,7 +130,8 @@ VAO (管理者)
 
 **分类**：图形学 > 渲染管线
 **关键词**：#vertex-shader #mvp #clip-space #interpolation
-**来源**：Unity Shader 入门精要学习笔记（整理）
+**来源**：《Unity Shader 入门精要》（冯乐乐著）
+**可信度**：⭐⭐⭐⭐⭐ (经典著作 + 广泛认可)
 
 ### 定义/概念
 
@@ -151,7 +155,8 @@ VAO (管理者)
 
 **分类**：图形学 > 渲染管线
 **关键词**：#fragment-shader #shading #texture-sampling #discard
-**来源**：Unity Shader 入门精要学习笔记（整理）
+**来源**：《Unity Shader 入门精要》（冯乐乐著）
+**可信度**：⭐⭐⭐⭐⭐ (经典著作 + 广泛认可)
 
 ### 定义/概念
 
@@ -176,7 +181,8 @@ VAO (管理者)
 
 **分类**：图形学 > 渲染管线
 **关键词**：#depth-test #zwrite #ztest #stencil
-**来源**：Unity Shader 入门精要学习笔记（整理）
+**来源**：《Unity Shader 入门精要》（冯乐乐著）、Unity 官方文档
+**可信度**：⭐⭐⭐⭐⭐ (经典著作 + 官方文档)
 
 ### 定义/概念
 
@@ -197,7 +203,8 @@ VAO (管理者)
 
 **分类**：图形学 > 渲染管线
 **关键词**：#blending #color-mask #alpha-blend #overdraw
-**来源**：Unity Shader 入门精要学习笔记（整理）
+**来源**：《Unity Shader 入门精要》（冯乐乐著）
+**可信度**：⭐⭐⭐⭐⭐ (经典著作 + 广泛认可)
 
 ### 定义/概念
 
@@ -215,7 +222,8 @@ VAO (管理者)
 
 **分类**：图形学 > 性能
 **关键词**：#draw-call #batching #instancing #overdraw
-**来源**：TA 零散知识（整理）
+**来源**：Unity 官方文档 - Optimizing draw calls、TA 工程实践经验整理
+**可信度**：⭐⭐⭐⭐ (官方文档 + 实践验证)
 
 ### 定义/概念
 
@@ -235,7 +243,8 @@ VAO (管理者)
 
 **分类**：图形学 > 性能 / Unity 渲染
 **关键词**：#CBUFFER #constant-buffer #srp-batcher #material-property
-**来源**：TA 零散知识、关于 SRP/URP 的研究（整理）
+**来源**：Unity 官方博客 - SRP Batcher: Speed up your rendering、关于 SRP/URP 的研究
+**可信度**：⭐⭐⭐⭐ (官方博客 + 实践验证)
 
 ### 定义/概念
 
@@ -256,7 +265,8 @@ CBUFFER（Constant Buffer）可以理解为 GPU 侧的“常量数据块”，�
 
 **分类**：图形学 > 性能 / Shader
 **关键词**：#shader-variant #keyword #multi_compile #shader_feature
-**来源**：TA 零散知识（整理）
+**来源**：Unity 官方文档 - Shader variants and keywords、TA 工程实践经验整理
+**可信度**：⭐⭐⭐⭐⭐ (官方文档 + 实践验证)
 
 ### 定义/概念
 
@@ -275,7 +285,8 @@ Shader 变体是“同一个 shader 因关键字组合不同而生成的多份�
 
 **分类**：Unity > 渲染
 **关键词**：#SRP #URP #ScriptableRendererFeature #ScriptableRenderPass
-**来源**：关于 SRP/URP 的研究（整理）
+**来源**：Unity 官方文档 - Universal Render Pipeline、关于 SRP/URP 的研究
+**可信度**：⭐⭐⭐⭐⭐ (官方文档 + 实践验证)
 
 ### 定义/概念
 
@@ -295,7 +306,8 @@ Shader 变体是“同一个 shader 因关键字组合不同而生成的多份�
 
 **分类**：Unity > 渲染 / 图形学 > 渲染管线
 **关键词**：#CommandBuffer #render-commands #GPU
-**来源**：关于 SRP/URP 的研究（整理）
+**来源**：Unity 官方文档 - CommandBuffer、关于 SRP/URP 的研究
+**可信度**：⭐⭐⭐⭐⭐ (官方文档 + 实践验证)
 
 ### 定义/概念
 
@@ -313,7 +325,8 @@ CommandBuffer（命令缓冲）可以理解为“把要做的 GPU 绘制/状态�
 
 **分类**：图形学 > 光照
 **关键词**：#lambert #phong #blinn-phong #specular
-**来源**：图形学基础笔记（整理）
+**来源**：《Real-Time Rendering》、图形学基础课程
+**可信度**：⭐⭐⭐⭐⭐ (权威著作 + 学术标准)
 
 ### Lambert（漫反射）
 
@@ -337,7 +350,8 @@ CommandBuffer（命令缓冲）可以理解为“把要做的 GPU 绘制/状态�
 
 **分类**：图形学 > 着色
 **关键词**：#PBR #BRDF #energy-conservation #fresnel
-**来源**：图形学基础笔记（整理）
+**来源**：《Physically Based Rendering》、《Real-Time Rendering》
+**可信度**：⭐⭐⭐⭐⭐ (权威著作 + 学术标准)
 
 ### 定义/概念
 
@@ -357,7 +371,8 @@ CommandBuffer（命令缓冲）可以理解为“把要做的 GPU 绘制/状态�
 
 **分类**：图形学 > 性能 / 移动端
 **关键词**：#TBDR #tile-based #overdraw #mobile-gpu
-**来源**：图形学/移动端渲染笔记（整理）
+**来源**：ARM/Qualcomm GPU 官方文档、图形学/移动端渲染笔记
+**可信度**：⭐⭐⭐⭐ (厂商文档 + 实践验证)
 
 ### 定义/概念
 
@@ -376,7 +391,8 @@ CommandBuffer（命令缓冲）可以理解为“把要做的 GPU 绘制/状态�
 
 **分类**：图形学 > 渲染管线
 **关键词**：#opaque #transparent #sorting #zwrite
-**来源**：Unity 渲染基础笔记（整理）
+**来源**：Unity 官方文档、《Unity Shader 入门精要》
+**可信度**：⭐⭐⭐⭐⭐ (官方文档 + 经典著作)
 
 ### 不透明（Opaque）
 

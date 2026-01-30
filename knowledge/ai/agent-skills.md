@@ -9,6 +9,7 @@
 **分类**：AI > 开放标准
 **关键词**：#agent-skills #skill #ai-agent #规范
 **来源**：[agentskills.io](https://agentskills.io/specification)
+**可信度**：⭐⭐⭐⭐⭐ (官方规范)
 
 ### 定义/概念
 
