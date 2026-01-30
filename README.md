@@ -87,6 +87,24 @@ git clone https://github.com/KTSAMA001/KT-s-Agent-Skills.git $HOME\.copilot
 
 如果 Agent 能够识别并激活 `experience-logger` Skill，即表示安装成功。
 
+### 3. Claude Code 支持（可选）
+
+本仓库同时支持 Claude Code，只需创建符号链接即可共享 Skills：
+
+```bash
+# 创建 Claude Code skills 目录
+mkdir -p ~/.claude/skills
+
+# 符号链接经验记录技能
+ln -sf ~/.copilot/skills/experience-logger ~/.claude/skills/experience-logger
+
+# 符号链接全局指令（可选）
+ln -sf ~/.copilot/CLAUDE.md ~/.claude/CLAUDE.md
+```
+
+配置完成后，在 Claude Code 中输入 `/skills` 即可看到 `experience-logger` 技能。
+
+
 ---
 
 ## 💡 使用指南
