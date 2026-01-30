@@ -19,6 +19,9 @@
 
 ```
 knowledge/
+├── ai/                 # AI 相关知识
+│   ├── agent-skills.md         # Agent Skills 规范
+│   └── prompting.md            # 提示工程
 ├── graphics/           # 图形学知识
 │   ├── rendering-pipeline.md   # 渲染管线
 │   ├── lighting.md             # 光照理论
