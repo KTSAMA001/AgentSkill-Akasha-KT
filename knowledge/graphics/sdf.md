@@ -3,9 +3,12 @@
 <!-- 
 修改记录：
 - [2026-01-31] 从 TaTa 仓库 (https://github.com/KTSAMA001/TaTa/blob/master/SDF/SDF-8ssedt.md) 整合 SDF 相关知识。
+- [2026-01-31] 添加图片引用链接（图片资源保留在 TaTa 仓库）。
 -->
 
 本文档记录 SDF（Signed Distance Field，有向距离场）的原理与应用。
+
+> 📷 **图片资源**：本文图片引用自 [TaTa 仓库 SDF/img](https://github.com/KTSAMA001/TaTa/tree/master/SDF/img)
 
 ---
 
@@ -30,6 +33,12 @@ Signed Distance Field（有向距离场），中文名为有向距离场。SDF �
   - 圆中心的点最黑（处于物体最内部）
   - 图片四角最白（距离圆最远）
 - 通常将有向距离值映射到 [0-1] 范围，0.5 表示物体内外的分界线
+
+**示意图**：
+
+| 原始图像 | 对应 SDF |
+|---------|---------|
+| ![原始图像](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/SDF/img/example1.png) | ![SDF图像](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/SDF/img/example1_SDF.png) |
 
 ### 关键点
 
@@ -196,6 +205,14 @@ B3 = (3,0)
 - SDF 本质上是"信号重建"，通过距离信息恢复原始形状
 - 这是 SDF 用于字体渲染的核心原因
 
+**对比效果**：
+
+| 正常大小对比 | 放大后对比 |
+|-------------|-----------|
+| ![正常对比](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/SDF/img/snowdif1.png) | ![放大对比](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/SDF/img/snowdif2.png) |
+
+左侧 SDF 生成的图像边缘光滑锐利，右侧 Bitmap 放大后出现明显锯齿。
+
 ---
 
 ## SDF 实现图像平滑过渡
@@ -231,6 +248,14 @@ col.a = smoothstep(0.5, 0.5 - _SmoothDelta, a1);
 
 - 每个像素本质上是距离的平滑过渡，转换成 RGB 就是图像间的平滑过渡
 - 可以减少贴图数量（多张阴影图合并为一张）
+
+**SDF 插值过渡效果**：
+
+| 图像 1 | 图像 2 |
+|-------|-------|
+| ![Step1](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/SDF/img/step1.png) | ![Step2](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/SDF/img/step2.png) |
+
+**动态效果演示**：[SDF 过渡 GIF](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/SDF/img/SDF.gif)
 
 ### 限制条件
 

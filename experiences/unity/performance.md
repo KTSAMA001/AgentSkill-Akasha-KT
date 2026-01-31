@@ -14,13 +14,27 @@
 **状态**：⚠️ 待验证（需根据 Unity 版本和 DOTS 版本调整）
 **适用版本**：Unity 2019.4+, Entities 0.7+
 
+> 📷 **图片/视频资源**：[TaTa 仓库 GrassSystem/Img](https://github.com/KTSAMA001/TaTa/tree/master/GrassSystem/Img)
+
 **问题/场景**：
 
 在移动端实现草海效果，需要处理大量草实例（十万级别）。传统的相机视锥剔除不够用，CPU 提交数据成为性能瓶颈。
 
+**目标效果**：
+
+![草海效果](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/GrassSystem/Img/Grass.jpg)
+
 **解决方案/结论**：
 
 使用 Unity ECS (DOTS) + Hybrid Rendering + Culling Group 实现高效的草海剔除系统。
+
+### 草模型对比
+
+| 模型草 | 面片草 |
+|-------|-------|
+| ![模型草](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/GrassSystem/Img/GrassModel.png) | ![面片草](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/GrassSystem/Img/GrassPlane.png) |
+
+**结论**：移动端模型草性能优于 Alpha Test 面片草。
 
 ### 核心方案对比
 
@@ -100,6 +114,21 @@ entityManager.SetSharedComponentData(grassEntity, new FrozenRenderSceneTag {
 **FrozenRenderSceneTag 效果**：
 - 挂载后：RenderMeshSystem 开销 < 1ms
 - 不挂载：开销 8-10ms（十万实例时）
+
+### 性能对比
+
+**无剔除 vs 有剔除**：
+
+| 无剔除 | 有剔除 |
+|-------|-------|
+| ![无剔除](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/GrassSystem/Img/GrassNoCulling.png) | ![有剔除](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/GrassSystem/Img/GrassMainCull.png) |
+| ![无剔除性能](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/GrassSystem/Img/GrassNoCulling2.png) | ![有剔除性能](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/GrassSystem/Img/GrassMainCull2.png) |
+
+**注意**：简单剔除在相机移动时可能导致 CPU 时间飙高（Entity 动态创建/删除开销）：
+
+![剔除缺陷](https://raw.githubusercontent.com/KTSAMA001/TaTa/master/GrassSystem/Img/GrassMainCull_drawback.png)
+
+**解决方案**：使用 JobComponentSystem 将 Entity 创建/删除从主线程剥离。
 
 **4. 使用 Culling Group 进行 Tile 级别剔除**
 
