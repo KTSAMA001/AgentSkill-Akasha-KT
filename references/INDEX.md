@@ -15,6 +15,8 @@
 | vscode/ | shortcuts, extensions, settings, copilot, debugging |
 | general/ | misc, social-observations |
 
+> 经验模板：[templates/experience-template.md](./templates/experience-template.md)
+
 ## 知识 knowledge/
 
 | 分类 | 文件 |
@@ -23,6 +25,14 @@
 | graphics/ | rendering-pipeline, color-space, sdf |
 | hlsl/ | syntax |
 | programming/ | csharp |
-| relationships/ | vera-kt-dog |
+| social/ | ktsama_bilibili, vera_kt_dog |
 | tools/ | git, search-apis, search-engines |
 | unity/ | urp, physics |
+
+> 知识模板：[templates/knowledge-template.md](./templates/knowledge-template.md)
+
+## 相关文档
+
+- [OPERATIONS.md](./OPERATIONS.md) - 操作流程
+- [EXAMPLES.md](./EXAMPLES.md) - 使用示例
+- [VALIDATION.md](./VALIDATION.md) - 验证流程
