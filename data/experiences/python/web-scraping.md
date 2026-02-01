@@ -97,3 +97,7 @@ response = requests.get(url, headers=headers)
 - [MCP 协议与 Agent 服务](../ai/mcp.md)
 - [Python 自动化](automation.md)
 
+**相关知识**：
+- [搜索 API 服务对比](../../knowledge/tools/search-apis.md)
+- [自搭建搜索引擎技术](../../knowledge/tools/search-engines.md)
+

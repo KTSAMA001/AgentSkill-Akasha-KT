@@ -186,3 +186,5 @@
 | 文件 | 说明 |
 |------|------|
 | `git.md` | Git |
+| `search-apis.md` | 搜索 API 服务对比（Brave/Serper/SerpAPI） |
+| `search-engines.md` | 自搭建搜索引擎（MeiliSearch/Typesense/SearXNG/Scrapy） |
