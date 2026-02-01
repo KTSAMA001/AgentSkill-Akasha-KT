@@ -29,16 +29,14 @@ license: MIT
 
 | 触发词 | 执行 |
 |--------|------|
-| "之前怎么解决的"、"有没有相关经验"、"查一下记录" | `OPERATIONS.md` → **一、查找流程** |
-| "记录一下"、"总结经验"、"归档"、"记一下这个知识点" | `OPERATIONS.md` → **二、记录流程** |
-| "这个不对"、"过时了"、"需要更新" | `OPERATIONS.md` → **三、验证流程** |
-| 本地未找到相关记录 | `OPERATIONS.md` → **1.2 网络搜索** |
-| 需确定分类 | `INDEX.md` |
-| 记录经验 | `templates/experience-template.md` |
-| 记录知识 | `templates/knowledge-template.md` |
-| 修正/废弃记录 | `VALIDATION.md` |
-
-> 所有 references 路径前缀：`references/`
+| "之前怎么解决的"、"有没有相关经验"、"查一下记录" | `references/OPERATIONS.md` → **一、查找流程** |
+| "记录一下"、"总结经验"、"归档"、"记一下这个知识点" | `references/OPERATIONS.md` → **二、记录流程** |
+| "这个不对"、"过时了"、"需要更新" | `references/OPERATIONS.md` → **三、验证流程** |
+| 本地未找到相关记录 | `references/OPERATIONS.md` → **1.2 网络搜索** |
+| 需确定分类 | `references/INDEX.md` |
+| 记录经验 | `references/templates/experience-template.md` |
+| 记录知识 | `references/templates/knowledge-template.md` |
+| 修正/废弃记录 | `references/VALIDATION.md` |
 
 ## 记录格式
 
