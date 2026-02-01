@@ -122,11 +122,115 @@ response = requests.get(url, headers=headers)
 - [undetected-chromedriver GitHub](https://github.com/ultrafunkamsterdam/undetected-chromedriver)
 - [fake-useragent PyPI](https://pypi.org/project/fake-useragent/)
 
+### 实践测试结果（2026-02-01）
+
+在 macOS + Chrome 144 环境下对 [nowsecure.nl](https://nowsecure.nl) 进行实际测试：
+
+| 测试项 | 结果 | 备注 |
+|-------|------|------|
+| nodriver 启动 | ❌ 失败 | macOS 上 CDP HTTPApi 连接失败 (RemoteDisconnected) |
+| undetected-chromedriver | ⚠️ 部分成功 | `navigator.webdriver = False` 成功伪装 |
+| Cloudflare Turnstile | ❌ 仍触发 | 即使 webdriver=False，仍显示"确认您是真人" |
+| pyautogui 真实鼠标点击 | ❌ 仍触发 | 物理层面的鼠标模拟也未能绕过 |
+
+**关键发现**：
+- Cloudflare 的检测**不仅是 `navigator.webdriver`**，还包括更深层的浏览器指纹
+- GitHub Issues 中有人指出："If Selenium touches the window in any way it gets detected"
+- nodriver 的 `mouse_click` 在 2025.09 也被报告为被检测
+
+### 已知 Workarounds（可能已失效）
+
+以下方案在 2023-2024 年曾有效，但 Cloudflare 持续更新，**不保证当前有效**：
+
+**方法 1：打开 DevTools**
+```python
+# 曾在 2023.07 有效
+chrome_options.add_argument("--auto-open-devtools-for-tabs")
+```
+
+**方法 2：JS 打开新标签页绕过**
+```python
+# 曾在 2023.07-08 有效
+driver.execute_script('''window.open("http://nowsecure.nl","_blank");''')
+time.sleep(5)
+driver.switch_to.window(window_name=driver.window_handles[0])
+driver.close()
+driver.switch_to.window(window_name=driver.window_handles[0])
+time.sleep(2)
+driver.get("https://google.com")  # 先访问其他站点
+time.sleep(2)
+driver.get("https://nowsecure.nl")  # 再访问目标
+```
+
+**方法 3：nodriver 的 `tab_new()`**
+```python
+# nodriver 内置方法，原理同方法 2
+driver.tab_new("https://google.com")
+```
+
+### 付费解决方案：CAPTCHA Solver API
+
+当上述方法失效时，可考虑付费服务：
+
+| 服务 | 价格 | Turnstile 支持 |
+|-----|------|----------------|
+| [2Captcha](https://2captcha.com) | ~$2.99/1000 | ✅ 支持 |
+| [CapSolver](https://capsolver.com) | ~$3/1000 | ✅ 支持 |
+| [Anti-Captcha](https://anti-captcha.com) | ~$2/1000 | ✅ 支持 |
+
+**2Captcha Turnstile 调用示例**：
+```python
+import requests
+
+# 1. 提交验证任务
+response = requests.post('https://2captcha.com/in.php', data={
+    'key': 'YOUR_API_KEY',
+    'method': 'turnstile',
+    'sitekey': '0x4AAAAAAAC...',  # 从页面提取
+    'pageurl': 'https://example.com/',
+    'json': 1
+})
+task_id = response.json()['request']
+
+# 2. 轮询获取结果
+import time
+while True:
+    time.sleep(5)
+    result = requests.get(f'https://2captcha.com/res.php?key=YOUR_API_KEY&action=get&id={task_id}&json=1')
+    if result.json()['status'] == 1:
+        token = result.json()['request']
+        break
+
+# 3. 将 token 注入页面的 cf-turnstile-response 字段
+```
+
+**对于 Cloudflare Challenge 页面**，还需额外参数：
+- `data`（cData）
+- `pagedata`（chlPageData）  
+- `action`
+- 必须使用返回的 User-Agent
+
+### 未来可尝试的方向
+
+1. **住宅代理 + nodriver**：数据中心 IP 是主要被检测因素
+2. **Cookie 复用**：手动通过验证后保存 cookies，后续请求复用
+3. **Puppeteer-extra-plugin-stealth**：Node.js 生态中的隐身插件
+4. **浏览器配置文件复用**：使用已有用户数据目录 `--user-data-dir`
+5. **等待 nodriver 更新**：作者可能会修复 macOS CDP 连接问题
+
+### 测试网站参考
+
+- [nowsecure.nl](https://nowsecure.nl) - nodriver 作者的官方测试站（Cloudflare Turnstile）
+- [bot.sannysoft.com](https://bot.sannysoft.com) - 检测 WebDriver 指纹
+- [browserleaks.com](https://browserleaks.com) - 浏览器指纹全面检测
+
 **验证记录**：
 - [2026-02-01] 调查 PyPI 文档，确认工具定位和局限性
 - [2026-02-01] 尝试获取反爬技术博客时遭遇 HTTP 403，证实反爬普遍性
 - [2026-02-01] MCP 服务开发中验证：所有主流搜索引擎均检测到自动化
-- [2026-02-01] 二次验证：确认 nodriver 为 undetected-chromedriver 官方继任者，推荐新项目使用
+- [2026-02-01] 二次验证：确认 nodriver 为 undetected-chromedriver 官方继任者
+- [2026-02-01] **实践测试**：nodriver macOS 连接失败，UC 成功伪装 webdriver 但仍触发 Cloudflare
+- [2026-02-01] GitHub Issues 调研：确认这是持续性的"猫鼠游戏"，所有公开方案随时可能失效
 
 **相关经验**：
 - [MCP 协议与 Agent 服务](../ai/mcp.md)
