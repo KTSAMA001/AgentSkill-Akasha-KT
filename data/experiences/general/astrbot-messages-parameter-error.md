@@ -2,8 +2,8 @@
 **收录日期**：2026-02-02
 **更新日期**：2026-02-02
 **标签**：#AstrBot #Bug #工具调用 #上下文截断 #智谱AI #调查中
-**状态**：⚠️ 部分解决（v4.13.x 仍有报告）
-**适用版本**：AstrBot v3.5.x ~ v4.13.x
+**状态**：⚠️ 部分解决（v4.13.2 仍有报告）
+**适用版本**：AstrBot v3.5.x ~ v4.13.2
 
 ### 问题现象
 在执行某些操作或生成回复后，AstrBot 返回错误：
@@ -16,6 +16,49 @@
 ```
 Error code: 400 - {'error': {'message': "Messages with role 'tool' must be a response to a preceding message with 'tool_calls'", 'type': 'invalid_request_error'}}
 ```
+
+### 实际案例：v4.13.2 完整堆栈跟踪 🆕
+
+以下是 **AstrBot v4.13.2** 用户报告的完整错误日志：
+
+```
+[23:21:18] [Core] [ERRO] [v4.13.2] [core.astr_agent_run_util:118]: Traceback (most recent call last):
+  File "/AstrBot/astrbot/core/astr_agent_run_util.py", line 52, in run_agent
+    async for resp in agent_runner.step():
+  File "/AstrBot/astrbot/core/agent/runners/tool_loop_agent_runner.py", line 181, in step
+    async for llm_response in self._iter_llm_responses():
+  File "/AstrBot/astrbot/core/agent/runners/tool_loop_agent_runner.py", line 155, in _iter_llm_responses
+    yield await self.provider.text_chat(**payload)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/AstrBot/astrbot/core/provider/sources/openai_source.py", line 512, in text_chat
+    ) = await self._handle_api_error(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/AstrBot/astrbot/core/provider/sources/openai_source.py", line 465, in _handle_api_error
+    raise e
+  File "/AstrBot/astrbot/core/provider/sources/openai_source.py", line 501, in text_chat
+    llm_response = await self._query(payloads, func_tool)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/AstrBot/astrbot/core/provider/sources/openai_source.py", line 115, in _query
+    completion = await self.client.chat.completions.create(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/resources/chat/completions/completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'code': '1214', 'message': 'messages 参数非法。请检查文档。'}}
+```
+
+**关键调用链分析**：
+1. `astr_agent_run_util.py:run_agent()` - Agent 执行入口
+2. `tool_loop_agent_runner.py:step()` - 工具循环执行器
+3. `tool_loop_agent_runner.py:_iter_llm_responses()` - 迭代 LLM 响应
+4. `openai_source.py:text_chat()` - 调用 LLM API
+5. `openai_source.py:_query()` - 实际发送请求
+6. **openai 库** → 智谱AI API 返回 1214 错误
 
 ### 触发场景
 1. 尝试使用工具调用（如 `/找` 命令搜索、网页搜索等）后继续对话
@@ -183,9 +226,10 @@ docker logs astrbot --tail 500 | grep -A 20 "1214"
 
 ## 验证记录
 - [x] 2026-02-02 通过官方文档和 GitHub Issues 确认工具调用截断问题
-- [x] 2026-02-02 确认智谱AI对消息格式有特殊要求（必须包含user消息）
-- [ ] v4.13.x 版本问题待进一步验证（用户反馈仍存在问题）
-- [ ] 需要收集更多日志信息确定具体触发原因
+- [x] 2026-02-02 确认智谱AI对消息格式有特殊要求（来自社区报告，待官方文档确认）
+- [x] 2026-02-02 收到 v4.13.2 版本的完整错误堆栈跟踪，已记录
+- [ ] 需要进一步排查：错误发生在 `tool_loop_agent_runner.py` 的工具执行循环中
+- [ ] 需要确认触发场景：是工具调用时还是普通对话时
 
 ---
 
@@ -194,16 +238,33 @@ docker logs astrbot --tail 500 | grep -A 20 "1214"
 如果你在 v4.13.x 仍然遇到此问题，请：
 
 1. **确认你使用的 LLM 提供商**
-   - 如果是智谱AI → 检查原因二
-   - 如果是 DeepSeek/OpenAI → 检查原因一
+   - 如果是智谱AI → 检查原因二（智谱AI特有限制）
+   - 如果是 DeepSeek/OpenAI → 检查原因一（工具调用截断）
 
 2. **记录触发时机**
    - 新会话第一条消息就报错？→ 可能是只有 system 消息
-   - 工具调用后报错？→ 可能是上下文截断
+   - 工具调用后报错？→ 可能是上下文截断或工具消息格式问题
    - 长对话后报错？→ 可能是截断或格式累积错误
 
-3. **提供日志信息**
-   - 如果方便，请在 Issue 中提供触发时的完整 messages 内容
+3. **检查堆栈跟踪中的关键位置**
+   根据上面的实际案例，错误发生在 `tool_loop_agent_runner.py` 中：
+   - 如果涉及 `_iter_llm_responses()` → 说明是在发送 LLM 请求时出错
+   - 检查 AstrBot 配置中的模型名称和 API 端点是否正确
+
+4. **提供日志信息**
+   - 如果方便，请在 GitHub Issue 中提供：
+     - 完整的错误堆栈跟踪
+     - 触发时的 messages 内容（如果能获取）
+     - LLM 提供商配置（脱敏）
+
+---
+
+## 更多参考资源
+
+- [GitHub Issue #4013](https://github.com/AstrBotDevs/AstrBot/issues/4013) - 类似错误的讨论
+- [GitHub Issue #2635](https://github.com/AstrBotDevs/AstrBot/issues/2635) - API payload 格式问题
+- [DeepWiki - ToolLoopAgentRunner](https://deepwiki.com/AstrBotDevs/AstrBot/6.1-toolloopagentrunner) - 工具执行器架构说明
+- [DeepWiki - Agent System](https://deepwiki.com/AstrBotDevs/AstrBot/6-agent-system-and-tool-execution) - Agent 系统整体架构
 
 ---
 
