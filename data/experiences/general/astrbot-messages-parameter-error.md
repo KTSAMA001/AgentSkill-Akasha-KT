@@ -153,13 +153,31 @@ docker logs astrbot --tail 500 | grep -A 20 "1214"
 
 ---
 
-## 参考链接
-- [AstrBot 官方文档 - 上下文压缩](https://docs.astrbot.app/en/use/context-compress.html)
+## 参考链接与信息来源
+
+### 📌 关于工具调用截断问题（原因一）的来源
 - [GitHub Issue #1243 - 调用函数工具可能导致400错误](https://github.com/AstrBotDevs/AstrBot/issues/1243)
-- [智谱 AI API 错误码文档](https://docs.bigmodel.cn/cn/faq/api-code)
-- [AstrBot 配置文件说明](https://docs.astrbot.app/config/astrbot-config.html)
-- [智谱AI SDK Issues - messages参数非法](https://github.com/MetaGLM/zhipuai-sdk-python-v4/issues/14)
+  - 这是 AstrBot 官方 GitHub 上的 Bug 报告，详细描述了工具调用消息链截断导致 400 错误的问题
+- [AstrBot 官方文档 - 上下文压缩](https://docs.astrbot.app/en/use/context-compress.html)
 - [DeepWiki - Tool Call Message Format](https://deepwiki.com/AstrBotDevs/AstrBot/6.2-tool-call-message-format)
+
+### 📌 关于智谱AI消息格式要求（原因二）的来源
+- [智谱AI SDK Issues #14 - messages参数非法](https://github.com/MetaGLM/zhipuai-sdk-python-v4/issues/14)
+  - 这是智谱AI官方 Python SDK 的 GitHub Issues，用户报告只有 system 消息会导致 1214 错误
+- [智谱 AI API 错误码文档](https://docs.bigmodel.cn/cn/faq/api-code)
+  - 智谱AI官方错误码说明文档，1214 表示"参数非法"
+- [Cangjie Magic Issue #24](https://gitcode.com/Cangjie-TPC/CangjieMagic/issues/24)
+  - 社区用户报告调用智谱AI接口时的 messages 参数非法错误
+- [AgentScope Issue #258 - 智谱 prompt 参数非法](https://github.com/agentscope-ai/agentscope/issues/258)
+  - AgentScope 项目中报告的智谱AI参数问题
+- [Dify Discussions #3579](https://github.com/langgenius/dify/discussions/3579)
+  - Dify 社区讨论：messages 必须添加 user 角色
+
+### 📌 其他参考
+- [AstrBot 配置文件说明](https://docs.astrbot.app/config/astrbot-config.html)
+- [AstrBot FAQ](https://docs.astrbot.app/faq.html)
+
+> **注意**：以上关于"智谱AI不支持只有system消息"的结论主要来自社区 Issues 和用户报告，尚未在智谱AI官方文档中找到明确说明。如果您的场景不符合，请以实际测试结果为准。
 
 ---
 
