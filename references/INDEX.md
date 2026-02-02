@@ -44,6 +44,12 @@
 
 > 知识模板：[templates/knowledge-template.md](./templates/knowledge-template.md)
 
+## 灵感 ideas/
+
+| 分类 | 文件 |
+|------|------|
+| smart_furniture/ | 3d_girl_smart_furniture |
+
 ## 相关文档
 
 - [OPERATIONS.md](./OPERATIONS.md) - 操作流程
