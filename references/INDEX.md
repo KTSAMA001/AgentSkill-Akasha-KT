@@ -4,8 +4,9 @@
 
 | 文档 | 路径 | 用途 |
 |------|------|------|
-| **操作流程** | [OPERATIONS.md](./OPERATIONS.md) | 查找/记录/验证的完整流程 |
-| 验证流程 | [VALIDATION.md](./VALIDATION.md) | 修正、废弃记录 |
+| **查找流程** | [workflows/search.md](./workflows/search.md) | 检索记录、网络搜索 |
+| **记录流程** | [workflows/record.md](./workflows/record.md) | 记录经验/知识 |
+| **验证流程** | [workflows/validate.md](./workflows/validate.md) | 修正、废弃记录 |
 | 使用示例 | [EXAMPLES.md](./EXAMPLES.md) | 参考用法 |
 | 经验模板 | [templates/experience-template.md](./templates/experience-template.md) | 记录经验 |
 | 知识模板 | [templates/knowledge-template.md](./templates/knowledge-template.md) | 记录知识 |
@@ -49,9 +50,14 @@
 | 分类 | 文件 |
 |------|------|
 | smart_furniture/ | 3d_girl_smart_furniture |
+工作流
+
+| 流程 | 说明 |
+|------|------|
+| [search.md](./workflows/search.md) | 检索本地记录 + 网络搜索 |
+| [record.md](./workflows/record.md) | 记录经验/知识（引用模板） |
+| [validate.md](./workflows/validate.md) | 验证并修正记录 |
 
 ## 相关文档
 
-- [OPERATIONS.md](./OPERATIONS.md) - 操作流程
 - [EXAMPLES.md](./EXAMPLES.md) - 使用示例
-- [VALIDATION.md](./VALIDATION.md) - 验证流程
