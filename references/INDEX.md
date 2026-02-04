@@ -41,7 +41,7 @@
 | programming/ | csharp |
 | social/ | ktsama_bilibili, vera_kt_dog |
 | tools/ | git, search-apis, search-engines |
-| unity/ | urp, physics, rendering, editor, **behavior-designer** |
+| unity/ | urp, physics, rendering, editor, animation, **behavior-designer** |
 
 > 知识模板：[templates/knowledge-template.md](./templates/knowledge-template.md)
 
