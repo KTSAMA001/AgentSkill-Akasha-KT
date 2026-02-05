@@ -20,7 +20,7 @@
 | ai/ | astrbot, mcp |
 | anthropic/ | claude-code, README |
 | csharp/ | syntax, async, linq, patterns, collections, dotnet, misc |
-| general/ | misc |
+| general/ | misc, astrbot-messages-parameter-error, validation-report-20260205 |
 | git/ | commands, workflow, troubleshooting, lfs, misc |
 | python/ | syntax, libraries, automation, environment, web-scraping, misc |
 | shader/ | hlsl, urp, hdrp, techniques, optimization, effects, misc |
@@ -50,7 +50,8 @@
 | 分类 | 文件 |
 |------|------|
 | smart_furniture/ | 3d_girl_smart_furniture |
-工作流
+
+## 工作流
 
 | 流程 | 说明 |
 |------|------|

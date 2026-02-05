@@ -29,8 +29,9 @@ FastMCP.run(tools=[...], transport="stdio")
 ```
 
 **参考链接**：
-- [MCP 官方文档](https://github.com/fastmcp/fastmcp)
-- [Playwright 官方文档](https://playwright.dev/python/)
+- [FastMCP GitHub](https://github.com/fastmcp-me/fastmcp-python) - Python MCP 框架
+- [FastMCP 文档](https://fastmcp.wiki/) - 官方文档
+- [Playwright Python 文档](https://playwright.dev/python/docs/intro) - 自动化浏览器
 
 **验证记录**：
 - [2026-01-30] MCP 服务本地开发，SSE 受限于 Docker 网络
@@ -50,5 +51,9 @@ FastMCP.run(tools=[...], transport="stdio")
 
 **相关经验**：
 - [网页抓取与反爬虫绕过](../python/web-scraping.md) - 详细的反爬虫工具对比与绕过方案
-- [Docker 容器部署经验](../tools/misc.md)
-- [Python 自动化](../python/automation.md)
+
+<!-- 
+注：以下引用暂时移除，目标文件为占位符，待补充实际内容后恢复：
+- Docker 容器部署经验 (../tools/misc.md)
+- Python 自动化 (../python/automation.md)
+-->

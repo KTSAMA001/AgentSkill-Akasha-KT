@@ -234,7 +234,11 @@ while True:
 
 **相关经验**：
 - [MCP 协议与 Agent 服务](../ai/mcp.md)
-- [Python 自动化](automation.md)
+
+<!-- 
+注：以下引用暂时移除，目标文件为占位符，待补充实际内容后恢复：
+- Python 自动化 (automation.md)
+-->
 
 **相关知识**：
 - [搜索 API 服务对比](../../knowledge/tools/search-apis.md)
