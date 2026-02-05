@@ -36,7 +36,7 @@
 | 分类 | 文件 |
 |------|------|
 | ai/ | agent-skills |
-| graphics/ | color-space, rendering-pipeline, sdf |
+| graphics/ | color-space, rendering-pipeline, sdf, color-banding |
 | hlsl/ | syntax |
 | programming/ | csharp |
 | social/ | ktsama_bilibili, vera_kt_dog |
@@ -61,3 +61,4 @@
 ## 相关文档
 
 - [EXAMPLES.md](./EXAMPLES.md) - 使用示例
+
