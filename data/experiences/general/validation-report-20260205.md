@@ -116,6 +116,10 @@
 |--------|------|------|
 | 索引更新 | `references/INDEX.md` | 添加 `astrbot-messages-parameter-error` 到 general/ 分类 |
 | 格式修复 | `references/INDEX.md` | 修复"工作流"标题缺少 `##` 前缀 |
+| 外部链接修复 | `experiences/ai/mcp.md` | 更正 FastMCP GitHub 链接 (404→正确地址) |
+| 引用修正 | `experiences/ai/mcp.md` | 移除指向占位符的无效引用 |
+| 引用修正 | `experiences/ai/astrbot.md` | 移除指向占位符的无效引用 |
+| 引用修正 | `experiences/python/web-scraping.md` | 移除指向占位符的无效引用 |
 
 ---
 
@@ -137,5 +141,6 @@
 
 **验证记录**：
 - [2026-02-05] 完成全面验证，修复 INDEX.md 问题
+- [2026-02-05] 修正指向占位符的无效引用，更正外部链接
 
 ---
