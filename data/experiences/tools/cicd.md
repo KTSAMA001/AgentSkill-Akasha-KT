@@ -83,19 +83,46 @@ dnf makecache
 
 6) **Mermaid 支持**
 
-VitePress 默认不渲染 Mermaid，需要引入 `vitepress-plugin-mermaid`。
+~~VitePress 默认不渲染 Mermaid，需要引入 `vitepress-plugin-mermaid`。~~
 
-要点：
+**更正（2026-02-07）**：`vitepress-plugin-mermaid@2.0.17` 与 VitePress 1.6.4 存在严重兼容性问题，会导致：
 
-- 新增依赖后，服务器端部署必须 `npm install`
-- 修改 `.vitepress/config.mts` 时要确保 `withMermaid(defineConfig(...))` 括号闭合，否则会报：
-	- `Expected ")" but found end of file`
+- 启动时报 `Failed to resolve dependency: vitepress > @vue/devtools-api, present in 'optimizeDeps.include'`
+- 页面白屏（JS 无法加载）
+- 即使手动安装 `@vue/devtools-api` 和 `@vueuse/core` 也无法解决
+
+**最终方案**：卸载 `vitepress-plugin-mermaid`，改用客户端 Mermaid 组件（自定义 Vue 组件 + `mermaid` npm 包），在 VitePress 主题中注册为全局组件。
+
+7) **`npx` 缓存陷阱导致白屏**
+
+直接运行 `npx vitepress dev` 时，npx 可能使用全局缓存中的旧版/残缺 VitePress（路径指向 `~/.npm/_npx/...`），其 `optimizeDeps` 配置与本地 `node_modules` 不匹配，导致客户端 JS 无法加载（白屏）。
+
+诊断方法：`curl -6 http://localhost:<port>/` 查看 HTML 中的 `<script>` 路径，如果指向 `/@fs/Users/.../.npm/_npx/...` 就说明用的是 npx 缓存版本。
+
+**解决**：
+- 使用 `npm run dev`（通过 package.json scripts 调用，自动用本地版本）
+- 或直接 `./node_modules/.bin/vitepress dev`
+- **不要**单独用 `npx vitepress dev`
+
+8) **国内服务器访问 GitHub 不稳定**
+
+阿里云等国内服务器拉取 GitHub 仓库经常超时或失败。
+
+解决方案之一——配置 GitHub 镜像加速：
+
+```bash
+git config --global url."https://mirror.ghproxy.com/https://github.com/".insteadOf "https://github.com/"
+```
+
+同步脚本中也应添加容错逻辑：git pull 失败时不要中断流程，使用本地缓存继续构建。
 
 **验证记录**：
 
 - 2026-02-07 通过 Nginx error.log 定位 403 根因（目录缺 index）
 - 2026-02-07 通过同步脚本自动生成目录 index.md 的策略稳定解决
-- 2026-02-07 Mermaid 插件集成后，代码块 ```mermaid``` 可正确渲染
+- 2026-02-07 `vitepress-plugin-mermaid` 导致白屏，已移除并改用客户端组件方案
+- 2026-02-07 发现 `npx` 缓存陷阱，改用本地 `node_modules/.bin/vitepress`
+- 2026-02-07 服务器端 GitHub 拉取失败属于网络问题，脚本容错逻辑生效
 
 **备注**：
 
