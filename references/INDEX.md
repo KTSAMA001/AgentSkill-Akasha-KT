@@ -36,6 +36,7 @@
 | 分类 | 文件 |
 |------|------|
 | ai/ | agent-skills |
+| design/ | README, arknights-ui-industrial-style |
 | graphics/ | color-space, rendering-pipeline, sdf, color-banding |
 | hlsl/ | syntax |
 | programming/ | csharp |
