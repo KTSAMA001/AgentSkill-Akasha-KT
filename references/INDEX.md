@@ -15,41 +15,42 @@
 
 ## 经验 experiences/
 
-| 分类 | 文件 |
-|------|------|
-| ai/ | astrbot, mcp |
-| anthropic/ | claude-code, README |
-| csharp/ | syntax, async, linq, patterns, collections, dotnet, misc |
-| general/ | misc, astrbot-messages-parameter-error, validation-report-20260205 |
-| git/ | commands, workflow, troubleshooting, lfs, misc |
-| python/ | syntax, libraries, automation, environment, web-scraping, misc |
-| shader/ | hlsl, urp, hdrp, techniques, optimization, effects, misc |
-| tools/ | terminal, build, debug, cicd（含 VitePress/宝塔/Nginx/Webhook 部署踩坑）, misc |
-| unity/ | csharp, physics, shader, vfx, ui, animation, performance, editor, networking, asset, misc, docs/VR_Variant_Collector_Architecture, docs/effect-system-review |
-| vscode/ | shortcuts, extensions, settings, copilot, debugging, misc |
-| warm-daily/ | sweet-healing |
+| 目录 | 中文名 | 描述 | 文件 |
+|------|--------|------|------|
+| ai | AI | AI 工具、Agent、MCP 等 | astrbot, mcp |
+| anthropic | Anthropic | Claude Code、Anthropic API | claude-code, README |
+| csharp | C# | C# 语法、异步、LINQ、模式 | syntax, async, linq, patterns, collections, dotnet, misc |
+| general | 通用 | 跨领域通用经验 | misc, astrbot-messages-parameter-error, validation-report-20260205 |
+| git | Git | 版本控制、工作流、LFS | commands, workflow, troubleshooting, lfs, misc |
+| python | Python | Python 脚本、自动化、爬虫 | syntax, libraries, automation, environment, web-scraping, misc |
+| shader | Shader | HLSL、URP/HDRP、特效 | hlsl, urp, hdrp, techniques, optimization, effects, misc |
+| tools | 工具 | 终端、构建、调试、CI/CD | terminal, build, debug, cicd, misc |
+| unity | Unity | Unity 引擎全领域经验 | csharp, physics, shader, vfx, ui, animation, performance, editor, networking, asset, misc, docs/VR_Variant_Collector_Architecture, docs/effect-system-review |
+| vscode | VS Code | 快捷键、扩展、配置 | shortcuts, extensions, settings, copilot, debugging, misc |
+| warm-daily | 温暖日常 | 生活经验 | sweet-healing |
 
 > 经验模板：[templates/experience-template.md](./templates/experience-template.md)
 
 ## 知识 knowledge/
 
-| 分类 | 文件 |
-|------|------|
-| ai/ | agent-skills |
-| design/ | README, arknights-ui-industrial-style |
-| graphics/ | color-space, rendering-pipeline, sdf, color-banding |
-| hlsl/ | syntax |
-| programming/ | csharp |
-| social/ | ktsama_bilibili, vera_kt_dog |
-| tools/ | search-apis, search-engines |
-| unity/ | urp, physics, rendering, editor, animation, behavior-designer, **ai-navigation** |
+| 目录 | 中文名 | 描述 | 文件 |
+|------|--------|------|------|
+| ai | AI | Agent Skills 等 AI 相关知识 | agent-skills |
+| design | 设计 | UI/UX 设计、视觉设计相关知识 | README, arknights-ui-industrial-style |
+| graphics | 图形学 | 色彩空间、渲染管线、SDF | color-space, rendering-pipeline, sdf, color-banding |
+| hlsl | HLSL | HLSL 着色器语法参考 | syntax |
+| programming | 编程 | C# 等编程语言知识 | csharp |
+| social | 社交 | 社交平台相关信息 | ktsama_bilibili, vera_kt_dog |
+| tools | 工具 | 搜索引擎、API 等工具知识 | search-apis, search-engines |
+| unity | Unity | URP、物理、编辑器等 Unity 知识 | urp, physics, rendering, editor, animation, behavior-designer, ai-navigation |
+
 > 知识模板：[templates/knowledge-template.md](./templates/knowledge-template.md)
 
 ## 灵感 ideas/
 
-| 分类 | 文件 |
-|------|------|
-| smart_furniture/ | 3d_girl_smart_furniture |
+| 目录 | 中文名 | 描述 | 文件 |
+|------|--------|------|------|
+| smart_furniture | 智能家居 | 3D 智能家居相关创意 | 3d_girl_smart_furniture |
 
 ## 工作流
 
