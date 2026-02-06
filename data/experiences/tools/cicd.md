@@ -11,7 +11,7 @@
 **收录日期**：2026-02-07
 **来源日期**：2026-02-07
 **更新日期**：2026-02-07
-**标签**：#vitepress #nginx #宝塔 #alicloud #alinux3 #webhook #git #部署
+**标签**：#vitepress #nginx #宝塔 #alicloud #alinux3 #webhook #git #部署 #mermaid #pm2
 **状态**：✅ 已验证
 **适用版本**：VitePress 1.x + Nginx 1.26 + 宝塔面板 9.x + Alibaba Cloud Linux 3
 
@@ -116,6 +116,76 @@ git config --global url."https://mirror.ghproxy.com/https://github.com/".instead
 
 同步脚本中也应添加容错逻辑：git pull 失败时不要中断流程，使用本地缓存继续构建。
 
+9) **sync 脚本的 `dubious ownership` 问题**
+
+`.akasha-repo`（由 sync 脚本克隆的阿卡西记录仓库缓存）同样会被 Git 安全策略拦截。每次手动 `git config --global --add safe.directory` 太麻烦。
+
+**最终方案**：在 sync 脚本中，git pull 之前自动执行：
+
+```javascript
+execSync(`git config --global --add safe.directory "${AKASHA_LOCAL}"`, { stdio: 'pipe' })
+```
+
+这样无论在哪台服务器部署，都不需要手动处理。
+
+10) **sync 脚本 pull 时的本地修改冲突**
+
+现象：`.akasha-repo` 中存在未提交的本地修改（可能是上一次构建过程中的残留），导致 `git pull` 报错：
+```
+error: Your local changes to the following files would be overwritten by merge
+```
+
+虽然 fallback 到 `git fetch + reset --hard` 可以解决，但每次都走 fallback 不优雅。
+
+**最终方案**：pull 前先丢弃所有本地修改：
+
+```javascript
+execSync('git checkout . && git clean -fd', { cwd: AKASHA_LOCAL, stdio: 'pipe' })
+execSync('git pull --ff-only', { cwd: AKASHA_LOCAL, stdio: 'pipe', timeout: 60000 })
+```
+
+11) **GITHUB_MIRROR 环境变量支持**
+
+直接硬编码 `https://github.com/...` 在国内服务器必定失败。
+
+**方案**：sync 脚本支持 `GITHUB_MIRROR` 环境变量，自动替换 URL 前缀：
+
+```javascript
+const GITHUB_MIRROR = process.env.GITHUB_MIRROR || ''
+const AKASHA_REPO = GITHUB_MIRROR
+  ? ORIGIN.replace('https://github.com/', GITHUB_MIRROR)
+  : ORIGIN
+```
+
+每次同步前还自动更新 remote URL（`git remote set-url origin`），避免 `.akasha-repo` 中缓存旧地址。
+
+服务器使用：`GITHUB_MIRROR="https://ghfast.top/" npm run build`
+
+12) **Mermaid 代码块自动渲染**
+
+单独注册 `<Mermaid code="...">` 全局组件不够——标准的 ` ```mermaid ` 代码块不会被拦截。
+
+**方案**：在 VitePress `markdown.config` 中重写 `fence` 规则，拦截 `info === 'mermaid'` 的代码块，将内容 Base64 编码后传给 `<MermaidRenderer>` 组件。
+
+注意 `atob()` 不支持 UTF-8 多字节字符（中文），解码时必须用 `TextDecoder`：
+
+```javascript
+const binary = atob(encoded)
+const bytes = Uint8Array.from(binary, c => c.charCodeAt(0))
+const code = new TextDecoder('utf-8').decode(bytes)
+```
+
+13) **Webhook 自动构建（pm2 守护）**
+
+webhook 服务使用 express 监听 3721 端口，接收 GitHub push 事件后自动执行 sync + build。
+
+要点：
+- 使用 `pm2 start server/webhook.mjs --name akasha-webhook` 守护运行
+- `pm2 save && pm2 startup` 实现开机自启
+- Nginx 已配置 `/webhook` 路径代理到 `127.0.0.1:3721`
+- webhook 脚本中使用 `./node_modules/.bin/vitepress build` 而非 `npx`（避免缓存陷阱）
+- 需在 GitHub 两个仓库（AkashaRecord-Web、AgentSkill-Akasha-KT）都配 webhook
+
 **验证记录**：
 
 - 2026-02-07 通过 Nginx error.log 定位 403 根因（目录缺 index）
@@ -123,6 +193,11 @@ git config --global url."https://mirror.ghproxy.com/https://github.com/".instead
 - 2026-02-07 `vitepress-plugin-mermaid` 导致白屏，已移除并改用客户端组件方案
 - 2026-02-07 发现 `npx` 缓存陷阱，改用本地 `node_modules/.bin/vitepress`
 - 2026-02-07 服务器端 GitHub 拉取失败属于网络问题，脚本容错逻辑生效
+- 2026-02-07 dubious ownership 根因确认：sync 脚本克隆的 .akasha-repo 也需要 safe.directory，已在脚本中自动处理
+- 2026-02-07 pull 冲突根因：.akasha-repo 有本地残留修改，pull 前加 git checkout + clean 彻底解决
+- 2026-02-07 GITHUB_MIRROR 环境变量验证通过，服务器通过 gh-proxy.com 镜像成功拉取
+- 2026-02-07 Mermaid 代码块渲染：markdown-it fence 拦截 + Base64 传参 + TextDecoder 解码，中文流程图正常显示
+- 2026-02-07 pm2 启动 webhook 服务成功，GitHub webhook 配置待完成
 
 **备注**：
 
