@@ -63,6 +63,6 @@ Web 侧常见实现手法（不绑定特定颜色）：
 ### 与经验关联（可选）
 
 - 实践验证：CI/CD 经验里的“工业风站点 + Mermaid 渲染 + 自动部署”
-  - https://github.com/KTSAMA001/AgentSkill-Akasha-KT/blob/main/data/experiences/tools/cicd.md
+  - [experiences/tools/cicd.md](../../experiences/tools/cicd.md)
 
 ---
