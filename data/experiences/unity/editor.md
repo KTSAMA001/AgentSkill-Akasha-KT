@@ -193,3 +193,5 @@ public class MyConditional : ProfilingConditional
 | 2026-02-03 | KT | ✅ 日志频率正常控制，不再刷屏 |
 
 ---
+
+> 另见：[EffectSystem 代码审查](docs/effect-system-review.md) - Unity 编辑器扩展（PropertyDrawer, CustomEditor）相关分析

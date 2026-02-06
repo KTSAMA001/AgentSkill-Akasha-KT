@@ -25,7 +25,7 @@
 | python/ | syntax, libraries, automation, environment, web-scraping, misc |
 | shader/ | hlsl, urp, hdrp, techniques, optimization, effects, misc |
 | tools/ | terminal, build, debug, cicd, misc |
-| unity/ | csharp, physics, shader, vfx, ui, animation, performance, editor, networking, asset, misc, docs/VR_Variant_Collector_Architecture |
+| unity/ | csharp, physics, shader, vfx, ui, animation, performance, editor, networking, asset, misc, docs/VR_Variant_Collector_Architecture, docs/effect-system-review |
 | vscode/ | shortcuts, extensions, settings, copilot, debugging, misc |
 | warm-daily/ | sweet-healing |
 
