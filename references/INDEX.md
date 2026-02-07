@@ -37,7 +37,7 @@
 |------|--------|------|------|
 | ai | AI | Agent Skills 等 AI 相关知识 | agent-skills |
 | design | 设计 | UI/UX 设计、视觉设计相关知识 | README, arknights-ui-industrial-style |
-| graphics | 图形学 | 色彩空间、渲染管线、SDF、HLSL | color-space, rendering-pipeline, sdf, color-banding, hlsl-syntax |
+| graphics | 图形学 | 色彩空间、渲染管线、SDF、HLSL、PBR、ComputeShader | color-space, rendering-pipeline, sdf, color-banding, hlsl-syntax, pbr, compute-shader |
 | programming | 编程 | C# 等编程语言知识 | csharp |
 | social | 社交 | 社交平台相关信息 | ktsama_bilibili, vera_kt_dog |
 | tools | 工具 | 搜索引擎、API 等工具知识 | search-apis, search-engines, akasha-visualization |
@@ -46,7 +46,7 @@
 | 分类 | 文件 |
 |------|------|
 | ai/ | agent-skills |
-| graphics/ | color-space, rendering-pipeline, sdf, color-banding |
+| graphics/ | color-space, rendering-pipeline, sdf, color-banding, **pbr**, **compute-shader** |
 | hlsl/ | syntax |
 | programming/ | csharp |
 | social/ | ktsama_bilibili, vera_kt_dog |
