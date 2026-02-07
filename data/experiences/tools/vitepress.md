@@ -89,3 +89,142 @@ Safari 对 SVG favicon 支持不佳，特别是 HTTP（非 HTTPS）站点。需�
 **验证记录**：
 
 - 2026-02-07 修改后推送，待验证非首页是否还有残留
+
+---
+
+## 全站 Emoji 替换为 SVG 图标的完整流程 {#emoji-to-svg}
+
+**收录日期**：2026-02-07
+**标签**：#vitepress #svg #图标 #emoji #设计系统
+**状态**：✅ 已验证
+
+**问题/场景**：
+
+站点多处使用 emoji 作为图标（例如 🎮Unity 开发、📝经验、📚知识等），在不同平台/浏览器上 emoji 渲染不一致，且无法用 CSS 精确控制颜色和尺寸，不符合工业风设计语言。
+
+**解决方案/结论**：
+
+### 涉及改动位置清单
+
+| 文件 | 改动内容 |
+|------|----------|
+| `public/icons/*.svg` | 新增 10 个 SVG 图标文件 |
+| `index.md` | features icon 改为 `{ src: /icons/xxx.svg, width: 48, height: 48 }` |
+| `Dashboard.vue` | `{{ stat.icon }}` 文本插值 → `<img :src="stat.icon">` |
+| `CategoryGrid.vue` | `<span>{{ item.icon }}</span>` → `<img :src="item.icon">` |
+| `sync-content.mjs` | SECTION_CONFIG/stats 的 icon 从 emoji 改为 SVG 路径 |
+| `sidebar.ts` | SPECIAL_LABELS 中 emoji 前缀（📝经验→经验）移除 |
+| `custom.css` | 新增 `.VPFeature .VPImage` 的 filter 着色规则 |
+
+### SVG 图标设计规范
+
+最终采用 Lucide 图标库的设计标准：
+- **画布**：24×24 viewBox
+- **笔触**：`stroke-width="2"`、`stroke-linecap="round"`、`stroke-linejoin="round"`
+- **填充**：`fill="none"`、`stroke="currentColor"`
+- **风格**：简洁几何线条，不使用 fill 填充块
+
+初版（1.5px square-cap）在小尺寸下显得粗糙，按 Lucide 规范重绘后明显提升。
+
+**验证记录**：
+
+- 2026-02-07 10 个 SVG 图标全部替换，三处组件渲染正常，构建通过
+
+---
+
+## `<img>` 标签的 SVG 无法继承 CSS color，需用 filter 着色 {#img-svg-color-filter}
+
+**收录日期**：2026-02-07
+**标签**：#css #svg #filter #currentColor #img
+**状态**：✅ 已验证
+
+**问题/场景**：
+
+SVG 内部使用 `stroke="currentColor"` 期望继承父元素的 CSS `color` 属性。但当 SVG 通过 `<img src="xxx.svg">` 加载时，`currentColor` 解析为默认黑色（`#000`），因为 `<img>` 标签创建了独立的文档上下文，**不继承**外部 CSS 属性。
+
+**解决方案/结论**：
+
+### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| **CSS filter（采用）** | 不改 HTML 结构，兼容 `<img>` | 颜色是近似值，非精确 |
+| 内联 SVG | 完全支持 currentColor | 需改为 Vue 组件，增加复杂度 |
+| SVG 中硬编码颜色 | 最简单 | 无法响应主题切换 |
+
+### CSS filter 近似 #FF6B2B 橙色的参数
+
+```css
+filter: invert(48%) sepia(89%) saturate(1600%) hue-rotate(3deg) brightness(101%) contrast(103%);
+```
+
+该 filter 链将黑色 SVG 笔触转换为近似 `#FF6B2B` 的橙色。原理：
+1. `invert` 将黑色翻转为白色
+2. `sepia` 添加棕色调
+3. `saturate` + `hue-rotate` 调整到目标色相
+4. `brightness` + `contrast` 微调明度
+
+**验证记录**：
+
+- 2026-02-07 Dashboard、CategoryGrid、VPFeature 三处图标均正常显示橙色
+
+---
+
+## VitePress VPFeature 图标 HTML 结构（无 .icon 包裹层） {#vpfeature-icon-structure}
+
+**收录日期**：2026-02-07
+**标签**：#vitepress #VPFeature #css选择器 #html结构
+**状态**：✅ 已验证
+
+**问题/场景**：
+
+在 `index.md` 的 features 中使用 `icon: { src: /icons/xxx.svg }` 格式，在 custom.css 中用 `.VPFeature .icon img` 选择器为图标添加 CSS filter 着色。但线上图标始终是黑色（filter 不生效）。
+
+**解决方案/结论**：
+
+VitePress 对 `{ src: '...' }` 格式的 feature icon 生成的 HTML 结构是：
+
+```html
+<article class="box" data-v-bd37d1a2>
+  <img class="VPImage" src="/icons/xxx.svg" width="48" height="48">
+  <h2 class="title">...</h2>
+</article>
+```
+
+**关键发现**：`<img>` 直接位于 `.box` 内部，**没有** `.icon` 中间包裹层。因此 `.VPFeature .icon img` 选择器完全匹配不到。
+
+正确选择器应为：
+
+```css
+.VPFeature .VPImage {
+  filter: invert(48%) sepia(89%) saturate(1600%) hue-rotate(3deg) brightness(101%) contrast(103%);
+}
+```
+
+**教训**：不要凭想象写 CSS 选择器，用 DevTools 或 `curl` + 分析实际渲染的 HTML 结构后再写。
+
+**验证记录**：
+
+- 2026-02-07 修正选择器后 MODULES 区域 6 个图标全部变为橙色
+
+---
+
+## 侧边栏自定义高亮竖条与文字间距 {#sidebar-padding-left}
+
+**收录日期**：2026-02-07
+**标签**：#vitepress #sidebar #css #间距
+**状态**：✅ 已验证
+
+**问题/场景**：
+
+为侧边栏 `.item::before` 添加了 3px 宽的橙色高亮竖条（`left: 0`），但竖条与右侧文字之间几乎没有间距，视觉上挤在一起。
+
+**解决方案/结论**：
+
+给 `.VPSidebar .VPSidebarItem .item` 添加 `padding-left: 12px !important`，让文字与竖条之间保持 12px 的呼吸空间。
+
+需要 `!important` 是因为 VitePress 默认样式对 `.item` 有自己的 padding 定义。
+
+**验证记录**：
+
+- 2026-02-07 间距修复后侧边栏视觉明显改善
