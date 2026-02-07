@@ -10,7 +10,7 @@
 
 **收录日期**：2026-02-07
 **来源日期**：2024-08-08
-**标签**：#ComputeShader #GPU草渲染 #视锥剔除 #DrawMeshInstancedProcedural #大规模渲染
+**标签**：#ComputeShader #GPU草渲染 #视锥剔除 #DrawMeshInstancedProcedural #大规模渲染 #URP
 **状态**：✅ 已验证
 **适用版本**：Unity 2022.3+ / URP 14.0+
 

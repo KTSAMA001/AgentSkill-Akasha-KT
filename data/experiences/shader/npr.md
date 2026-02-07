@@ -110,7 +110,7 @@ public override void AddRenderPasses(...)
 
 **收录日期**：2026-02-07
 **来源日期**：2024-08-08
-**标签**：#RenderFeature #刘海阴影 #NPR #屏幕空间 #卡通渲染
+**标签**：#RenderFeature #刘海阴影 #NPR #屏幕空间 #卡通渲染 #URP
 **状态**：✅ 已验证
 **适用版本**：Unity 2022.3+ / URP 14.0+
 
