@@ -1,93 +1,107 @@
 # 记录流程
 
-> 将有价值的内容保存到对应分类文件
+> 将有价值的内容保存为独立记录文件
 
 ---
 
 ## 一、流程总览
 
 1. **同步仓库**：`git pull origin main`
-2. **判断类型** → 经验 vs 知识
-3. **确定分类** → 参考 [INDEX.md](../INDEX.md)
-4. **全面验证** → 按 [validate.md](./validate.md) 流程进行验证检查（包括重复检测、正确性、时效性等）
-5. **格式化与写入** → [experience template](../templates/experience-template.md) / [knowledge template](../templates/knowledge-template.md)
-6. **提交与反馈** → Git Commit & User Feedback
+2. **确定文件名** → `kebab-case` 自解释命名
+3. **全面验证** → 按 [validate.md](./validate.md) 检查（重复检测、正确性、时效性等）
+4. **格式化写入** → 按 [record-template.md](../templates/record-template.md) 模板写入 `data/` 目录
+5. **打标签** → 确保至少 1 个领域标签 + 1 个类型标签
+6. **更新索引** → 同步更新 [INDEX.md](../INDEX.md) 的文件清单和标签索引
+7. **提交推送** → Git Commit & Push
 
 ---
 
-## 二、记录经验 (Experience)
+## 二、文件命名规则
 
-> **核心问题**：怎么解决？怎么做？
-> **侧重**：问题 → 方案 → 验证
+- 格式：`kebab-case`，全小写，连字符分隔
+- 要求：自解释，无需依赖目录上下文即可理解内容
+- 位置：一律写入 `data/*.md`，**不创建子目录**
 
-### 2.1 推荐分类
-参考 [INDEX.md](../INDEX.md) 中的**经验分类表**查看所有可用分类及其文件。根据内容性质选择对应分类：
-- **Unity 相关** → `experiences/unity/*`
-- **编程语言** → `experiences/csharp/`、`experiences/python/` 等
-- **工具/开发** → `experiences/tools/`、`experiences/git/` 等
-- **其他领域** → `experiences/ai/`、`experiences/shader/` 等
+### 命名示例
+| 内容 | 文件名 |
+|------|--------|
+| URP 自定义 Renderer Feature | `urp-renderer-feature-custom.md` |
+| C# 异步编程踩坑 | `csharp-async-pitfalls.md` |
+| Git PAT 认证故障 | `git-pat-credential-fix.md` |
+| 明日方舟工业风 UI 分析 | `arknights-ui-industrial-style.md` |
+| 3D 美少女智能家具创意 | `idea-3d-girl-smart-furniture.md` |
 
-### 2.2 提取要点清单
+---
+
+## 三、标签打标
+
+> 标签是唯一的分类机制，务必认真打标。
+
+### 必选标签
+| 维度 | 数量 | 预定义值 |
+|------|------|----------|
+| **领域** | ≥1 | `#unity` `#shader` `#graphics` `#csharp` `#python` `#git` `#ai` `#web` `#design` `#tools` `#vscode` `#social` |
+| **类型** | 1 | `#experience` `#knowledge` `#idea` `#reference` `#architecture` |
+
+### 可选标签
+| 维度 | 说明 |
+|------|------|
+| **专项** | 具体技术/主题：`#urp` `#hlsl` `#mcp` `#physics` 等 |
+| **自定义** | 按需创建，不受限制 |
+
+### 标签格式
+- `#小写英文`，多词用连字符：`#behavior-designer`
+- 领域标签可多选（如 Renderer Feature → `#unity` `#shader` `#graphics`）
+- 类型标签单选
+
+---
+
+## 四、提取要点清单
+
+根据内容性质，关注以下要点：
+
+### 经验类 (#experience)
 - **标题**：一句话概括问题与方案
 - **问题描述**：发生的场景、报错信息
 - **解决方案**：具体的修复步骤或代码
-- **代码片段**：关键代码（非整文件）
 - **版本环境**：Unity 202x, VS Code xxx
 - **参考链接**：StackOverflow, Unity Forum
 
----
-
-## 三、记录知识 (Knowledge)
-
-> **核心问题**：是什么？为什么？
-> **侧重**：定义 → 原理 → 要点
-
-### 3.1 推荐分类
-参考 [INDEX.md](../INDEX.md) 中的**知识分类表**查看所有可用分类及其文件。根据知识性质选择对应分类：
-- **图形学** → `knowledge/graphics/`、`knowledge/hlsl/`
-- **编程** → `knowledge/programming/csharp.md`
-- **工具** → `knowledge/tools/*`
-- **其他** → `knowledge/ai/`、`knowledge/social/` 等
-
-### 3.2 提取要点清单
+### 知识类 (#knowledge)
 - **标题**：知识点名称
 - **定义**：简练的概念解释
 - **原理**：底层逻辑或工作机制
 - **来源**：官方文档、权威书籍
 - **示例**：简单的用法演示
 
----
-
-## 四、高级处理
-
-### 4.1 跨分类处理 (交叉引用)
-当内容涉及多个领域时（如 Unity 中的 C# 特性）：
-1. **主分类写入**：在最核心的分类文件中记录
-   - 判定标准：问题发生层 / 解决方案层
-2. **相关分类引用**：
-   ```markdown
-   > 另见：[标题](../../主分类/文件.md#anchor) —— 一句话说明
-   ```
-
-### 4.2 大型内容 (Docs)
-> 对 >50 行或完整方案，使用独立文档
-
-1. 创建 `[分类]/docs/[name].md`
-2. 主文件添加摘要 + 链接
+### 创意类 (#idea)
+- **标题**：创意名称
+- **灵感来源**：触发想法的事件/需求
+- **核心想法**：创意的完整描述
+- **可行性**：初步评估
 
 ---
 
-## 五、仓库同步与规范
+## 五、索引更新
+
+每次新增/修改记录后，**必须**同步更新 [INDEX.md](../INDEX.md)：
+
+1. **文件清单视图**：在表格中添加一行，填入文件名、标签、状态、简述
+2. **标签索引视图**：在该文件所有领域标签分组下添加条目
+
+---
+
+## 六、仓库同步与规范
 
 ### Commit 规范
 `git commit -m "Type: Subject"`
 
 | 类型 | 格式示例 |
 |------|----------|
-| **新增经验** | `docs: add experience [标题]` |
-| **新增知识** | `docs: add knowledge [标题]` |
+| **新增记录** | `docs: add [文件名]` |
 | **更新内容** | `docs: update [文件名] - [说明]` |
 | **修正错误** | `fix: correct [文件名] - [错误]` |
+| **系统维护** | `chore: [说明]` |
 
 ### 冲突解决
 ```bash

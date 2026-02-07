@@ -13,9 +13,9 @@ license: MIT
 ```
 <技能根目录>/          ← SKILL.md 所在位置
 ├── SKILL.md           ← 当前文件（技能定义）
-├── data/              ← 数据存储目录
-│   ├── experiences/   ← 经验记录
-│   └── knowledge/     ← 知识记录
+├── data/              ← 所有记录，扁平存放（无子目录）
+│   ├── xxx.md
+│   └── ...
 └── references/        ← 参考文档（模板、索引、操作指南）
 ```
 
@@ -23,22 +23,28 @@ license: MIT
 
 ## 核心规则
 
-**写入位置**：
-- 经验 → `data/experiences/<分类>/*.md`
-- 知识 → `data/knowledge/<分类>/*.md`
+**分类方式**：所有记录通过**标签**分类，不使用目录层级。
+
+**标签要求**：每条记录必须至少包含：
+- **1 个领域标签**：`#unity` `#shader` `#graphics` `#csharp` `#python` `#git` `#ai` `#web` `#design` `#tools` `#vscode` `#social` 等
+- **1 个类型标签**：`#experience` | `#knowledge` | `#idea` | `#reference` | `#architecture`
+- 可选的专项标签和自定义标签
+
+**写入位置**：所有记录 → `data/*.md`
+
+**文件命名**：`kebab-case`，自解释，如 `urp-renderer-feature-custom.md`、`csharp-async-pitfalls.md`
 
 **权限**：
 | 路径 | 操作 |
 |------|------|
-| `data/**/*.md` | 读/写/新建，删除需确认 |
-| `data/**/`（子目录） | 可新建 |
-| `references/INDEX.md` | 读/写（分类索引需实时更新） |
+| `data/*.md` | 读/写/新建，删除需确认 |
+| `references/INDEX.md` | 读/写（索引需实时更新） |
 | `SKILL.md`、`references/` 其他文件 | 只读 |
 | 其他位置 | 禁止 |
 
-**索引维护**：新增分类或文件时，同步更新 `references/INDEX.md`
+**索引维护**：新增或修改记录时，同步更新 `references/INDEX.md` 的文件清单和标签索引两个视图
 
-**禁止**：在 `data/` 外创建数据文件 | 自定义格式 | 操作技能目录外文件
+**禁止**：在 `data/` 外创建数据文件 | 在 `data/` 下创建子目录 | 自定义格式 | 操作技能目录外文件
 
 ## 意图识别与路由
 
@@ -51,56 +57,29 @@ license: MIT
 | **修正/反馈** | 指出内容错误、要求更新过时信息、"验证下"、"这个不对"、"信息过期了" | [workflows/validate.md](references/workflows/validate.md) |
 
 **辅助资源**：
-- 需确定分类或寻找文件位置：[INDEX.md](references/INDEX.md)
-- 需获取记录模板：[templates/](references/templates/)
+- 需定位文件或按标签检索：[INDEX.md](references/INDEX.md)
+- 需获取记录模板：[templates/record-template.md](references/templates/record-template.md)
 
 ## 记录格式
 
-> **完整模板**：`references/templates/experience-template.md` | `references/templates/knowledge-template.md`
+> **完整模板**：`references/templates/record-template.md`
 
-### 经验（简要）
-
-```
-## [标题]
-收录/来源/更新日期 | 标签 | 状态(✅⚠️🔄❌🔬) | 适用版本
-问题/场景 → 解决方案 → 关键代码 → 参考链接 → 验证记录 → 相关经验/理论基础
-```
-
-### 知识（简要）
+### 简要格式
 
 ```
 ## [标题]
-分类 | 关键词 | 来源 | 日期 | 可信度(⭐~⭐⭐⭐⭐⭐) | 状态(📘🔄📕)
-定义/概念 → 原理/详解 → 关键点 → 示例 → 相关知识 → 与经验关联
+标签 | 来源/收录/更新日期 | 状态 | 可信度 | 适用版本
+概要 → 内容 → 关键代码 → 参考链接 → 相关记录 → 验证记录
 ```
 
-### 相互引用（交叉引用原则）
+### 相互引用
 
-知识与经验可以相互引用，形成**多层级网络**而非简单树形结构：
+记录之间使用同级相对路径引用：
 
 ```markdown
-# 经验引用知识
-**理论基础**：[知识点](../../knowledge/分类/文件.md#anchor)
-
-# 知识引用经验
-### 与经验关联
-- [经验标题](../../experiences/分类/文件.md#anchor)
+### 相关记录
+- [相关记录标题](./other-record.md) - 关联说明
 ```
-
-### 跨分类内容处理
-
-当内容涉及多个领域时（如"BehaviorDesigner 中的 Tooltip 冲突"同时涉及 Unity 编辑器和 BD 插件），采用**交叉引用**而非重复记录：
-
-| 原则 | 说明 |
-|------|------|
-| 主位置 | 内容放入**最核心**的分类（实际解决问题的领域） |
-| 引用链接 | 在相关分类中添加 `另见：[链接]` 指向主位置 |
-| 避免重复 | 不要在多个文件中复制相同内容 |
-| 锚点命名 | 使用 `{#有意义的锚点名}` 便于精确引用 |
-
-**示例**：BD 的 Tooltip 冲突属于 Unity 编辑器开发中遇到的问题
-- 主位置：`experiences/unity/editor.md#bd-tooltip-conflict`  
-- 在 BD 知识文件中添加：`另见：[Tooltip 冲突解决](../../experiences/unity/editor.md#bd-tooltip-conflict)`
 
 ### 时间字段
 
@@ -112,14 +91,14 @@ license: MIT
 
 ## 状态标记速查
 
-| 经验 | 知识 | 可信度 |
-|------|------|--------|
-| ✅已验证 ⚠️待验证 🔄已过时 ❌已废弃 🔬实验性 | 📘有效 🔄待更新 📕已过时 | ⭐⭐⭐⭐⭐官方 → ⭐待验证 |
-
-## 经验 vs 知识
-
-| 类型 | 来源 | 核心问题 | 格式 |
-|------|------|----------|------|
-| 经验 | 实践、踩坑 | 怎么做/避坑 | 问题→方案→验证 |
-| 知识 | 书籍、文档 | 是什么/为什么 | 概念→原理→要点 |
+| 标记 | 含义 |
+|------|------|
+| ✅ 已验证 | 经实践确认有效 |
+| ⚠️ 待验证 | 理论可行但未实测 |
+| 📘 有效 | 信息准确且当前适用 |
+| 🔄 待更新 | 有新版本或变更 |
+| 📕 已过时 | 不再适用当前环境 |
+| ❌ 已废弃 | 错误或有风险 |
+| 🔬 实验性 | 非主流/试探性方案 |
+| 💡 构想中 | 创意/灵感阶段 |
 
