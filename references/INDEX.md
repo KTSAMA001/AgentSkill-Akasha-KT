@@ -10,6 +10,7 @@
 | 使用示例 | [EXAMPLES.md](./EXAMPLES.md) | 参考用法 |
 | 经验模板 | [templates/experience-template.md](./templates/experience-template.md) | 记录经验 |
 | 知识模板 | [templates/knowledge-template.md](./templates/knowledge-template.md) | 记录知识 |
+| 验证报告 | [reports/validation-report-20260205.md](./reports/validation-report-20260205.md) | 内容审计记录 |
 
 ---
 
@@ -17,10 +18,10 @@
 
 | 目录 | 中文名 | 描述 | 文件 |
 |------|--------|------|------|
-| ai | AI | AI 工具、Agent、MCP 等 | astrbot, mcp |
+| ai | AI | AI 工具、Agent、MCP 等 | astrbot, astrbot-messages-error, mcp |
 | anthropic | Anthropic | Claude Code、Anthropic API | claude-code, README |
 | csharp | C# | C# 语法、异步、LINQ、模式 | syntax, async, linq, patterns, collections, dotnet, misc |
-| general | 通用 | 跨领域通用经验 | misc, astrbot-messages-parameter-error, validation-report-20260205 |
+| general | 通用 | 跨领域通用经验 | misc |
 | git | Git | 版本控制、工作流、LFS | commands, workflow, troubleshooting, lfs, misc |
 | python | Python | Python 脚本、自动化、爬虫 | syntax, libraries, automation, environment, web-scraping, misc |
 | shader | Shader | HLSL、URP/HDRP、特效 | hlsl, urp, hdrp, techniques, optimization, effects, misc |
@@ -37,8 +38,7 @@
 |------|--------|------|------|
 | ai | AI | Agent Skills 等 AI 相关知识 | agent-skills |
 | design | 设计 | UI/UX 设计、视觉设计相关知识 | README, arknights-ui-industrial-style |
-| graphics | 图形学 | 色彩空间、渲染管线、SDF | color-space, rendering-pipeline, sdf, color-banding |
-| hlsl | HLSL | HLSL 着色器语法参考 | syntax |
+| graphics | 图形学 | 色彩空间、渲染管线、SDF、HLSL | color-space, rendering-pipeline, sdf, color-banding, hlsl-syntax |
 | programming | 编程 | C# 等编程语言知识 | csharp |
 | social | 社交 | 社交平台相关信息 | ktsama_bilibili, vera_kt_dog |
 | tools | 工具 | 搜索引擎、API 等工具知识 | search-apis, search-engines |

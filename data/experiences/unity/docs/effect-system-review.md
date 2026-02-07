@@ -1,7 +1,7 @@
 ## EffectSystem 效果系统 - 代码审查与架构分析 {#effect-system-review}
 
 **收录日期**：2026-02-06
-**来源日期**：2025-08-19（系统创建，作者：王燚）
+**来源日期**：2025-08-19（系统创建，作者：KT）
 **标签**：#Unity #EffectSystem #架构审查 #ScriptableObject #材质动画 #模块化
 **状态**：✅ 已验证
 **适用版本**：Unity 2021+（使用 SerializeReference、UniTask）
@@ -182,8 +182,3 @@ bool running = EffectManager.Instance.IsEffectRunning(gameObject, "Dissolve");
 **验证记录**：
 
 - [2026-02-06] 初次记录，来源：代码审查全部源码文件（~3000行）
-
-**参考链接**：
-
-- [EffectSystem 飞书设计文档](https://ewe8txd9jt.feishu.cn/wiki/YcWBwSoJPi0wGJkCWc1ck58GnUb) - 作者王燚的原始设计文档
-
