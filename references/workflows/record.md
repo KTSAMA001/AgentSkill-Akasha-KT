@@ -11,7 +11,7 @@
 3. **全面验证** → 按 [validate.md](./validate.md) 检查（重复检测、正确性、时效性等）
 4. **格式化写入** → 按 [record-template.md](../templates/record-template.md) 模板写入 `data/` 目录
 5. **打标签** → 确保至少 1 个领域标签 + 1 个类型标签
-6. **更新索引** → 同步更新 [INDEX.md](../INDEX.md) 的文件清单和标签索引
+6. **更新索引** → 更新 [INDEX.md](../INDEX.md) 的文件清单（如有新标签则同步更新标签概览）
 7. **提交推送** → Git Commit & Push
 
 ---
@@ -37,22 +37,19 @@
 
 > 标签是唯一的分类机制，务必认真打标。
 
-### 必选标签
-| 维度 | 数量 | 预定义值 |
-|------|------|----------|
-| **领域** | ≥1 | `#unity` `#shader` `#graphics` `#csharp` `#python` `#git` `#ai` `#web` `#design` `#tools` `#vscode` `#social` |
-| **类型** | 1 | `#experience` `#knowledge` `#idea` `#reference` `#architecture` |
+### 要求
+- 每条记录 **至少 2 个标签**
+- 查看 [INDEX.md](../INDEX.md) 标签概览，优先复用已有标签
+- 如需新标签，格式为 `#小写英文`，多词用连字符：`#behavior-designer`
+- 数量不限，根据内容打足即可
 
-### 可选标签
-| 维度 | 说明 |
+### 示例
+| 内容 | 标签 |
 |------|------|
-| **专项** | 具体技术/主题：`#urp` `#hlsl` `#mcp` `#physics` 等 |
-| **自定义** | 按需创建，不受限制 |
-
-### 标签格式
-- `#小写英文`，多词用连字符：`#behavior-designer`
-- 领域标签可多选（如 Renderer Feature → `#unity` `#shader` `#graphics`）
-- 类型标签单选
+| URP Renderer Feature 开发经验 | `#unity` `#shader` `#urp` `#renderer-feature` `#experience` |
+| PBR 渲染理论 | `#graphics` `#pbr` `#brdf` `#knowledge` |
+| Git PAT 认证故障 | `#git` `#credential` `#experience` `#bug` |
+| 3D 智能家具创意 | `#idea` `#3d` `#smart-furniture` |
 
 ---
 
@@ -86,8 +83,8 @@
 
 每次新增/修改记录后，**必须**同步更新 [INDEX.md](../INDEX.md)：
 
-1. **文件清单视图**：在表格中添加一行，填入文件名、标签、状态、简述
-2. **标签索引视图**：在该文件所有领域标签分组下添加条目
+1. **文件清单**：在表格中添加一行，填入文件名、标签、状态、简述
+2. **标签概览**：仅当使用了新标签时，将新标签追加到概览列表中
 
 ---
 

@@ -25,10 +25,7 @@ license: MIT
 
 **分类方式**：所有记录通过**标签**分类，不使用目录层级。
 
-**标签要求**：每条记录必须至少包含：
-- **1 个领域标签**：`#unity` `#shader` `#graphics` `#csharp` `#python` `#git` `#ai` `#web` `#design` `#tools` `#vscode` `#social` 等
-- **1 个类型标签**：`#experience` | `#knowledge` | `#idea` | `#reference` | `#architecture`
-- 可选的专项标签和自定义标签
+**标签要求**：每条记录至少 2 个标签，所有标签同级、不分类。新增标签前先查阅 INDEX.md 标签概览，优先复用已有标签。
 
 **写入位置**：所有记录 → `data/*.md`
 
@@ -42,7 +39,7 @@ license: MIT
 | `SKILL.md`、`references/` 其他文件 | 只读 |
 | 其他位置 | 禁止 |
 
-**索引维护**：新增或修改记录时，同步更新 `references/INDEX.md` 的文件清单和标签索引两个视图
+**索引维护**：新增或修改记录时，同步更新 `references/INDEX.md` 的文件清单（如有新标签则同步更新标签概览）
 
 **禁止**：在 `data/` 外创建数据文件 | 在 `data/` 下创建子目录 | 自定义格式 | 操作技能目录外文件
 
