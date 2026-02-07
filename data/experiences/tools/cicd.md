@@ -291,3 +291,71 @@ VPBackdrop 遮罩（半透明暗色覆盖层）在 Safari 窗口 resize 时，�
 **核心思路**：覆盖层的边界问题不可能完美解决（浏览器渲染层面限制），不如换个思路——不需要边界就不存在边界问题。阴影挂在 sidebar 元素自身上，跟 resize 无关。
 
 **状态**：✅ 已验证
+
+
+18) **宝塔面板 SSL 部署报"找不到标识信息"——双配置文件冲突**
+
+宝塔创建 HTML 类型站点时，Nginx 配置文件命名为 `html_{域名}.conf`（如 `html_akasha.ktsama.top.conf`）。但宝塔的 **SSL 模块按 `{域名}.conf`**（不带类型前缀）查找配置文件。当 SSL 面板找不到 `akasha.ktsama.top.conf` 时，会报：
+
+> 站点配置文件中未找到标识信息【#error_page 404/404.html;】
+
+**根因分析**：
+
+| 模块 | 查找的文件名 | 实际文件 |
+|------|-------------|---------|
+| 站点管理（配置文件编辑） | `html_akasha.ktsama.top.conf` | ✅ 存在，标记完整 |
+| SSL 部署模块 | `akasha.ktsama.top.conf` | ❌ 不存在或为空 |
+
+两个模块的命名规范不一致，导致 SSL 模块在错误的文件里找标记。
+
+**解决方案**：
+
+- **方案 A（手动 SSL）**：直接在配置文件中手写 `listen 443 ssl` + `ssl_certificate` 等指令，绕过宝塔 SSL 模块注入。可行但面板状态不同步。
+- **方案 B（同步面板状态）**：创建符号链接`ln -s html_{域名}.conf {域名}.conf`，或用宝塔面板的 SSL 页面反复保存直到它自动在正确文件中注入。实测中，**先手动配好 SSL（方案 A），再去面板点"保存并启用证书"，面板最终会识别到已有的 SSL 配置并同步状态**。
+
+**最终操作流程**：
+1. 手动在 `html_{域名}.conf` 中添加 443 server 块 + SSL 证书配置
+2. 80 端口 server 块改为 `return 301 https://...` 
+3. `nginx -t && nginx -s reload` 确认生效
+4. 回到宝塔 SSL 面板点"保存并启用证书"，面板注入 `#HTTP_TO_HTTPS` 等配置并同步状态
+5. 如果出现 `conflicting server name` 警告，检查 `ls /www/server/panel/vhost/nginx/*{域名}*`，删除多余的重复配置文件
+
+**注意**：宝塔面板操作 SSL 时可能自动创建 `{域名}.conf`（不带前缀），导致两份同名 server 配置同时加载。发现 `nginx -t` 有 `conflicting server name` 警告时，需排查并合并/删除重复文件。
+
+**状态**：✅ 已验证
+
+
+19) **Webhook 从 HTTP 直连迁移到 Nginx 反向代理（HTTPS）**
+
+启用 SSL 后，GitHub Webhook 不能继续用 `http://{域名}:3721/webhook`（明文 HTTP + 非标端口）。需要通过 Nginx 反向代理，让 GitHub 走 HTTPS 标准端口访问。
+
+**架构变更**：
+
+```
+之前：GitHub → HTTP:3721 → Node.js（直连，需开放 3721 端口）
+之后：GitHub → HTTPS:443 → Nginx 解密 → HTTP → 127.0.0.1:3721 → Node.js
+```
+
+**Nginx 配置（在 443 server 块内添加）**：
+
+```nginx
+location /webhook {
+    proxy_pass http://127.0.0.1:3721;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 300s;
+}
+```
+
+**关键点**：
+- Node.js 程序（webhook.mjs）**无需改动**，继续监听 `127.0.0.1:3721`
+- `proxy_pass` 路径不带尾部 `/`，保持请求路径原样转发（`/webhook` → `/webhook`）
+- `proxy_read_timeout 300s` 避免构建时间长导致 Nginx 超时断开
+- 3721 端口可以从防火墙关闭外网访问，只允许本机 127.0.0.1 访问，更安全
+- GitHub Webhook URL 改为: `https://{域名}/webhook`，启用 SSL verification
+
+**验证**：GitHub Recent Deliveries 显示 ping 事件返回 200 + `{"message":"pong"}`
+
+**状态**：✅ 已验证
