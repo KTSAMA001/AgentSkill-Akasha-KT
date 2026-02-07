@@ -253,4 +253,41 @@ VPBackdrop 使用 `position: fixed; inset: 0` 覆盖视口。Safari 拉伸窗口
 
 200vmax = 视口最大维度的200倍，无论窗口多大拉多快都不可能露出。`box-shadow` 是渲染层效果，不依赖元素 inset 尺寸的重绘。
 
+**状态**：🔄 已迭代（见条目 17）
+
+**演进说明**：box-shadow 200vmax 方案可以覆盖 resize 间隙，但用户反馈本质问题是「任何覆盖层都有边界」——模糊、半透明、纯色都一样，只要有视觉差异就可能在 resize 时暴露。最终决定彻底移除覆盖层，见条目 17。
+
+
+17) **移动端 sidebar 遮罩的终极方案：去掉遮罩**
+
+VPBackdrop 遮罩（半透明暗色覆盖层）在 Safari 窗口 resize 时，无论用什么方式实现（background rgba / box-shadow / backdrop-filter blur），只要存在「有视觉效果的全屏覆盖层」，就会因 fixed 元素重绘延迟而在边缘暴露瑕疵。
+
+**尝试过的方案及问题**：
+
+| 方案 | 问题 |
+|------|------|
+| 原始 VPBackdrop（background rgba） | Safari resize 重绘延迟，右下角漏边 |
+| box-shadow: 0 0 0 200vmax | 覆盖范围够大，但本质仍是颜色覆盖层 |
+| backdrop-filter: blur() | 同样有边界问题，模糊和未模糊的分界线暴露 |
+
+**最终方案**：完全去掉覆盖层的视觉效果，改为：
+
+1. VPBackdrop 设为 `background: transparent`，仅保留作为**点击热区**关闭 sidebar 的功能
+2. sidebar 本身添加 `box-shadow: 4px 0 24px rgba(0,0,0,0.3)`，用投影表达层级感
+
+```css
+.VPBackdrop {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 959px) {
+  .VPSidebar {
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3) !important;
+  }
+}
+```
+
+**核心思路**：覆盖层的边界问题不可能完美解决（浏览器渲染层面限制），不如换个思路——不需要边界就不存在边界问题。阴影挂在 sidebar 元素自身上，跟 resize 无关。
+
 **状态**：⚠️ 待验证
