@@ -253,9 +253,9 @@ VPBackdrop 使用 `position: fixed; inset: 0` 覆盖视口。Safari 拉伸窗口
 
 200vmax = 视口最大维度的200倍，无论窗口多大拉多快都不可能露出。`box-shadow` 是渲染层效果，不依赖元素 inset 尺寸的重绘。
 
-**状态**：🔄 已迭代（见条目 17）
+**状态**：❌ 已废弃（见条目 17）
 
-**演进说明**：box-shadow 200vmax 方案可以覆盖 resize 间隙，但用户反馈本质问题是「任何覆盖层都有边界」——模糊、半透明、纯色都一样，只要有视觉差异就可能在 resize 时暴露。最终决定彻底移除覆盖层，见条目 17。
+**验证结果**：box-shadow 200vmax 理论上覆盖范围足够，但实测 Safari 拉伸窗口时 **box-shadow 的重绘同样存在延迟**，仍会漏出边缘。根本原因是 Safari 对 fixed 元素的所有视觉属性（background/box-shadow/backdrop-filter）在 resize 时都有重绘延迟，无法通过纯 CSS 覆盖层解决。最终决定彻底移除覆盖层，见条目 17。
 
 
 17) **移动端 sidebar 遮罩的终极方案：去掉遮罩**

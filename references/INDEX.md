@@ -24,7 +24,7 @@
 | git | Git | 版本控制、工作流、LFS | commands, workflow, troubleshooting, lfs, misc |
 | python | Python | Python 脚本、自动化、爬虫 | syntax, libraries, automation, environment, web-scraping, misc |
 | shader | Shader | HLSL、URP/HDRP、特效 | hlsl, urp, hdrp, techniques, optimization, effects, misc |
-| tools | 工具 | 终端、构建、调试、CI/CD | terminal, build, debug, cicd, misc |
+| tools | 工具 | 终端、构建、调试、CI/CD | terminal, build, debug, cicd, vitepress, misc |
 | unity | Unity | Unity 引擎全领域经验 | csharp, physics, shader, vfx, ui, animation, performance, editor, networking, asset, misc, docs/VR_Variant_Collector_Architecture, docs/effect-system-review |
 | vscode | VS Code | 快捷键、扩展、配置 | shortcuts, extensions, settings, copilot, debugging, misc |
 | warm-daily | 温暖日常 | 生活经验 | sweet-healing |
