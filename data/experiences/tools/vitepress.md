@@ -110,8 +110,8 @@ Safari 对 SVG favicon 支持不佳，特别是 HTTP（非 HTTPS）站点。需�
 |------|----------|
 | `public/icons/*.svg` | 新增 10 个 SVG 图标文件 |
 | `index.md` | features icon 改为 `{ src: /icons/xxx.svg, width: 48, height: 48 }` |
-| `Dashboard.vue` | `{{ stat.icon }}` 文本插值 → `<img :src="stat.icon">` |
-| `CategoryGrid.vue` | `<span>{{ item.icon }}</span>` → `<img :src="item.icon">` |
+| `Dashboard.vue` | 文本插值 stat.icon → img 标签 :src 绑定 |
+| `CategoryGrid.vue` | span 文本插值 item.icon → img 标签 :src 绑定 |
 | `sync-content.mjs` | SECTION_CONFIG/stats 的 icon 从 emoji 改为 SVG 路径 |
 | `sidebar.ts` | SPECIAL_LABELS 中 emoji 前缀（📝经验→经验）移除 |
 | `custom.css` | 新增 `.VPFeature .VPImage` 的 filter 着色规则 |
@@ -132,7 +132,7 @@ Safari 对 SVG favicon 支持不佳，特别是 HTTP（非 HTTPS）站点。需�
 
 ---
 
-## `<img>` 标签的 SVG 无法继承 CSS color，需用 filter 着色 {#img-svg-color-filter}
+## img 标签的 SVG 无法继承 CSS color，需用 filter 着色 {#img-svg-color-filter}
 
 **收录日期**：2026-02-07
 **标签**：#css #svg #filter #currentColor #img
@@ -140,7 +140,7 @@ Safari 对 SVG favicon 支持不佳，特别是 HTTP（非 HTTPS）站点。需�
 
 **问题/场景**：
 
-SVG 内部使用 `stroke="currentColor"` 期望继承父元素的 CSS `color` 属性。但当 SVG 通过 `<img src="xxx.svg">` 加载时，`currentColor` 解析为默认黑色（`#000`），因为 `<img>` 标签创建了独立的文档上下文，**不继承**外部 CSS 属性。
+SVG 内部使用 `stroke="currentColor"` 期望继承父元素的 CSS `color` 属性。但当 SVG 通过 img 标签加载时，`currentColor` 解析为默认黑色（`#000`），因为 img 标签创建了独立的文档上下文，**不继承**外部 CSS 属性。
 
 **解决方案/结论**：
 
@@ -148,7 +148,7 @@ SVG 内部使用 `stroke="currentColor"` 期望继承父元素的 CSS `color` �
 
 | 方案 | 优点 | 缺点 |
 |------|------|------|
-| **CSS filter（采用）** | 不改 HTML 结构，兼容 `<img>` | 颜色是近似值，非精确 |
+| **CSS filter（采用）** | 不改 HTML 结构，兼容 img 标签 | 颜色是近似值，非精确 |
 | 内联 SVG | 完全支持 currentColor | 需改为 Vue 组件，增加复杂度 |
 | SVG 中硬编码颜色 | 最简单 | 无法响应主题切换 |
 
@@ -191,7 +191,7 @@ VitePress 对 `{ src: '...' }` 格式的 feature icon 生成的 HTML 结构是�
 </article>
 ```
 
-**关键发现**：`<img>` 直接位于 `.box` 内部，**没有** `.icon` 中间包裹层。因此 `.VPFeature .icon img` 选择器完全匹配不到。
+**关键发现**：img 元素直接位于 `.box` 内部，**没有** `.icon` 中间包裹层。因此 `.VPFeature .icon img` 选择器完全匹配不到。
 
 正确选择器应为：
 
