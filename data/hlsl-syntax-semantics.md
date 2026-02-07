@@ -75,4 +75,4 @@
 
 ## 关联知识
 
-- 渲染管线基础：../graphics/rendering-pipeline.md
+- 渲染管线基础：./rendering-pipeline-overview.md

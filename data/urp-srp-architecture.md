@@ -280,6 +280,6 @@ public override void Setup(ScriptableRenderContext context, ref RenderingData re
 
 ## 关联知识
 
-- 渲染管线基础：../graphics/rendering-pipeline.md
-- 色彩空间：../graphics/color-space.md
-- 色带与抖动（Color Banding / Dithering）：../graphics/color-banding.md
+- 渲染管线基础：./rendering-pipeline-overview.md
+- 色彩空间：./color-space-gamma-linear.md
+- 色带与抖动（Color Banding / Dithering）：./color-banding-dither.md

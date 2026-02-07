@@ -107,8 +107,8 @@
 
 ## 相关知识
 
-- 色彩空间（Gamma/Linear）：../../knowledge/graphics/color-space.md
-- 渲染管线基础：../../knowledge/graphics/rendering-pipeline.md
+- 色彩空间（Gamma/Linear）：./color-space-gamma-linear.md
+- 渲染管线基础：./rendering-pipeline-overview.md
 - 相关概念：Posterization / Quantization / Mach bands
 
 ## 参考链接
