@@ -51,9 +51,3 @@ FastMCP.run(tools=[...], transport="stdio")
 
 **相关经验**：
 - [网页抓取与反爬虫绕过](./python-web-scraping-antibot.md) - 详细的反爬虫工具对比与绕过方案
-
-<!-- 
-注：以下引用暂时移除，目标文件为占位符，待补充实际内容后恢复：
-- Docker 容器部署经验 (../tools/misc.md)
-- Python 自动化 (../python/automation.md)
--->

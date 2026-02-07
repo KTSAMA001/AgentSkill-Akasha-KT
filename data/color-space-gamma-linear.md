@@ -1,10 +1,5 @@
 # 色彩空间知识
 
-<!-- 
-修改记录：
-- [2026-01-31] 从 TaTa 仓库 (https://github.com/KTSAMA001/TaTa/blob/master/ColorSpace/Gamma%26Linear.md) 整合 Gamma/Linear 色彩空间知识。
--->
-
 本文档记录 Gamma/Linear 色彩空间的原理与 Unity 中的应用。
 
 ---

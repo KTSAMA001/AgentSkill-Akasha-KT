@@ -1,10 +1,5 @@
 # 色带（Color Banding）与抖动（Dithering）知识
 
-<!--
-修改记录：
-- [2026-02-05] 新增：Color Banding 在 Unity URP 高亮特效（Bloom/Tone Mapping）中的典型表现与解决路径（Dithering、LUT Size、输出位深）。
--->
-
 本文档记录 Color Banding（色带/色阶）这一常见图形伪影的成因，以及在 Unity URP 高亮特效中常见的处理方式。
 
 ---
