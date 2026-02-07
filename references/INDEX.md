@@ -11,12 +11,13 @@
 | 经验模板 | [templates/experience-template.md](./templates/experience-template.md) | 记录经验 |
 | 知识模板 | [templates/knowledge-template.md](./templates/knowledge-template.md) | 记录知识 |
 | 验证报告 | [reports/validation-report-20260205.md](./reports/validation-report-20260205.md) | 内容审计记录 |
+| **标签注册表** | [tag-registry.md](./tag-registry.md) | 标签元数据（显示名、图标） |
 
 ---
 
 ## 标签概览
 
-> 新增记录时优先复用已有标签，保持一致性。
+> 完整元数据（显示名、图标）见 [tag-registry.md](./tag-registry.md)。新增标签时需同时注册。
 
 `#3d` `#agent-skills` `#ai` `#ai-navigation` `#akasha` `#animation` `#anti-bot` `#architecture` `#arknights` `#astrbot` `#audio` `#behavior-designer` `#bilibili` `#blend-tree` `#brdf` `#bug` `#cicd` `#claude-code` `#collider` `#color-banding` `#color-space` `#compute-shader` `#conventional-commits` `#cook-torrance` `#copilot` `#credential` `#csharp` `#culling` `#custom-editor` `#cyberpunk` `#design` `#dither` `#docker` `#draw-call` `#ecs` `#editor` `#effect-system` `#effects` `#experience` `#gamma` `#git` `#github-actions` `#gpgpu` `#graphics` `#hdr` `#hlsl` `#idea` `#identity` `#knowledge` `#ktsama` `#linear` `#material` `#mcp` `#meilisearch` `#nav-mesh` `#npr` `#pat` `#pbr` `#performance` `#physics` `#playwright` `#post-processing` `#python` `#raycast` `#react` `#reference` `#renderer-feature` `#rendering` `#rendering-pipeline` `#scriptable-object` `#sdf` `#search-api` `#search-engine` `#searxng` `#selenium` `#serp` `#shader` `#shader-variants` `#smart-furniture` `#social` `#srp` `#srp-batcher` `#tools` `#ui` `#unity` `#urp` `#vera` `#vitepress` `#vscode` `#web`
 
