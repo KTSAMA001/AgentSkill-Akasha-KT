@@ -198,6 +198,9 @@ webhook 服务使用 express 监听 3721 端口，接收 GitHub push 事件后�
 - 2026-02-07 GITHUB_MIRROR 环境变量验证通过，服务器通过 gh-proxy.com 镜像成功拉取
 - 2026-02-07 Mermaid 代码块渲染：markdown-it fence 拦截 + Base64 传参 + TextDecoder 解码，中文流程图正常显示
 - 2026-02-07 pm2 启动 webhook 服务成功，GitHub webhook 配置待完成
+- 2026-02-07 GitHub webhook 两个仓库均配置完成（HTTP、JSON、push only），delivery 返回 200
+- 2026-02-07 发现 webhook.mjs 没有 git pull 自身代码（鸡蛋问题），已修复并手动首次部署
+- 2026-02-07 VPBackdrop 遮罩残留问题确认为 VitePress 断点不匹配 bug，已添加 CSS 修复
 
 **备注**：
 
@@ -205,3 +208,49 @@ webhook 服务使用 express 监听 3721 端口，接收 GitHub push 事件后�
 	- `/www/wwwlogs/<domain>.error.log`
 	- `ls -l` 验证 dist 内是否存在 `index.html`
 - 如果某路径既可能是“目录”也可能是“同名 html”（cleanUrls 场景），`try_files` 顺序会影响行为；但最稳妥还是让目录真实存在 `index.html`。
+
+14) **Webhook "鸡蛋问题"：自更新 git pull**
+
+webhook.mjs 接收 push event 后执行 sync + build，但脚本**自身的更新**也需要 git pull。如果 webhook.mjs 代码有变更，旧版本不会自动拉取新代码。
+
+**方案**：在 webhook.mjs 的 runBuild() 开头加 Step 0：
+
+```javascript
+// Step 0: 更新 Web 仓库自身代码
+execSync('git checkout . && git clean -fd', { cwd: PROJECT_ROOT })
+execSync('git pull --ff-only', { cwd: PROJECT_ROOT, timeout: 60000 })
+```
+
+**鸡蛋问题**：首次部署这个修改时，服务器上运行的是旧版 webhook.mjs（没有 Step 0），push 触发的 webhook 用的还是旧代码。必须**手动**在服务器执行一次 `git pull && pm2 restart akasha-webhook`，之后就能自举了。
+
+15) **VitePress VPBackdrop 遮罩断点不匹配（已知 Bug）**
+
+窄屏时点开 sidebar，???屏时点开 sidebar，???屏时点开 sidebarＺ???屏时点开 sidebar，???屏时点开 sidebar?960px** 切换为桌面常驻模式，但 `.VPBackdrop` 的 CSS `display: none` 设在 **1280px**。且 sidebar 的 JS（`useSidebarControl`）没有 resize 监听来自动关闭状态（对比 `useNav` 有 `closeScreenOnTabletWindow`）。
+
+**修复**：自定义 CSS 将 VPBackdrop 隐藏断点对齐到 960px：
+
+```css
+@media (min-width: 960px) {
+  .VPBackdrop {
+    display: none !important;
+  }
+}
+```
+
+**状态**：✅ 已验证
+
+16) **Safari position:fixed 元素在窗口 resize 时重绘延迟**
+
+VPBackdrop 使用 `position: fixed; inset: 0` 覆盖视口。Safari 拉伸窗口时 fixed 元素的尺寸重绘跟不上窗口变化速度，导致遮罩右下角边缘短暂漏出内容。
+
+**方案**：用 `box-shadow` 超大扩展替代依赖元素尺寸的覆盖：
+
+```css
+.VPBackdrop {
+  box-shadow: 0 0 0 200vmax var(--vp-backdrop-bg-color) !important;
+}
+```
+
+200vmax = 视口最大维度的200倍，无论窗口多大拉多快都不可能露出。`box-shadow` 是渲染层效果，不依赖元素 inset 尺寸的重绘。
+
+**状态**：⚠️ 待验证
