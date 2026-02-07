@@ -41,9 +41,18 @@
 | graphics | 图形学 | 色彩空间、渲染管线、SDF、HLSL | color-space, rendering-pipeline, sdf, color-banding, hlsl-syntax |
 | programming | 编程 | C# 等编程语言知识 | csharp |
 | social | 社交 | 社交平台相关信息 | ktsama_bilibili, vera_kt_dog |
-| tools | 工具 | 搜索引擎、API 等工具知识 | search-apis, search-engines |
+| tools | 工具 | 搜索引擎、API 等工具知识 | search-apis, search-engines, akasha-visualization |
 | unity | Unity | URP、物理、编辑器等 Unity 知识 | urp, physics, rendering, editor, animation, behavior-designer, ai-navigation |
 
+| 分类 | 文件 |
+|------|------|
+| ai/ | agent-skills |
+| graphics/ | color-space, rendering-pipeline, sdf, color-banding |
+| hlsl/ | syntax |
+| programming/ | csharp |
+| social/ | ktsama_bilibili, vera_kt_dog |
+| tools/ | search-apis, search-engines, akasha-visualization |
+| unity/ | urp, physics, rendering, editor, animation, behavior-designer, **ai-navigation** |
 > 知识模板：[templates/knowledge-template.md](./templates/knowledge-template.md)
 
 ## 灵感 ideas/
