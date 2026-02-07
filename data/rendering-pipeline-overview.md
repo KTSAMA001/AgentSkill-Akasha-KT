@@ -12,7 +12,6 @@
 
 ## 渲染管线三大阶段
 
-**分类**：图形学 > 渲染管线
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：《Unity Shader 入门精要》（冯乐乐著）
 **来源日期**：2016 年（书籍出版）
@@ -81,7 +80,6 @@ DrawCall 图元 → 顶点着色器 → 曲面细分着色器 → 几何着色�
 
 ## 渲染管线中的缓冲对象
 
-**分类**：图形学 > 渲染管线
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：OpenGL 官方规范、关于 SRP/URP 的研究
 **可信度**：⭐⭐⭐⭐⭐ (官方规范 + 实践验证)
@@ -130,7 +128,6 @@ VAO (管理者)
 <a id="vertex-shader"></a>
 ## 顶点着色器（Vertex Shader）
 
-**分类**：图形学 > 渲染管线
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：《Unity Shader 入门精要》（冯乐乐著）
 **可信度**：⭐⭐⭐⭐⭐ (经典著作 + 广泛认可)
@@ -155,7 +152,6 @@ VAO (管理者)
 <a id="fragment-shader"></a>
 ## 片元着色器（Fragment Shader）
 
-**分类**：图形学 > 渲染管线
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：《Unity Shader 入门精要》（冯乐乐著）
 **可信度**：⭐⭐⭐⭐⭐ (经典著作 + 广泛认可)
@@ -181,7 +177,6 @@ VAO (管理者)
 <a id="depthstencil"></a>
 ## 深度测试与模板测试（Depth/Stencil）
 
-**分类**：图形学 > 渲染管线
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：《Unity Shader 入门精要》（冯乐乐著）、Unity 官方文档
 **可信度**：⭐⭐⭐⭐⭐ (经典著作 + 官方文档)
@@ -203,7 +198,6 @@ VAO (管理者)
 <a id="per-fragment-operations"></a>
 ## 逐片元操作（Per-Fragment Operations）
 
-**分类**：图形学 > 渲染管线
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：《Unity Shader 入门精要》（冯乐乐著）
 **可信度**：⭐⭐⭐⭐⭐ (经典著作 + 广泛认可)
@@ -222,7 +216,6 @@ VAO (管理者)
 <a id="performance-keywords"></a>
 ## 性能关键词：Draw Call / Batching / Instancing
 
-**分类**：图形学 > 性能
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：Unity 官方文档 - Optimizing draw calls、TA 工程实践经验整理
 **可信度**：⭐⭐⭐⭐ (官方文档 + 实践验证)
@@ -243,7 +236,6 @@ VAO (管理者)
 <a id="cbuffer"></a>
 ## CBUFFER 与 SRP Batcher
 
-**分类**：图形学 > 性能 / Unity 渲染
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：Unity 官方博客 - SRP Batcher: Speed up your rendering、关于 SRP/URP 的研究
 **可信度**：⭐⭐⭐⭐ (官方博客 + 实践验证)
@@ -265,7 +257,6 @@ CBUFFER（Constant Buffer）可以理解为 GPU 侧的“常量数据块”，�
 <a id="shader-variants"></a>
 ## Shader 变体（Variants）与关键字（Keywords）
 
-**分类**：图形学 > 性能 / Shader
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：Unity 官方文档 - Shader variants and keywords、TA 工程实践经验整理
 **可信度**：⭐⭐⭐⭐⭐ (官方文档 + 实践验证)
@@ -285,7 +276,6 @@ Shader 变体是“同一个 shader 因关键字组合不同而生成的多份�
 <a id="srp-urp"></a>
 ## SRP/URP 与 Renderer Feature
 
-**分类**：Unity > 渲染
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：Unity 官方文档 - Universal Render Pipeline、关于 SRP/URP 的研究
 **可信度**：⭐⭐⭐⭐⭐ (官方文档 + 实践验证)
@@ -306,7 +296,6 @@ Shader 变体是“同一个 shader 因关键字组合不同而生成的多份�
 <a id="command-buffer"></a>
 ## CommandBuffer 与渲染命令录制
 
-**分类**：Unity > 渲染 / 图形学 > 渲染管线
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：Unity 官方文档 - CommandBuffer、关于 SRP/URP 的研究
 **可信度**：⭐⭐⭐⭐⭐ (官方文档 + 实践验证)
@@ -325,7 +314,6 @@ CommandBuffer（命令缓冲）可以理解为“把要做的 GPU 绘制/状态�
 <a id="lighting-models"></a>
 ## 光照模型：Lambert / Phong / Blinn-Phong
 
-**分类**：图形学 > 光照
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：《Real-Time Rendering》、图形学基础课程
 **可信度**：⭐⭐⭐⭐⭐ (权威著作 + 学术标准)
@@ -350,7 +338,6 @@ CommandBuffer（命令缓冲）可以理解为“把要做的 GPU 绘制/状态�
 <a id="pbr-brdf"></a>
 ## PBR / BRDF 基本要点
 
-**分类**：图形学 > 着色
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：《Physically Based Rendering》、《Real-Time Rendering》
 **可信度**：⭐⭐⭐⭐⭐ (权威著作 + 学术标准)
@@ -371,7 +358,6 @@ CommandBuffer（命令缓冲）可以理解为“把要做的 GPU 绘制/状态�
 <a id="tbdr-overdraw"></a>
 ## 移动端：TBDR 与 Overdraw
 
-**分类**：图形学 > 性能 / 移动端
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：ARM/Qualcomm GPU 官方文档、图形学/移动端渲染笔记
 **可信度**：⭐⭐⭐⭐ (厂商文档 + 实践验证)
@@ -391,7 +377,6 @@ CommandBuffer（命令缓冲）可以理解为“把要做的 GPU 绘制/状态�
 <a id="opaque-transparent"></a>
 ## 不透明/透明：排序与代价
 
-**分类**：图形学 > 渲染管线
 **标签**：#graphics #knowledge #rendering-pipeline #draw-call
 **来源**：Unity 官方文档、《Unity Shader 入门精要》
 **可信度**：⭐⭐⭐⭐⭐ (官方文档 + 经典著作)

@@ -6,7 +6,6 @@
 
 ## Cook-Torrance BRDF 模型 {#cook-torrance-brdf}
 
-**分类**：图形学 > 渲染 > PBR
 **标签**：#graphics #knowledge #pbr #brdf #cook-torrance
 **来源**：Unity_URP_Learning 仓库实践 + 学术论文
 **来源日期**：2024-08-08
@@ -154,7 +153,6 @@ float3 PBR_Direct_Light(float3 albedo, Light lightData, float3 N, float3 V,
 
 ## 间接光照与 IBL {#ibl}
 
-**分类**：图形学 > 渲染 > PBR
 **标签**：#graphics #knowledge #pbr #brdf #cook-torrance
 **来源**：Unity_URP_Learning 仓库实践 + Unity 官方文档
 **来源日期**：2024-08-08
@@ -209,7 +207,6 @@ float3 specular_InDirect = envSpecular * (F * env_brdf.r + env_brdf.g);
 
 ## ACES Tone Mapping {#aces-tonemapping}
 
-**分类**：图形学 > 色彩 > 后处理
 **标签**：#graphics #knowledge #pbr #brdf #cook-torrance
 **来源**：Unity_URP_Learning 仓库 / ACES 标准
 **来源日期**：2024-08-08

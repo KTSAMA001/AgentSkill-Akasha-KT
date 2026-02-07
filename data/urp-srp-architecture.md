@@ -1,19 +1,10 @@
 # URP / SRP 知识
-
-<!-- 
-修改记录：
-- [2026-01-30] 补充来源和可信度标注，确保知识条目符合规范。
-- [2026-01-31] 从 TA 笔记中抽取 SRP/URP 的核心结构与扩展点（Renderer Feature/RenderPass），用于后续做渲染功能开发与性能排查时快速对照。
-- [2026-01-31] 从 TaTa 仓库 (https://github.com/KTSAMA001/TaTa/tree/master/URP-analysis) 整合 URP 源码分析笔记。
--->
-
 本文档记录 Unity SRP/URP 的核心概念与常用扩展点，偏"原理 + 工程要点"。
 
 ---
 
 ## SRP（Scriptable Render Pipeline）是什么
 
-**分类**：Unity > 渲染
 **标签**：#unity #graphics #knowledge #urp #srp
 **来源**：Unity 官方文档 - Scriptable Render Pipeline
 **来源日期**：-
@@ -27,7 +18,6 @@
 
 ## URP 的核心结构（工程视角）
 
-**分类**：Unity > 渲染
 **标签**：#unity #graphics #knowledge #urp #srp
 **来源**：Unity 官方文档 - Universal Render Pipeline、URP 源码分析
 **来源日期**：-
@@ -44,7 +34,6 @@
 
 ## URP 源码分析 - 入口与渲染流程
 
-**分类**：Unity > 渲染 > URP
 **标签**：#unity #graphics #knowledge #urp #srp
 **来源**：TaTa 仓库 - URP-analysis/urp-analysis.md
 **来源日期**：2020-11-05
@@ -153,7 +142,6 @@ public static void RenderSingleCamera(ScriptableRenderContext context, Camera ca
 
 ## URP 源码分析 - ForwardRenderer
 
-**分类**：Unity > 渲染 > URP
 **标签**：#unity #graphics #knowledge #urp #srp
 **来源**：TaTa 仓库 - URP-analysis/urp-analysis.md
 **来源日期**：2020-11-05
@@ -251,7 +239,6 @@ public override void Setup(ScriptableRenderContext context, ref RenderingData re
 
 ## Renderer Feature 的要点
 
-**分类**：Unity > 渲染
 **标签**：#unity #graphics #knowledge #urp #srp
 **来源**：Unity 官方文档 - Custom Renderer Feature、URP 工程实践
 **来源日期**：-
@@ -266,7 +253,6 @@ public override void Setup(ScriptableRenderContext context, ref RenderingData re
 
 ## CommandBuffer（命令录制）在 URP 中的角色
 
-**分类**：Unity > 渲染
 **标签**：#unity #graphics #knowledge #urp #srp
 **来源**：Unity 官方文档 - CommandBuffer、URP 源码分析
 **来源日期**：-

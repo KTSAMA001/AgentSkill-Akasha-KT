@@ -1,18 +1,10 @@
 # Unity 物理系统知识
-
-<!-- 
-修改记录：
-- [2026-02-01] 创建文件，记录 3D Collider 类型性能消耗对比知识。
-- [2026-02-01] 添加射线检测（Raycast）知识与性能优化。
--->
-
 本文档记录 Unity 物理系统的核心概念与原理，偏"知识 + 原理"。
 
 ---
 
 ## 3D Collider 类型性能消耗对比
 
-**分类**：Unity > 物理 > Collider  
 **标签**：#unity #knowledge #physics #collider #raycast
 **来源**：Unity 2022.3 官方文档 - Collider types and performance  
 **来源日期**：2026-01-31  
@@ -66,7 +58,6 @@
 
 ## 射线检测（Raycast）知识与性能优化
 
-**分类**：Unity > 物理 > 射线检测  
 **标签**：#unity #knowledge #physics #collider #raycast
 **来源**：Unity 2022.3 官方文档 - Physics.Raycast / Optimize raycasts and other physics queries  
 **来源日期**：2026-01-31  

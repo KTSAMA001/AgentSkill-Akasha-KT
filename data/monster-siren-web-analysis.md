@@ -1,6 +1,5 @@
 ## 塞壬唱片官网 (Monster Siren) 深度技术与设计分析
 
-**分类**：design > web-analysis
 **标签**：#web #design #knowledge #arknights #react #cyberpunk
 **来源**：https://monster-siren.hypergryph.com
 **来源日期**：2026-02-08

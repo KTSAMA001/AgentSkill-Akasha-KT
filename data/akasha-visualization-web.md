@@ -1,6 +1,5 @@
 ## 阿卡西记录可视化网站
 
-**分类**：tools > web-resources
 **标签**：#tools #web #reference #akasha
 **来源**：用户 KTSAMA 提供
 **来源日期**：2026-02-07

@@ -1,6 +1,5 @@
 ## [KTSAMA的B站主页]
 
-**分类**：社交平台 > B站
 **标签**：#social #reference #ktsama #bilibili
 **来源**：KTSAMA本人提供
 **来源日期**：2026-02-01

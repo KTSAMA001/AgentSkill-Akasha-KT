@@ -1,6 +1,5 @@
 ## 明日方舟工业风 UI：网点、网格、切角、噪点等视觉元素总结
 
-**分类**：design > ui-style
 **标签**：#design #knowledge #arknights #ui
 **来源**：
 - 机核：《明日方舟》UI/UX设计复盘（蓝湿父，2020-04-30）https://www.gcores.com/articles/123154

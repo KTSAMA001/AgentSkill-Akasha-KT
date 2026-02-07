@@ -2,7 +2,6 @@
 
 ## Renderer.material 与 Renderer.materials 的实例化行为
 
-**分类**：Unity > Rendering > Material
 **标签**：#unity #knowledge #rendering #material
 **来源**：Unity 官方文档
 **来源日期**：2026-01-31

@@ -11,7 +11,6 @@
 
 ## Color Banding（色带）是什么
 
-**分类**：图形学 > 图像伪影
 **标签**：#graphics #knowledge #color-banding #dither #hdr
 **来源**：Wikipedia（Colour banding / Dither）、FrostKiwi（LUT 文章）
 **来源日期**：2026-01-15（Dither 页面最后编辑时间） / 2026-01-04（Colour banding 页面最后编辑时间） / 2024-02-29（FrostKiwi LUT 文章最后编辑时间）

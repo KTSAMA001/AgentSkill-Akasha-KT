@@ -6,7 +6,6 @@
 
 ## Agent Skills 概述
 
-**分类**：AI > 开放标准
 **标签**：#ai #knowledge #agent-skills
 **来源**：[agentskills.io](https://agentskills.io/specification)
 **可信度**：⭐⭐⭐⭐⭐ (官方规范)

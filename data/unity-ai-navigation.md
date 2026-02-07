@@ -6,7 +6,6 @@
 
 ## 多场景独立烘焙与运行时连接机制
 
-**分类**：Unity > AI > Navigation
 **标签**：#unity #knowledge #nav-mesh #ai-navigation
 **来源**：Unity 官方文档 / 社区验证
 **来源日期**：2026-02-05

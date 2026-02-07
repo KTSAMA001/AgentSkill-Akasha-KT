@@ -11,7 +11,6 @@
 
 ## Gamma 与 Linear 色彩空间基础
 
-**分类**：图形学 > 色彩空间
 **标签**：#graphics #knowledge #color-space #gamma #linear
 **来源**：TaTa 仓库 - ColorSpace/Gamma&Linear.md
 **来源日期**：2021-01-06
@@ -46,7 +45,6 @@
 
 ## Unity 色彩空间设置
 
-**分类**：Unity > 渲染 > 色彩空间
 **标签**：#graphics #knowledge #color-space #gamma #linear
 **来源**：TaTa 仓库 - ColorSpace/Gamma&Linear.md
 **来源日期**：2021-01-06
@@ -84,7 +82,6 @@
 
 ## Linear 空间下的 LUT 处理
 
-**分类**：Unity > 渲染 > 后处理
 **标签**：#graphics #knowledge #color-space #gamma #linear
 **来源**：TaTa 仓库 - ColorSpace/Gamma&Linear.md
 **来源日期**：2021-01-06

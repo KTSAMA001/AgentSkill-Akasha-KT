@@ -6,7 +6,6 @@
 
 ## ComputeShader 基础概念 {#compute-shader-basics}
 
-**分类**：图形学 > GPU 计算
 **标签**：#graphics #shader #knowledge #compute-shader #gpgpu
 **来源**：Unity_URP_Learning 仓库实践 + Unity 官方文档
 **来源日期**：2024-08-08
@@ -111,7 +110,6 @@ void FrustumCulling(uint3 id : SV_DispatchThreadID)
 
 ## GPU 视锥剔除 (Frustum Culling) {#gpu-frustum-culling}
 
-**分类**：图形学 > GPU 计算 > 优化
 **标签**：#graphics #shader #knowledge #compute-shader #gpgpu
 **来源**：Unity_URP_Learning 仓库实践
 **来源日期**：2024-08-08

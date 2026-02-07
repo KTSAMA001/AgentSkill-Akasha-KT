@@ -12,7 +12,6 @@
 
 ## 顶点/片元阶段与数据流
 
-**分类**：HLSL > 基础
 **标签**：#graphics #shader #knowledge #hlsl
 **来源**：Microsoft HLSL 文档、Unity Shader 官方文档
 **可信度**：⭐⭐⭐⭐⭐ (官方文档)
@@ -24,7 +23,6 @@
 
 ## 语义（Semantics）
 
-**分类**：HLSL > 语法
 **标签**：#graphics #shader #knowledge #hlsl
 **来源**：Microsoft HLSL 文档、Unity ShaderLab 文档
 **可信度**：⭐⭐⭐⭐⭐ (官方文档)
@@ -39,7 +37,6 @@
 
 ## CBUFFER（Constant Buffer）与参数组织
 
-**分类**：HLSL > 性能
 **标签**：#graphics #shader #knowledge #hlsl
 **来源**：Unity 官方博客 - SRP Batcher、Microsoft HLSL 文档
 **可信度**：⭐⭐⭐⭐⭐ (官方文档 + 实践验证)
@@ -51,7 +48,6 @@
 
 ## 精度选择（float/half）
 
-**分类**：HLSL > 性能
 **标签**：#graphics #shader #knowledge #hlsl
 **来源**：Unity 官方文档 - Shader data types、ARM Mali GPU 文档
 **可信度**：⭐⭐⭐⭐ (官方文档 + 实践验证)
@@ -63,7 +59,6 @@
 
 ## 关键字与变体
 
-**分类**：HLSL > 性能
 **标签**：#graphics #shader #knowledge #hlsl
 **来源**：Unity 官方文档 - Shader variants and keywords
 **可信度**：⭐⭐⭐⭐⭐ (官方文档 + 实践验证)

@@ -2,7 +2,6 @@
 
 ## [CustomEditor] 对子类的继承支持
 
-**分类**：Unity > Editor开发
 **标签**：#unity #knowledge #editor #custom-editor
 **来源**：Unity Scripting API
 **来源日期**：2026-02-02

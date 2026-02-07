@@ -8,7 +8,6 @@
 
 ## BehaviorDesigner Task Attributes 系统
 
-**分类**：Unity > 插件 > BehaviorDesigner
 **标签**：#unity #knowledge #behavior-designer #ai
 **来源**：[Opsive 官方文档](https://opsive.com/support/documentation/behavior-designer/task-attributes/)
 **来源日期**：2026-02-03
@@ -57,7 +56,6 @@ BehaviorDesigner 提供一系列 Attribute 用于定义 Task 的元数据和显�
 
 ## BehaviorDesigner ObjectDrawer 系统
 
-**分类**：Unity > 插件 > BehaviorDesigner
 **标签**：#unity #knowledge #behavior-designer #ai
 **来源**：[Opsive 官方文档](https://opsive.com/support/documentation/behavior-designer/object-drawers/)
 **来源日期**：2026-02-03
