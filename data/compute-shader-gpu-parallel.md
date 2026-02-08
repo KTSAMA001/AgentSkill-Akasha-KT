@@ -104,7 +104,7 @@ void FrustumCulling(uint3 id : SV_DispatchThreadID)
 
 ### 与经验关联
 
-- 实践验证：[GPU ComputeShader 草渲染与视锥剔除](./experiences/shader/urp.md#gpu-grass-compute-shader) — 完整的 ComputeShader 草渲染实现
+- 实践验证：[GPU ComputeShader 草渲染与视锥剔除](./gpu-grass-large-scale-rendering.md#gpu-grass-compute-shader) — 完整的 ComputeShader 草渲染实现
 
 ---
 

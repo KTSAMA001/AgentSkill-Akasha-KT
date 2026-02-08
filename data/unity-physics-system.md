@@ -7,8 +7,9 @@
 
 **标签**：#unity #knowledge #physics #collider #raycast
 **来源**：Unity 2022.3 官方文档 - Collider types and performance  
-**来源日期**：2026-01-31  
 **收录日期**：2026-02-01  
+**来源日期**：2026-01-31  
+**状态**：📘 有效
 **可信度**：⭐⭐⭐⭐⭐ (官方文档)
 
 ### 性能排序（从低到高）
@@ -62,6 +63,7 @@
 **来源**：Unity 2022.3 官方文档 - Physics.Raycast / Optimize raycasts and other physics queries  
 **来源日期**：2026-01-31  
 **收录日期**：2026-02-01  
+**状态**：📘 有效
 **可信度**：⭐⭐⭐⭐⭐ (官方文档)
 
 ### 基本概念

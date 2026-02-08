@@ -11,7 +11,9 @@
 **收录日期**：2026-01-31
 **来源日期**：2021-05-19（TaTa 仓库 Git commit 时间）
 **标签**：#unity #experience #performance #ecs #culling
+**来源**：KTSAMA 实践经验
 **状态**：⚠️ 待验证（需根据 Unity 版本和 DOTS 版本调整）
+**可信度**：⭐⭐⭐ (待验证)
 **适用版本**：Unity 2019.4+, Entities 0.7+
 
 > 📷 **图片/视频资源**：[TaTa 仓库 GrassSystem/Img](https://github.com/KTSAMA001/TaTa/tree/master/GrassSystem/Img)

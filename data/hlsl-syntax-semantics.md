@@ -8,6 +8,9 @@
 
 **标签**：#graphics #shader #knowledge #hlsl
 **来源**：Microsoft HLSL 文档、Unity Shader 官方文档
+**收录日期**：2026-02-08
+**来源日期**：2026-02-08
+**状态**：📘 有效
 **可信度**：⭐⭐⭐⭐⭐ (官方文档)
 
 - 顶点阶段输出：`SV_POSITION` + 自定义 varyings。
@@ -17,8 +20,10 @@
 
 ## 语义（Semantics）
 
+**收录日期**：2026-02-08
 **标签**：#graphics #shader #knowledge #hlsl
 **来源**：Microsoft HLSL 文档、Unity ShaderLab 文档
+**状态**：📘 有效
 **可信度**：⭐⭐⭐⭐⭐ (官方文档)
 
 常见：
@@ -29,8 +34,10 @@
 
 ---
 
-## CBUFFER（Constant Buffer）与参数组织
-
+##收录日期**：2026-02-08
+**标签**：#graphics #shader #knowledge #hlsl
+**来源**：Unity 官方博客 - SRP Batcher、Microsoft HLSL 文档
+**状态**：📘 有效
 **标签**：#graphics #shader #knowledge #hlsl
 **来源**：Unity 官方博客 - SRP Batcher、Microsoft HLSL 文档
 **可信度**：⭐⭐⭐⭐⭐ (官方文档 + 实践验证)
@@ -40,8 +47,10 @@
 
 ---
 
-## 精度选择（float/half）
-
+##收录日期**：2026-02-08
+**标签**：#graphics #shader #knowledge #hlsl
+**来源**：Unity 官方文档 - Shader data types、ARM Mali GPU 文档
+**状态**：📘 有效
 **标签**：#graphics #shader #knowledge #hlsl
 **来源**：Unity 官方文档 - Shader data types、ARM Mali GPU 文档
 **可信度**：⭐⭐⭐⭐ (官方文档 + 实践验证)
@@ -51,8 +60,10 @@
 
 ---
 
-## 关键字与变体
-
+##收录日期**：2026-02-08
+**标签**：#graphics #shader #knowledge #hlsl
+**来源**：Unity 官方文档 - Shader variants and keywords
+**状态**：📘 有效
 **标签**：#graphics #shader #knowledge #hlsl
 **来源**：Unity 官方文档 - Shader variants and keywords
 **可信度**：⭐⭐⭐⭐⭐ (官方文档 + 实践验证)

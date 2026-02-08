@@ -3,7 +3,9 @@
 **收录日期**：2026-02-01
 **来源日期**：2026-02-01
 **标签**：#python #experience #playwright #selenium #anti-bot
+**来源**：KTSAMA 实践经验
 **状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (实践验证)
 **适用版本**：nodriver 0.48+ / playwright-stealth 2.0.1 / undetected-chromedriver 3.5.5
 
 **问题/场景**：

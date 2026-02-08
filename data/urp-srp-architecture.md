@@ -7,8 +7,9 @@
 
 **标签**：#unity #graphics #knowledge #urp #srp
 **来源**：Unity 官方文档 - Scriptable Render Pipeline
-**来源日期**：-
 **收录日期**：2026-01-30
+**来源日期**：-
+**状态**：📘 有效
 **可信度**：⭐⭐⭐⭐⭐ (官方文档)
 
 - SRP 是 Unity 的可编程渲染管线体系：用 C# 组织"何时画什么、用哪些 render states/targets、执行顺序"。
@@ -22,6 +23,7 @@
 **来源**：Unity 官方文档 - Universal Render Pipeline、URP 源码分析
 **来源日期**：-
 **收录日期**：2026-01-30
+**状态**：📘 有效
 **可信度**：⭐⭐⭐⭐⭐ (官方文档 + 源码验证)
 
 常见理解方式：
@@ -37,6 +39,7 @@
 **标签**：#unity #graphics #knowledge #urp #srp
 **来源**：TaTa 仓库 - URP-analysis/urp-analysis.md
 **来源日期**：2020-11-05
+**状态**：📘 有效
 **收录日期**：2026-01-31
 **可信度**：⭐⭐⭐⭐ (源码分析 + 实践验证)
 
@@ -145,6 +148,7 @@ public static void RenderSingleCamera(ScriptableRenderContext context, Camera ca
 **标签**：#unity #graphics #knowledge #urp #srp
 **来源**：TaTa 仓库 - URP-analysis/urp-analysis.md
 **来源日期**：2020-11-05
+**状态**：📘 有效
 **收录日期**：2026-01-31
 **可信度**：⭐⭐⭐⭐ (源码分析 + 实践验证)
 
@@ -242,6 +246,7 @@ public override void Setup(ScriptableRenderContext context, ref RenderingData re
 **标签**：#unity #graphics #knowledge #urp #srp
 **来源**：Unity 官方文档 - Custom Renderer Feature、URP 工程实践
 **来源日期**：-
+**状态**：📘 有效
 **收录日期**：2026-01-30
 **可信度**：⭐⭐⭐⭐⭐ (官方文档 + 实践验证)
 
@@ -257,6 +262,7 @@ public override void Setup(ScriptableRenderContext context, ref RenderingData re
 **来源**：Unity 官方文档 - CommandBuffer、URP 源码分析
 **来源日期**：-
 **收录日期**：2026-01-30
+**状态**：📘 有效
 **可信度**：⭐⭐⭐⭐⭐ (官方文档 + 源码验证)
 
 - RenderPass 通常会构建命令并提交执行；命令过多会带来 CPU 开销。

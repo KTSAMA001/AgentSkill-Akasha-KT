@@ -137,7 +137,7 @@
 
 ## 相关经验
 
-- [验证流程](../../../references/workflows/validate.md)
+- [验证流程](../workflows/validate.md)
 
 **验证记录**：
 - [2026-02-05] 完成全面验证，修复 INDEX.md 问题

@@ -8,10 +8,12 @@
 ---
 ## Shader 变体（Shader Variants）详解
 
-**日期**：2026-01-31
 **标签**：#shader #experience #hlsl #shader-variants
-**状态**：✅ 已验证
 **来源**：Technical_Artist_Technotes/TA零散知识
+**收录日期**：2026-01-31
+**来源日期**：2026-01-31
+**状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (实践验证)
 
 **问题/场景**：
 

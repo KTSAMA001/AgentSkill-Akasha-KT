@@ -8,10 +8,12 @@
 
 ## 自定义 PBR Shader 在 URP 中的实现 {#custom-pbr-urp}
 
+**标签**：#shader #unity #experience #pbr #urp #hlsl
+**来源**：KTSAMA 实践经验
 **收录日期**：2026-02-07
 **来源日期**：2024-08-08
-**标签**：#shader #unity #experience #pbr #urp #hlsl
 **状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (实践验证)
 **适用版本**：Unity 2022.3+ / URP 14.0+
 
 **问题/场景**：
@@ -75,5 +77,5 @@ for (int i = 0; i < _index; i++)       // 亮度轴
 
 **理论基础**：
 
-- [PBR BRDF 模型详解](./knowledge/graphics/pbr.md#cook-torrance-brdf)
-- [IBL 间接光照](./knowledge/graphics/pbr.md#ibl)
+- [PBR BRDF 模型详解](./pbr-brdf-theory.md#cook-torrance-brdf)
+- [IBL 间接光照](./pbr-brdf-theory.md#ibl)

@@ -139,7 +139,7 @@ public class RangeDrawer : ObjectDrawer
 
 ### 与经验关联
 
-- [BD 节点 Tooltip 命名空间冲突解决](./experiences/unity/editor.md#bd-tooltip-namespace-conflict)
-- [BD 节点条件显示的替代方案](./experiences/unity/editor.md#bd-showif-workaround)
+- [BD 节点 Tooltip 命名空间冲突解决](./bd-tooltip-namespace-conflict.md#bd-tooltip-namespace-conflict)
+- [BD 节点条件显示的替代方案](./bd-showif-workaround.md#bd-showif-workaround)
 
 ---

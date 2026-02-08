@@ -8,11 +8,13 @@
 
 ## VitePress（静态站）在宝塔 Nginx 部署：403/404、路径迁移、Webhook 自动更新踩坑记录
 
+**标签**：#tools #experience #cicd #vitepress #github-actions
+**来源**：KTSAMA 实践经验
 **收录日期**：2026-02-07
 **来源日期**：2026-02-07
 **更新日期**：2026-02-07
-**标签**：#tools #experience #cicd #vitepress #github-actions
 **状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (实践验证)
 **适用版本**：VitePress 1.x + Nginx 1.26 + 宝塔面板 9.x + Alibaba Cloud Linux 3
 
 **问题/场景**：
