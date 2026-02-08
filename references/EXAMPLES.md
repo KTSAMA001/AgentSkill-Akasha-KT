@@ -11,7 +11,7 @@
 **用户**："Unity 协程怎么正确等待一帧？"
 
 **操作**：
-1. 判断为 Unity C# 相关 → 读取 `../data/experiences/unity/csharp.md`
+1. 判断为 Unity C# 相关 → 读取 `../data/unity-framework-architecture.md`
 2. 搜索关键词"协程"、"yield"、"等待"
 3. 找到相关记录 → 展示给用户
 4. 反馈："在经验记录中找到相关内容，建议使用 `yield return null` 替代 `yield return 0`"
@@ -23,7 +23,7 @@
 **用户**："Unity DOTS 的 IJobEntity 怎么用？"
 
 **操作**：
-1. 判断为 Unity 相关 → 读取 `../data/experiences/unity/csharp.md`
+1. 判断为 Unity 相关 → 读取 `../data/unity-framework-architecture.md`
 2. 搜索关键词"DOTS"、"IJobEntity"、"Job"
 3. 未找到相关记录 → 告知用户："未在经验记录中找到相关内容，正在上网搜索..."
 4. 搜索 Unity 官方文档关于 DOTS/IJobEntity 的内容
@@ -40,15 +40,15 @@
 
 **操作**：
 1. 执行 `git pull origin main` 拉取仓库最新内容
-2. 识别为 Unity C# 协程相关 → 归类到 `unity/csharp.md`
+2. 识别为 Unity C# 协程相关 → 归类到 `unity-framework-architecture.md`
 3. 检查是否有类似记录 → 无
 4. 提取关键信息：
    - 标题：Unity 协程优化
    - 问题：协程中使用 yield return 0 导致性能问题
    - 解决：使用 yield return null 更高效
-5. 追加到 `unity/csharp.md`
+5. 追加到 `unity-framework-architecture.md`
 6. 执行 `git add . && git commit -m "update: 添加 Unity 协程优化经验" && git push origin main`
-7. 反馈："已将协程优化经验记录到 unity/csharp.md，并已同步到远程仓库"
+7. 反馈："已将协程优化经验记录到 unity-framework-architecture.md，并已同步到远程仓库"
 
 ---
 
@@ -60,7 +60,7 @@
 
 **操作**：
 1. 执行 `git pull origin main` 拉取仓库最新内容
-2. 定位到 `unity/csharp.md` 中的协程相关记录
+2. 定位到 `unity-framework-architecture.md` 中的协程相关记录
 3. 判断为"补充"类型更新
 4. 添加更新日期、新增内容
 5. 提交并推送
@@ -76,12 +76,12 @@
 **操作**：
 1. 执行 `git pull origin main`
 2. 识别为大型内容，符合 Progressive Disclosure 原则
-3. 创建独立文档：`../data/experiences/unity/docs/VR_Variant_Collector_Architecture.md`
+3. 创建独立文档：`../data/vr-variant-collector-architecture.md`
 4. 编写完整架构设计、打包策略、编译坑点
-5. 在 `unity/shader.md` 中追加记录：
+5. 在 `unity-shader-variants-tool.md` 中追加记录：
    - 标题：VR Shader 变体收集器架构
    - 内容：摘要核心的打包策略和优化点
-   - 链接：`- [完整架构文档](./docs/VR_Variant_Collector_Architecture.md)`
+   - 链接：`- [完整架构文档](./vr-variant-collector-architecture.md)`
 6. 提交并推送
 
 ---
@@ -155,5 +155,5 @@
 
 ## 链接回操作指南
 
-- 详细操作流程：参见 [OPERATIONS.md](./OPERATIONS.md)
-- 验证流程：参见 [VALIDATION.md](./VALIDATION.md)
+- 详细操作流程：参见 [workflows/record.md](./workflows/record.md)
+- 验证流程：参见 [workflows/validate.md](./workflows/validate.md)

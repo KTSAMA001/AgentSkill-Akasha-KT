@@ -146,8 +146,8 @@ float3 PBR_Direct_Light(float3 albedo, Light lightData, float3 N, float3 V,
 
 ### 与经验关联
 
-- 实践验证：[自定义 PBR Shader 在 URP 中的实现](./experiences/shader/urp.md#custom-pbr-urp) — 基于此理论的完整 URP 实现
-- 实践验证：[GPU 草渲染 PBR 光照](./experiences/shader/urp.md#gpu-grass-compute-shader) — 草渲染中的 PBR 变体
+- 实践验证：[自定义 PBR Shader 在 URP 中的实现](./pbr-custom-shader-urp.md#custom-pbr-urp) — 基于此理论的完整 URP 实现
+- 实践验证：[GPU 草渲染 PBR 光照](./gpu-grass-large-scale-rendering.md#gpu-grass-compute-shader) — 草渲染中的 PBR 变体
 
 ---
 

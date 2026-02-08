@@ -8,9 +8,12 @@
 
 ## VS Code Copilot 与 Claude Code 共享 Skills 仓库
 
-**日期**：2026-01-30
 **标签**：#vscode #tools #experience #copilot
+**来源**：KTSAMA 实践经验
+**收录日期**：2026-01-30
+**来源日期**：2026-01-30
 **状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (实践验证)
 
 **问题/场景**：
 

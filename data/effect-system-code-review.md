@@ -1,9 +1,11 @@
 # EffectSystem 效果系统 - 代码审查与架构分析
 
+**标签**：#unity #architecture #scriptable-object #effect-system
+**来源**：KTSAMA 实践经验
 **收录日期**：2026-02-06
 **来源日期**：2025-08-19（系统创建，作者：KT）
-**标签**：#unity #architecture #scriptable-object #effect-system
 **状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (实践验证)
 **适用版本**：Unity 2021+（使用 SerializeReference、UniTask）
 
 **问题/场景**：

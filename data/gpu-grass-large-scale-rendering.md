@@ -8,10 +8,12 @@
 
 ## GPU ComputeShader 草渲染与视锥剔除 {#gpu-grass-compute-shader}
 
+**标签**：#shader #unity #experience #compute-shader #urp #performance
+**来源**：KTSAMA 实践经验
 **收录日期**：2026-02-07
 **来源日期**：2024-08-08
-**标签**：#shader #unity #experience #compute-shader #urp #performance
 **状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (实践验证)
 **适用版本**：Unity 2022.3+ / URP 14.0+
 
 **问题/场景**：
@@ -103,6 +105,6 @@ Graphics.DrawMeshInstancedProcedural(
 
 **理论基础**：
 
-- [ComputeShader 基础概念](./knowledge/graphics/compute-shader.md#compute-shader-basics)
-- [GPU 视锥剔除](./knowledge/graphics/compute-shader.md#gpu-frustum-culling)
-- [PBR BRDF 模型](./knowledge/graphics/pbr.md#cook-torrance-brdf)
+- [ComputeShader 基础概念](./compute-shader-gpu-parallel.md#compute-shader-basics)
+- [GPU 视锥剔除](./compute-shader-gpu-parallel.md#gpu-frustum-culling)
+- [PBR BRDF 模型](./pbr-brdf-theory.md#cook-torrance-brdf)

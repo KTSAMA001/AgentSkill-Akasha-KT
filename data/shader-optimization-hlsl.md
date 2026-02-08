@@ -8,9 +8,12 @@
 
 ## 根据索引获取向量分量（无分支优化）
 
-**日期**：2026-01-30  
 **标签**：#shader #experience #hlsl #performance
-**状态**：✅ 已验证  
+**来源**：KTSAMA 实践经验
+**收录日期**：2026-01-30
+**来源日期**：2026-01-30
+**状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (实践验证)
 **适用版本**：Unity 2020+ / HLSL generic
 
 **问题/场景**：
@@ -93,9 +96,11 @@ float GetVectorComponent_Matrix(float3 v, int index)
 
 ## 根据索引生成轴向量（无分支优化）
 
-**日期**：2026-01-30  
+**收录日期**：2026-01-30
 **标签**：#shader #experience #hlsl #performance
+**来源**：KTSAMA 实践经验
 **状态**：✅ 已验证  
+**可信度**：⭐⭐⭐⭐ (算法验证)
 **适用版本**：Unity 2020+ / HLSL generic
 
 **问题/场景**：

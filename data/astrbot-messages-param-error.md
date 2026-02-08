@@ -1,8 +1,12 @@
 # AstrBot "messages 参数非法" 错误
-**收录日期**：2026-02-02
-**更新日期**：2026-02-02
+
 **标签**：#ai #experience #astrbot #bug
+**来源**：KTSAMA 实践经验
+**收录日期**：2026-02-02
+**来源日期**：2026-02-02
+**更新日期**：2026-02-02
 **状态**：⚠️ 部分解决（v4.13.2 仍有报告）
+**可信度**：⭐⭐⭐⭐ (实践验证)
 **适用版本**：AstrBot v3.5.x ~ v4.13.2
 
 ### 问题现象
@@ -312,5 +316,5 @@ docker logs astrbot --tail 500 | grep -A 20 "1214"
 ---
 
 ## 相关经验
-- [AstrBot 集成 MCP 服务经验](./ai/astrbot.md)
-- [MCP 协议与 Agent 服务开发经验](./ai/mcp.md)
+- [AstrBot 集成 MCP 服务经验](./astrbot-mcp-service-config.md)
+- [MCP 协议与 Agent 服务开发经验](./mcp-protocol-agent-dev.md)

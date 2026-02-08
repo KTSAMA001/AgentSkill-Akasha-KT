@@ -8,10 +8,12 @@
 
 ## 屏幕空间描边 SSOutLine RenderFeature 实现 {#ss-outline-renderfeature}
 
+**标签**：#shader #unity #experience #npr #renderer-feature #post-processing
+**来源**：KTSAMA 实践经验
 **收录日期**：2026-02-07
 **来源日期**：2024-08-08
-**标签**：#shader #unity #experience #npr #renderer-feature #post-processing
 **状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (实践验证)
 **适用版本**：Unity 2022.3+ / URP 14.0+
 
 **问题/场景**：
@@ -97,12 +99,12 @@ public override void AddRenderPasses(...)
 
 **相关经验**：
 
-- [URP Renderer Feature 开发要点](./urp.md#urp-renderer-feature-开发要点) — 通用 RenderFeature 模式
-- [URP 中 GrabPass 替代方案](./urp.md#grab-color-renderfeature) — 依赖 GrabColor 功能
+- [URP Renderer Feature 开发要点](./urp-renderer-feature-guide.md) — 通用 RenderFeature 模式
+- [URP 中 GrabPass 替代方案](./urp-grabpass-alternative.md#grab-color-renderfeature) — 依赖 GrabColor 功能
 
 **理论基础**：
 
-- [Renderer Feature 的要点](./knowledge/unity/urp.md#renderer-feature-的要点)
+- [Renderer Feature 的要点](./urp-srp-architecture.md#renderer-feature-的要点)
 
 ---
 
@@ -111,7 +113,9 @@ public override void AddRenderPasses(...)
 **收录日期**：2026-02-07
 **来源日期**：2024-08-08
 **标签**：#shader #unity #experience #npr #renderer-feature #post-processing
+**来源**：Unity_URP_Learning
 **状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (代码验证)
 **适用版本**：Unity 2022.3+ / URP 14.0+
 
 **问题/场景**：
