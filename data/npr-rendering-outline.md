@@ -1,4 +1,4 @@
-# NPR 渲染经验
+# 非真实感渲染 (Non-Photorealistic Rendering) 相关经验
 
 > 非真实感渲染 (Non-Photorealistic Rendering) 相关经验
 >

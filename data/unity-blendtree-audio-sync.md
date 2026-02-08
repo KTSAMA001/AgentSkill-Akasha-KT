@@ -1,4 +1,4 @@
-## Unity BlendTree 下动画驱动音效同步（脚步声等）常见方案汇总
+# Unity BlendTree 下动画驱动音效同步（脚步声等）常见方案汇总
 **标签**：#unity #knowledge #animation #blend-tree #audio
 **来源**：多来源（Unity Manual / Unity Forum & Discussions / 第三方博客；详见“来源链接”）
 **来源日期**：2021-04-12（CodeAndWeb）/ 其他未标注

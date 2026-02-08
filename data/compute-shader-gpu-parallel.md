@@ -1,4 +1,4 @@
-# ComputeShader 与 GPU 并行计算
+# GPU 通用计算 (GPGPU) 相关原理与概念
 
 > GPU 通用计算 (GPGPU) 相关原理与概念
 

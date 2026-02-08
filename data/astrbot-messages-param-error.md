@@ -1,4 +1,4 @@
-## AstrBot "messages 参数非法" 错误
+# AstrBot "messages 参数非法" 错误
 **收录日期**：2026-02-02
 **更新日期**：2026-02-02
 **标签**：#ai #experience #astrbot #bug

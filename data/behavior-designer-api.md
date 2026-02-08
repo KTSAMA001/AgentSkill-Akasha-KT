@@ -1,4 +1,4 @@
-# BehaviorDesigner 相关知识
+# Behavior Designer 行为树插件的技术规范、API 和原理
 
 > Behavior Designer 行为树插件的技术规范、API 和原理
 > 

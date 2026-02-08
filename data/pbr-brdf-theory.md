@@ -1,4 +1,4 @@
-# PBR 渲染知识
+# 基于物理的渲染（Physically Based Rendering）相关原理与概念
 
 > 基于物理的渲染（Physically Based Rendering）相关原理与概念
 

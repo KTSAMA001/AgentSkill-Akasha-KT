@@ -1,4 +1,4 @@
-# PBR 渲染经验
+# 基于物理的渲染 (Physically Based Rendering) 相关经验
 
 > 基于物理的渲染 (Physically Based Rendering) 相关经验
 >

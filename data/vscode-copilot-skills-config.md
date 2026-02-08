@@ -1,4 +1,4 @@
-# VS Code Copilot 经验
+# GitHub Copilot 使用相关经验
 
 > GitHub Copilot 使用相关经验
 >

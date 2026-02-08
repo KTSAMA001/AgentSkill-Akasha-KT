@@ -1,4 +1,4 @@
-## EffectSystem 效果系统 - 代码审查与架构分析 {#effect-system-review}
+# EffectSystem 效果系统 - 代码审查与架构分析
 
 **收录日期**：2026-02-06
 **来源日期**：2025-08-19（系统创建，作者：KT）

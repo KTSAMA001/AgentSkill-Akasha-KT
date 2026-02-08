@@ -1,4 +1,4 @@
-## [KTSAMA的B站主页]
+# [KTSAMA的B站主页]
 
 **标签**：#social #reference #ktsama #bilibili
 **来源**：KTSAMA本人提供
