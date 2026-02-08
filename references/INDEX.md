@@ -44,7 +44,7 @@
 | [gpu-grass-large-scale-rendering.md](../data/gpu-grass-large-scale-rendering.md) | ：#shader #unity #experience #compute-shader #urp #performance | ：✅ 已验证 | 大规模渲染 (Large-Scale Rendering) 相关经验 |
 | [hlsl-syntax-semantics.md](../data/hlsl-syntax-semantics.md) | ：#graphics #shader #knowledge #hlsl |  | Unity Shader / HLSL 基础知识 |
 | [idea-3d-girl-smart-furniture.md](../data/idea-3d-girl-smart-furniture.md) | ：#idea #smart-furniture #3d | ：💡 灵感记录 | 3D美少女智能家具创业想法 |
-| [ktsama-bilibili-profile.md](../data/ktsama-bilibili-profile.md) | ：#social #reference #ktsama #bilibili | ：📚 有效 | [KTSAMA的B站主页] |
+| [ktsama-bilibili-profile.md](../data/ktsama-bilibili-profile.md) | ：#social #reference #ktsama #bilibili | ：📘 有效 | [KTSAMA的B站主页] |
 | [mcp-protocol-agent-dev.md](../data/mcp-protocol-agent-dev.md) | ：#ai #experience #mcp | ：✅ 已验证 | MCP 协议与 Agent 服务开发经验 |
 | [monster-siren-web-analysis.md](../data/monster-siren-web-analysis.md) | ：#web #design #knowledge #arknights #react #cyberpunk | ：📘 有效 | 塞壬唱片官网 (Monster Siren) 深度技术与设计分析 |
 | [npr-rendering-outline.md](../data/npr-rendering-outline.md) | ：#shader #unity #experience #npr #renderer-feature #post-processing | ：✅ 已验证 | 非真实感渲染 (Non-Photorealistic Rendering) 相关经验 |
@@ -70,7 +70,7 @@
 | [unity-shader-variants-tool.md](../data/unity-shader-variants-tool.md) | ：#unity #shader #experience #shader-variants #editor | ：✅ 已验证 | Unity 中 Shader 相关经验 |
 | [urp-shader-practices.md](../data/urp-shader-practices.md) | ：#shader #unity #experience #urp #srp-batcher #renderer-feature | ：✅ 已验证 | Universal Render Pipeline 相关经验 |
 | [urp-srp-architecture.md](../data/urp-srp-architecture.md) | ：#unity #graphics #knowledge #urp #srp |  | URP / SRP 知识 |
-| [vera-kt-dog-identity.md](../data/vera-kt-dog-identity.md) | ：#social #reference #vera #identity | ：📚 有效 | 薇拉的身份设定 |
+| [vera-kt-dog-identity.md](../data/vera-kt-dog-identity.md) | ：#social #reference #vera #identity | ：📘 有效 | 薇拉的身份设定 |
 | [vitepress-site-dev.md](../data/vitepress-site-dev.md) | ：#tools #web #experience #vitepress | ：✅ 已验证 | VitePress 静态站点生成器相关经验 |
 | [vr-variant-collector-architecture.md](../data/vr-variant-collector-architecture.md) | ：#unity #shader #architecture #shader-variants |  | 请在 VS Code 中点击右上角的 **"Open Preview to the Side"** (快捷键 `Ctrl+K V`) 查看图形化渲染效果。 |
 | [vscode-copilot-skills-config.md](../data/vscode-copilot-skills-config.md) | ：#vscode #tools #experience #copilot | ：✅ 已验证 | GitHub Copilot 使用相关经验 |
