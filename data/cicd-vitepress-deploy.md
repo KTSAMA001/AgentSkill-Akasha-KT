@@ -325,7 +325,7 @@ VPBackdrop 遮罩（半透明暗色覆盖层）在 Safari 窗口 resize 时，�
 **状态**：✅ 已验证
 
 
-19) **Webhook 从 HTTP 直连迁移到 Nginx 反向代理（HTTPS）**
+19) **Webhook 从 HTTP 直连迁移到 Nginx 反向代理（HTTPS）**  
 
 启用 SSL 后，GitHub Webhook 不能继续用 `http://{域名}:3721/webhook`（明文 HTTP + 非标端口）。需要通过 Nginx 反向代理，让 GitHub 走 HTTPS 标准端口访问。
 
@@ -359,3 +359,46 @@ location /webhook {
 **验证**：GitHub Recent Deliveries 显示 ping 事件返回 200 + `{"message":"pong"}`
 
 **状态**：✅ 已验证
+
+
+20) **Nginx 支持 VitePress cleanUrls：try_files 补 .html 后缀**
+
+VitePress 配置 `cleanUrls: true` 后，构建产物是 `xxx.html`，但页面 URL 显示为 `/records/xxx`（无后缀）。站内 SPA 跳转由客户端 JS 路由处理没问题，但**直接访问或浏览器刷新**时，Nginx 找不到 `/records/xxx` 这个文件就返回 404。
+
+**现象**：从记录终端点开卡片能正常进入 → 在详情页按 F5 刷新 → 404。
+
+**根因**：Nginx 默认只查找精确路径 `$uri`，不会尝试加 `.html` 后缀。需要 `try_files` 指令显式指定查找顺序。
+
+**关键排查过程**：
+- `cleanUrls: true` 从项目第一个 commit 就存在，不是新改动引入
+- 之前没发现是因为一直通过首页 SPA 导航进入文档、从未在详情页刷新过
+- `curl -sI /records/xxx` → 404，`curl -sI /records/xxx.html` → 200
+
+**修复**：在 Nginx 配置的 `server` 块中（webhook location 之前）添加：
+
+```nginx
+# VitePress cleanUrls 支持
+location / {
+    try_files $uri $uri.html $uri/ /404.html;
+}
+```
+
+**查找顺序**：`/records/xxx`（精确文件，不存在）→ `/records/xxx.html`（存在，命中！）→ 如果还不存在就找目录 → 最终回退到 404 页面。
+
+**注意**：`location /` 必须放在其他具体 location 块（如 `location /webhook`）之前，但不影响更具体路径的优先匹配（Nginx 的 `location /webhook` 比 `location /` 更精确，会优先命中）。
+
+**完整位置参考**（宝塔面板生成的配置中）：
+
+```nginx
+    #REWRITE-END
+
+    # VitePress cleanUrls 支持
+    location / {
+        try_files $uri $uri.html $uri/ /404.html;
+    }
+
+    # GitHub Webhook 反向代理
+    location /webhook {
+```
+
+**状态**：✅ 已验证（`nginx -t && nginx -s reload` 后刷新详情页正常返回 200）
