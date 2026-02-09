@@ -1,8 +1,8 @@
-# Unity 其他无法归类的经验
+# Unity 中 Layer 与 Render Layer 的核心区别与使用场景
 
-> Unity 其他无法归类的经验
+> Unity 中 Layer（游戏层）与 Render Layer（渲染层）的核心区别、各自用途，以及在 SRP 中如何正确使用它们进行渲染筛选。
 > 
-> 包含：项目配置、构建发布、平台适配、第三方插件等
+> 涉及：Layer Mask、Rendering Layer Mask、Renderer Feature 中的筛选配置等。
 
 ---
 ## Layer 与 Render Layer 的区别

@@ -78,7 +78,7 @@
 | [unity-blendtree-audio-sync.md](../data/unity-blendtree-audio-sync.md) | #unity #knowledge #animation #blend-tree #audio | 📘 有效 | Unity BlendTree 下动画驱动音效同步（脚步声等）常见方案汇总 |
 | [unity-editor-api.md](../data/unity-editor-api.md) | #unity #knowledge #editor #custom-editor | 📘 有效 | Unity Editor 开发知识 |
 | [unity-framework-architecture.md](../data/unity-framework-architecture.md) | #unity #csharp #experience #architecture | ⚠️ 待验证 | Unity 中的 C# 脚本编程相关经验 |
-| [unity-layer-vs-renderlayer.md](../data/unity-layer-vs-renderlayer.md) | #unity #experience #rendering | ✅ 已验证 | Unity 其他无法归类的经验 |
+| [unity-layer-vs-renderlayer.md](../data/unity-layer-vs-renderlayer.md) | #unity #experience #rendering | ✅ 已验证 | Unity 中 Layer 与 Render Layer 的核心区别与使用场景 |
 | [unity-material-renderer.md](../data/unity-material-renderer.md) | #unity #knowledge #rendering #material | 📘 有效 | Unity 渲染相关知识 |
 | [unity-performance-ecs-culling.md](../data/unity-performance-ecs-culling.md) | #unity #experience #performance #ecs #culling | ⚠️ 待验证（需根据 Unity 版本和 DOTS 版本调整） | Unity 性能优化相关经验 |
 | [unity-physics-system.md](../data/unity-physics-system.md) | #unity #knowledge #physics #collider #raycast | 📘 有效 | Unity 物理系统知识 |
