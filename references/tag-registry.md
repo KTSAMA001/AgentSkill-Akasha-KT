@@ -16,6 +16,7 @@
 | #ai-navigation | AI 寻路 | unity |
 | #akasha | 阿卡西记录 | book |
 | #animation | 动画 | unity |
+| #animation-retarget | 动画重定向 | unity |
 | #anti-bot | 反爬虫 | network |
 | #architecture | 架构设计 | code |
 | #arknights | 明日方舟 | monitor |
@@ -58,6 +59,7 @@
 | #hlsl | HLSL | shader |
 | #idea | 灵感 | spark |
 | #identity | 身份设定 | doc |
+| #ik | 逆向运动学 | unity |
 | #knowledge | 知识 | book |
 | #ktsama | KTSAMA | doc |
 | #linear | 线性空间 | shader |
@@ -79,6 +81,7 @@
 | #renderer-feature | Renderer Feature | shader |
 | #rendering | 渲染 | shader |
 | #rendering-pipeline | 渲染管线 | shader |
+| #retarget-pro | Retarget Pro | unity |
 | #scriptable-object | ScriptableObject | unity |
 | #sdf | SDF 距离场 | shader |
 | #search-api | 搜索 API | wrench |
