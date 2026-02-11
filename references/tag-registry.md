@@ -10,7 +10,6 @@
 
 | 标签 | 显示名 | 图标 |
 |------|--------|------|
-| #3d | 3D | spark |
 | #agent-skills | Agent Skills | chip |
 | #ai | AI | chip |
 | #ai-navigation | AI 寻路 | unity |
