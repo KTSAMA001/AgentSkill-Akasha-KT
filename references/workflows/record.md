@@ -51,7 +51,7 @@
 | URP Renderer Feature 开发经验 | `#unity` `#shader` `#urp` `#renderer-feature` `#experience` |
 | PBR 渲染理论 | `#graphics` `#pbr` `#brdf` `#knowledge` |
 | Git PAT 认证故障 | `#git` `#credential` `#experience` `#bug` |
-| 3D 智能家具创意 | `#idea` `#3d` `#smart-furniture` |
+| 3D 智能家具创意 | `#idea` `#smart-furniture` |
 
 ---
 
