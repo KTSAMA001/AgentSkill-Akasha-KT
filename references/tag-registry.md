@@ -63,6 +63,7 @@
 | #ktsama | KTSAMA | doc |
 | #linear | 线性空间 | shader |
 | #material | 材质 | unity |
+| #math | 数学 | code |
 | #mcp | MCP 协议 | chip |
 | #meilisearch | Meilisearch | wrench |
 | #nav-mesh | NavMesh | unity |
