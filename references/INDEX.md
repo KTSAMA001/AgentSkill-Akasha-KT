@@ -92,6 +92,7 @@
 | [vera-kt-dog-identity.md](../data/vera-kt-dog-identity.md) | #social #reference #vera #identity | 📘 有效 | 薇拉的身份设定 |
 | [vitepress-dynamic-sidebar-index.md](../data/vitepress-dynamic-sidebar-index.md) | #tools #web #experience #vitepress | ✅ 已验证 | VitePress 动态侧边栏标签 + 分类索引页自动生成 |
 | [vitepress-emoji-to-svg-icon.md](../data/vitepress-emoji-to-svg-icon.md) | #tools #web #experience #vitepress | ✅ 已验证 | 全站 Emoji 替换为 SVG 图标的完整流程 {#emoji-to-svg} |
+| [vitepress-frontmatter-attrs-crash.md](../data/vitepress-frontmatter-attrs-crash.md) | #vitepress #bug #experience #web | ✅ 已验证 | 解决 markdown-it-attrs 插件因 Frontmatter 中包含自定义 ID 导致构建失败的问题 |
 | [vitepress-sidebar-highlight-padding.md](../data/vitepress-sidebar-highlight-padding.md) | #tools #web #experience #vitepress | ✅ 已验证 | 侧边栏自定义高亮竖条与文字间距 {#sidebar-padding-left} |
 | [vitepress-spa-fixed-pseudo-leak.md](../data/vitepress-spa-fixed-pseudo-leak.md) | #tools #web #experience #vitepress | ⚠️ 待验证 | VitePress SPA 路由中 position:fixed 伪元素泄漏 |
 | [vitepress-vpfeature-icon-structure.md](../data/vitepress-vpfeature-icon-structure.md) | #tools #web #experience #vitepress | ✅ 已验证 | VitePress VPFeature 图标 HTML 结构（无 .icon 包裹层） {#vpfeature-icon-structure} |
