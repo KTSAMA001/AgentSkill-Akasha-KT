@@ -39,10 +39,14 @@
 必须使用**乘法（缩放）**，严禁使用减法（固定偏移）。
 
 *   **缩放公式**：
-    $$ ScaleFactor = \frac{TargetLegLength}{SourceLegLength} $$
-
-*   **应用逻辑**：
-    *   **水平位移 ($X, Z$)**：$TargetPosition_{xz} = SourcePosition_{xz} \times ScaleFactor$。
+    ```
+    ScaleFactor = TargetLegLength / SourceLegLength
+    ```
+X, Z)**：`TargetPosition_xz = SourcePosition_xz * ScaleFactor`。
+    *   **垂直位移 (Y)**：同样乘以 `ScaleFactor`，保证跳跃高度或走路起伏符合体型。
+        ```
+        D = S * Scale
+        ```tPosition_{xz} = SourcePosition_{xz} \times ScaleFactor$。
     *   **垂直位移 ($Y$)**：同样乘以 $ScaleFactor$，保证跳跃高度或走路起伏符合体型。
         $$ D = S \times Scale $$
 
@@ -81,7 +85,7 @@
 
 **Q：验证案例：如果 A、B 躯干一样，B 的腿长是 A 的 0.5 倍，能否仅通过根运动位移 x0.5 解决？**
 
-**可以，且效果完美。**
+**可以，且效果完美。`L = θ * r`
 
 *   基于弧长公式 $L = \theta \times r$，半径减半，角度不变，弧长（步幅）自然减半。
 *   **注意**：垂直方向的起伏（Y轴）也必须 x0.5，否则小短腿会有极其夸张的蹲伏动作。
@@ -98,9 +102,9 @@
 
 **Q：为什么需要一个“标准中间骨骼”（Intermediate Skeleton）？不能直接映射吗？**
 
-中间骨骼（如 Unity Humanoid）解决了 $N \times M$ 的复杂度问题：
+中间骨骼（如 Unity Humanoid）解决了 `N * M` 的复杂度问题：
 
-1.  **解耦**：所有动画源和目标角色都只与中间层交互，复杂度降为 $N + M$。
+1.  **解耦**：所有动画源和目标角色都只与中间层交互，复杂度降为 `N + M`。
 2.  **归一化**：抹平了骨骼命名（Bip01 vs Hips）、坐标轴朝向（Y-up vs Z-up）的差异。
 3.  **姿态校准**：强制统一 T-Pose，解决了源数据与目标数据初始姿态（T-Pose vs A-Pose）不一致的问题。
 
@@ -109,7 +113,7 @@
 **Q：Unity 的 Humanoid 重定向具体是如何落实上述理论的？**
 
 1.  **垂直缩放**：通过 **Hips Height (臀部高度)** 决定。
-    *   公式：$Factor = \frac{TargetHipsHeight}{SourceHipsHeight}$。
+    *   公式：`Factor = TargetHipsHeight / SourceHipsHeight`。
 2.  **水平步幅**：通过 **Human Scale (人体缩放系数)** 隐式控制。
     *   Unity 会将根运动位移矢量乘以该系数。
 3.  **旋转处理**：引入 **Muscle Space (肌肉空间)**。
