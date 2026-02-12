@@ -98,3 +98,4 @@
 | [vscode-copilot-skills-config.md](../data/vscode-copilot-skills-config.md) | #vscode #tools #experience #copilot | ✅ 已验证 | GitHub Copilot 使用相关经验 |
 | [animation-retarget-technology-unity.md](../data/animation-retarget-technology-unity.md) | #unity #animation #animation-retarget #knowledge #ik | 📘 有效 | 动画重定向技术原理分析（参考姿势/骨骼映射/链式映射）与 Unity Humanoid 实战经验 |
 | [kinemation-retarget-pro-plugin.md](../data/kinemation-retarget-pro-plugin.md) | #unity #animation #knowledge #retarget-pro #animation-retarget #ik #scriptable-object | ✅ 已验证 | KINEMATION Retarget Pro 动画重定向插件全面分析（v4.2.1） |
+| [web-archive-mcp-blueprint.md](../data/web-archive-mcp-blueprint.md) | #mcp #python #playwright #architecture #web #tools | ✅ 已验证 | Web Archive MCP 实现蓝图 — FastMCP + Playwright (Edge) 网页归档服务完整设计与复现指南 |
