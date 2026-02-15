@@ -27,7 +27,7 @@
 | 文件 | 标签 | 状态 | 简述 |
 |------|------|------|------|
 | [agent-skills-spec.md](../data/agent-skills-spec.md) | #ai #knowledge #agent-skills | 📘 有效 | Agent Skills 规范 |
-| [akasha-visualization-web.md](../data/akasha-visualization-web.md) | #tools #web #reference #akasha | 📘 有效 | 阿卡西记录可视化网站 |
+| [akasha-visualization-web.md](../data/akasha-visualization-web.md) | #tools #web #reference #akasha | 📘 有效 | 阿卡西记录可视化网站：VitePress + Schema-Driven 架构，统一搜索与工业风 UI |
 | [animation-retarget-root-motion-algorithm.md](../data/animation-retarget-root-motion-algorithm.md) | #unity #animation #math #root-motion #animation-retarget #knowledge | 📘 有效 | 3D 动画重定向与根运动算法解析：旋转复用、位移缩放与 Stride Warping |
 | [animation-retarget-technology-unity.md](../data/animation-retarget-technology-unity.md) | #unity #animation #animation-retarget #knowledge #ik | 📘 有效 | 动画重定向技术原理分析（参考姿势/骨骼映射/链式映射）与 Unity Humanoid 实战经验 |
 | [arknights-ui-industrial-style.md](../data/arknights-ui-industrial-style.md) | #design #knowledge #arknights #ui | 📘 有效 | 明日方舟工业风 UI：网点、网格、切角、噪点等视觉元素总结 |
