@@ -18,7 +18,7 @@
 
 > 完整元数据（显示名、图标）见 [tag-registry.md](./tag-registry.md)。新增标签时需同时注册。
 
-`#agent-skills` `#ai` `#ai-navigation` `#akasha` `#animation` `#animation-retarget` `#anti-bot` `#architecture` `#arknights` `#astrbot` `#audio` `#behavior-designer` `#bilibili` `#blend-tree` `#brdf` `#bug` `#cicd` `#claude-code` `#collider` `#color-banding` `#color-space` `#compute-shader` `#conventional-commits` `#cook-torrance` `#copilot` `#credential` `#csharp` `#culling` `#custom-editor` `#cyberpunk` `#design` `#dither` `#docker` `#draw-call` `#ecs` `#editor` `#effect-system` `#effects` `#experience` `#gamma` `#git` `#github-actions` `#gpgpu` `#graphics` `#hdr` `#hlsl` `#idea` `#identity` `#ik` `#knowledge` `#ktsama` `#linear` `#material` `#math` `#mcp` `#meilisearch` `#nav-mesh` `#npr` `#pat` `#pbr` `#performance` `#physics` `#playwright` `#post-processing` `#python` `#raycast` `#react` `#reference` `#renderer-feature` `#rendering` `#rendering-pipeline` `#retarget-pro` `#root-motion` `#scriptable-object` `#sdf` `#search-api` `#search-engine` `#searxng` `#selenium` `#serp` `#shader` `#shader-variants` `#smart-furniture` `#social` `#srp` `#srp-batcher` `#tools` `#ui` `#unity` `#urp` `#vera` `#vitepress` `#vscode` `#web`
+`#agent-skills` `#ai` `#ai-navigation` `#akasha` `#animation` `#animation-retarget` `#anti-bot` `#architecture` `#arknights` `#astrbot` `#audio` `#behavior-designer` `#bilibili` `#blend-tree` `#brdf` `#bug` `#cicd` `#claude-code` `#collider` `#color-banding` `#color-space` `#compute-shader` `#conventional-commits` `#cook-torrance` `#copilot` `#credential` `#csharp` `#culling` `#custom-editor` `#cyberpunk` `#design` `#dither` `#docker` `#draw-call` `#ecs` `#editor` `#effect-system` `#effects` `#experience` `#gamma` `#git` `#github-actions` `#gpgpu` `#graphics` `#hdr` `#hlsl` `#idea` `#identity` `#ik` `#knowledge` `#ktsama` `#linear` `#material` `#math` `#mcp` `#meilisearch` `#nav-mesh` `#npr` `#pat` `#pbr` `#performance` `#physics` `#playwright` `#post-processing` `#python` `#raycast` `#react` `#reference` `#renderer-feature` `#rendering` `#rendering-pipeline` `#retarget-pro` `#root-motion` `#scriptable-object` `#sdf` `#search-api` `#search-engine` `#searxng` `#selenium` `#serp` `#shader` `#shader-variants` `#smart-furniture` `#social` `#srp` `#srp-batcher` `#test` `#tools` `#ui` `#unity` `#urp` `#vera` `#vitepress` `#vscode` `#web`
 
 ---
 
@@ -29,6 +29,7 @@
 | [agent-skills-spec.md](../data/agent-skills-spec.md) | #ai #knowledge #agent-skills | 📘 有效 | Agent Skills 规范 |
 | [akasha-visualization-web.md](../data/akasha-visualization-web.md) | #tools #web #reference #akasha | 📘 有效 | 阿卡西记录可视化网站 |
 | [animation-retarget-root-motion-algorithm.md](../data/animation-retarget-root-motion-algorithm.md) | #unity #animation #math #root-motion #animation-retarget #knowledge | 📘 有效 | 3D 动画重定向与根运动算法解析：旋转复用、位移缩放与 Stride Warping |
+| [animation-retarget-technology-unity.md](../data/animation-retarget-technology-unity.md) | #unity #animation #animation-retarget #knowledge #ik | 📘 有效 | 动画重定向技术原理分析（参考姿势/骨骼映射/链式映射）与 Unity Humanoid 实战经验 |
 | [arknights-ui-industrial-style.md](../data/arknights-ui-industrial-style.md) | #design #knowledge #arknights #ui | 📘 有效 | 明日方舟工业风 UI：网点、网格、切角、噪点等视觉元素总结 |
 | [ase-shader-bakery-integration.md](../data/ase-shader-bakery-integration.md) | #shader #unity #experience #urp #srp-batcher #renderer-feature | ✅ 已验证 | ASE Shader 架构与 Bakery 光照集成最佳实践 |
 | [astrbot-mcp-service-config.md](../data/astrbot-mcp-service-config.md) | #ai #experience #mcp #astrbot | ✅ 已验证 | AstrBot 集成 MCP 服务经验 |
@@ -58,6 +59,7 @@
 | [hlsl-syntax-semantics.md](../data/hlsl-syntax-semantics.md) | #graphics #shader #knowledge #hlsl | 📘 有效 | Unity Shader / HLSL 基础知识 |
 | [idea-3d-girl-smart-furniture.md](../data/idea-3d-girl-smart-furniture.md) | #idea #smart-furniture | 💡 灵感记录 | 3D智能家具创意 |
 | [img-svg-css-color-filter.md](../data/img-svg-css-color-filter.md) | #tools #web #experience #vitepress | ✅ 已验证 | img 标签的 SVG 无法继承 CSS color，需用 filter 着色 {#img-svg-color-filter} |
+| [kinemation-retarget-pro-plugin.md](../data/kinemation-retarget-pro-plugin.md) | #unity #animation #knowledge #retarget-pro #animation-retarget #ik #scriptable-object | ✅ 已验证 | KINEMATION Retarget Pro 动画重定向插件全面分析（v4.2.1） |
 | [ktsama-bilibili-profile.md](../data/ktsama-bilibili-profile.md) | #social #reference #ktsama #bilibili | 📘 有效 | [KTSAMA的B站主页] |
 | [macos-git-osxkeychain-path.md](../data/macos-git-osxkeychain-path.md) | #git #experience #pat #docker #credential | ✅ 已验证 | macOS Git osxkeychain Credential Helper 路径问题 {#osxkeychain-path} |
 | [mcp-protocol-agent-dev.md](../data/mcp-protocol-agent-dev.md) | #ai #experience #mcp | ✅ 已验证 | MCP 协议与 Agent 服务开发经验 |
@@ -74,6 +76,7 @@
 | [shader-effects-techniques.md](../data/shader-effects-techniques.md) | #shader #experience #effects | ✅ 已验证 | 具体特效实现相关经验 |
 | [shader-optimization-hlsl.md](../data/shader-optimization-hlsl.md) | #shader #experience #hlsl #performance | ✅ 已验证 | Shader 性能优化相关经验 |
 | [shader-variants-compile.md](../data/shader-variants-compile.md) | #shader #experience #hlsl #shader-variants | ✅ 已验证 | HLSL 着色器语言相关经验 |
+| [test-document.md](../data/test-document.md) | #tools #experience #test | ✅ 已验证 | 阿卡西记录系统测试文档 |
 | [unity-ai-navigation.md](../data/unity-ai-navigation.md) | #unity #knowledge #nav-mesh #ai-navigation | 📘 有效 | Unity AI Navigation 知识 |
 | [unity-animation-scripting-notes.md](../data/unity-animation-scripting-notes.md) | #unity #animation #csharp #performance #knowledge #root-motion | ✅ 已验证 | Unity 动画与脚本开发核心知识清单：Root Motion、Animator API 与优化 |
 | [unity-blendtree-audio-sync.md](../data/unity-blendtree-audio-sync.md) | #unity #knowledge #animation #blend-tree #audio | 📘 有效 | Unity BlendTree 下动画驱动音效同步（脚步声等）常见方案汇总 |
@@ -98,6 +101,4 @@
 | [vitepress-vpfeature-icon-structure.md](../data/vitepress-vpfeature-icon-structure.md) | #tools #web #experience #vitepress | ✅ 已验证 | VitePress VPFeature 图标 HTML 结构（无 .icon 包裹层） {#vpfeature-icon-structure} |
 | [vr-variant-collector-architecture.md](../data/vr-variant-collector-architecture.md) | #unity #shader #architecture #shader-variants | 📘 有效 | VR 变体收集器 - 架构与流程图解 |
 | [vscode-copilot-skills-config.md](../data/vscode-copilot-skills-config.md) | #vscode #tools #experience #copilot | ✅ 已验证 | GitHub Copilot 使用相关经验 |
-| [animation-retarget-technology-unity.md](../data/animation-retarget-technology-unity.md) | #unity #animation #animation-retarget #knowledge #ik | 📘 有效 | 动画重定向技术原理分析（参考姿势/骨骼映射/链式映射）与 Unity Humanoid 实战经验 |
-| [kinemation-retarget-pro-plugin.md](../data/kinemation-retarget-pro-plugin.md) | #unity #animation #knowledge #retarget-pro #animation-retarget #ik #scriptable-object | ✅ 已验证 | KINEMATION Retarget Pro 动画重定向插件全面分析（v4.2.1） |
 | [web-archive-mcp-blueprint.md](../data/web-archive-mcp-blueprint.md) | #mcp #python #playwright #architecture #web #tools | ✅ 已验证 | Web Archive MCP 实现蓝图 — FastMCP + Playwright (Edge) 网页归档服务完整设计与复现指南 |
