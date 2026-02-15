@@ -95,6 +95,7 @@
 | #social | 社交 | network |
 | #srp | SRP | shader |
 | #srp-batcher | SRP Batcher | shader |
+| #test | 测试 | doc |
 | #tools | 工具 | wrench |
 | #ui | UI | monitor |
 | #unity | Unity 引擎 | unity |
