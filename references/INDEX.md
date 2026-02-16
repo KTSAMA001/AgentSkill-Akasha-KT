@@ -39,6 +39,7 @@
 | [bd-log-throttle.md](../data/bd-log-throttle.md) | #unity #experience #editor #behavior-designer | ✅ 已验证 | BD 节点日志频率控制 {#bd-log-throttle} |
 | [bd-showif-workaround.md](../data/bd-showif-workaround.md) | #unity #experience #editor #behavior-designer | ✅ 已验证 | BD 节点条件显示的替代方案 {#bd-showif-workaround} |
 | [bd-tooltip-namespace-conflict.md](../data/bd-tooltip-namespace-conflict.md) | #unity #experience #editor #behavior-designer | ✅ 已验证 | BD 节点 Tooltip 命名空间冲突解决 {#bd-tooltip-namespace-conflict} |
+| [llm-api-image-url-deserialize-error.md](../data/llm-api-image-url-deserialize-error.md) | #ai #experience #astrbot #bug | ⚠️ 待调查 | LLM API image_url 字段反序列化错误 - "unknown variant `image_url`, expected `text`" |
 | [vitepress-architecture-deep-dive.md](../data/vitepress-architecture-deep-dive.md) | #web #vitepress #reference #architecture | 📘 有效 | 阿卡西记录 Web 项目架构深度解析：完整技术架构、核心流程、组件系统、数据流与部署方案 |
 | [behavior-designer-api.md](../data/behavior-designer-api.md) | #unity #knowledge #behavior-designer #ai | 📘 有效 | Behavior Designer 行为树插件的技术规范、API 和原理 |
 | [cbuffer-srp-batcher-mechanism.md](../data/cbuffer-srp-batcher-mechanism.md) | #shader #unity #experience #urp #srp-batcher #renderer-feature | ✅ 已验证 | CBUFFER 与 SRP Batcher 合批机制 |
