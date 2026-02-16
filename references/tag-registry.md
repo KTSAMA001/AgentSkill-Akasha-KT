@@ -66,6 +66,7 @@
 | #math | 数学 | code |
 | #mcp | MCP 协议 | chip |
 | #meilisearch | Meilisearch | wrench |
+| #mvvm | MVVM 架构 | code |
 | #nav-mesh | NavMesh | unity |
 | #npr | NPR 渲染 | shader |
 | #pat | PAT 令牌 | code |
