@@ -5,9 +5,10 @@
 **收录日期**: 2026-02-16
 **来源日期**: 2026-02-16
 **更新日期**: 2026-02-16
-**状态**: ⚠️ 待调查
-**可信度**: ⭐⭐⭐ (个人经验验证)
+**状态**: ✅ 已解决
+**可信度**: ⭐⭐⭐⭐⭐ (实践验证)
 **适用版本**: AstrBot v4.17.x+
+**解决日期**: 2026-02-16
 
 ### 概要
 
@@ -27,20 +28,21 @@ All chat models failed: BadRequestError: Error code: 400 - {'error': {'message':
 - 内部错误类型: `invalid_request_error`
 - 具体信息: `Failed to deserialize the JSON body into the target type: messages[11]: unknown variant `image_url`, expected `text`
 
-### 可能的原因
+### 根本原因
 
-1. **模型不支持图片输入**:
-   - 配置的 LLM 模型（如某些纯文本模型）可能无法处理包含图片的消息
-   - 但 AstrBot 的某个插件或功能却尝试发送了带图片的请求
+**已废弃的"通晓前文"插件导致**：该插件已不再维护，但在 v4.17.x 版本中仍被使用，导致图片消息被错误地传递给不支持视觉的模型。
 
-2. **消息格式不符合 API 规范**:
-   - 即使是支持多模态的模型，图片内容也应该按照特定格式包裹在 `content` 数组里
-   - 例如 OpenAI 的格式是 `{"type": "image_url", "image_url": {"url": "..."}}`
-   - 如果直接使用了 `image_url` 这个字段名，或者格式不对，就会报这个错
+### 解决方案
 
-3. **插件或功能配置问题**:
-   - 可能是某个插件（如定时转载 AstrBook 帖子的任务）在生成请求时，错误地构造了包含图片的消息
-   - AstrBot 内部的消息构造逻辑可能存在兼容性问题
+**禁用或移除"通晓前文"插件**即可解决问题。
+
+### 历史分析（供参考）
+
+此问题在早期版本中也曾存在，官方已在 v4.11.4 通过以下 PR 修复：
+- PR #4367: `sanitize_context_by_modalities`
+- PR #4411: 图片占位符支持
+
+但在 v4.17.x 中，由于使用了已废弃的"通晓前文"插件，绕过了这些修复机制。
 
 ### 排查方向
 
@@ -61,11 +63,42 @@ All chat models failed: BadRequestError: Error code: 400 - {'error': {'message':
    - 此错误与之前记录的 "messages 参数非法" 错误（智谱AI特有格式要求）不同
    - 本次错误核心是 `image_url` 字段不被识别，而非消息角色或格式问题
 
-### 临时解决方案
+### 官方解决方案
 
-1. **切换模型**: 暂时使用纯文本模型，避免触发多模态相关功能
-2. **禁用相关插件**: 如果怀疑是某个插件导致，暂时禁用该插件
-3. **检查配置**: 确认 LLM 提供商和模型名称是否正确，某些模型可能名称相似但能力不同
+**已在 v4.11.4 版本修复**，相关 PR：
+
+1. **PR #4367 - `sanitize_context_by_modalities`** (2026-01-11 合并)
+   - 新增配置项 `sanitize_context_by_modalities`（默认开启）
+   - 根据模型的 `modalities` 配置自动过滤不支持的模态内容
+   - 模型不支持图片时：自动移除历史消息中的 `image_url` 块
+   - 模型不支持工具调用时：移除 tool 角色消息及 tool_calls 字段
+
+2. **PR #4411 - 图片占位符** (2026-01-11 合并)
+   - 修复私聊中单独发送图片时 bot 无响应的问题
+   - 非视觉模型将图片转换为 `[图片]` 文本占位符，而非静默丢弃
+
+### 解决步骤
+
+1. **升级 AstrBot 到 v4.11.4 或更高版本**
+
+2. **确保 Provider 配置正确**：
+   ```yaml
+   # 对于不支持图片的模型（如 deepseek-chat）
+   modalities: ['text', 'tool_use']
+
+   # 对于支持图片的模型（如 gpt-4-vision）
+   modalities: ['text', 'image', 'tool_use']
+   ```
+
+3. **确认 `sanitize_context_by_modalities` 已启用**（默认开启）
+
+4. **重启 AstrBot 使配置生效**
+
+### 临时解决方案（旧版本）
+
+1. **切换模型**: 使用支持视觉的模型（如 GPT-4V、Claude-3）
+2. **禁用相关插件**: 暂时禁用可能发送图片的插件
+3. **检查配置**: 确认 LLM 提供商和模型名称配置正确
 
 ### 相关记录
 
@@ -74,4 +107,13 @@ All chat models failed: BadRequestError: Error code: 400 - {'error': {'message':
 
 ### 验证记录
 
-- [2026-02-16] 初步记录错误现象和可能原因，待 KT 进一步排查
+- [2026-02-16] 初步记录错误现象和可能原因
+- [2026-02-16] 查阅 AstrBot GitHub 仓库，确认官方已在 v4.11.4 通过 PR #4367 和 #4411 修复此问题
+- [2026-02-16] **确认根本原因**：已废弃的"通晓前文"插件导致，禁用后问题解决
+
+### 相关 GitHub Issues / PRs
+
+- [Issue #2894](https://github.com/AstrBotDevs/AstrBot/issues/2894) - 最早报告此问题
+- [Issue #4465](https://github.com/AstrBotDevs/AstrBot/issues/4465) - 最新报告，问题偶发
+- [PR #4367](https://github.com/AstrBotDevs/AstrBot/pull/4367) - 核心修复：sanitize_context_by_modalities
+- [PR #4411](https://github.com/AstrBotDevs/AstrBot/pull/4411) - 图片占位符支持
