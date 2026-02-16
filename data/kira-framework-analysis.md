@@ -35,29 +35,29 @@ KiraFramework 是一个 **"UI + 事件通信 + 代码生成"** 的轻量级框�
 
 ```mermaid
 flowchart TB
-    subgraph 配置层["配置层 (Configs/)"]
+    subgraph config["配置层 Configs"]
         direction TB
         CA1["Enum定义"]
         CA2["Static映射"]
         CA3["ViewModel配置"]
     end
 
-    subgraph 生成层["生成层 (Generated/)"]
+    subgraph generated["生成层 Generated"]
         direction TB
         GB1["枚举类生成"]
         GB2["静态类生成"]
         GB3["UI类生成"]
     end
 
-    subgraph 运行层["运行层 (Core/)"]
+    subgraph core["运行层 Core"]
         direction TB
-        RC1["事件系统<br/>EventManager"]
-        RC2["UI管理<br/>UIManager"]
-        RC3["MVVM绑定<br/>ViewModelBase"]
+        RC1["事件系统 EventManager"]
+        RC2["UI管理 UIManager"]
+        RC3["MVVM绑定 ViewModelBase"]
     end
 
-    配置层 -->|"触发生成"| 生成层
-    生成层 -->|"提供类型"| 运行层
+    config -->|触发生成| generated
+    generated -->|提供类型| core
 ```
 
 **设计模式**：单例、观察者、MVVM、工厂模式
@@ -75,19 +75,19 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    subgraph 发布者["事件发布者"]
-        P1["FireEvent&lt;T&gt;()"]
+    subgraph publisher["事件发布者"]
+        P1["FireEvent T"]
     end
 
-    subgraph 管理器["EventManager (单例)"]
+    subgraph manager["EventManager 单例"]
         M1["无参事件字典"]
         M2["带参事件字典"]
         M3["回调列表执行"]
     end
 
-    subgraph 订阅者["事件订阅者"]
-        S1["RegisterEvent&lt;T&gt;()"]
-        S2["UnregisterEvent&lt;T&gt;()"]
+    subgraph subscriber["事件订阅者"]
+        S1["RegisterEvent T"]
+        S2["UnregisterEvent T"]
         S3["回调函数执行"]
     end
 
@@ -120,11 +120,11 @@ flowchart LR
 stateDiagram-v2
     [*] --> Created: Instantiate实例化
     Created --> Hidden: 初始化完成
-    Hidden --> Showing: Show()被调用
-    Showing --> Visible: OnShow()执行完成
-    Visible --> Hiding: Hide()被调用
-    Hiding --> Hidden: OnHide()执行完成
-    Hidden --> Closed: Close()被调用
+    Hidden --> Showing: Show被调用
+    Showing --> Visible: OnShow执行完成
+    Visible --> Hiding: Hide被调用
+    Hiding --> Hidden: OnHide执行完成
+    Hidden --> Closed: Close被调用
     Closed --> [*]: Destroy销毁
 ```
 
@@ -149,22 +149,22 @@ stateDiagram-v2
 
 ```mermaid
 sequenceDiagram
-    participant 玩家
-    participant GameLogic
-    participant EventManager
-    participant UI面板
-    participant 音效系统
-    participant 存档系统
+    participant player as 玩家
+    participant logic as GameLogic
+    participant event as EventManager
+    participant ui as UI面板
+    participant audio as 音效系统
+    participant save as 存档系统
 
-    玩家->>GameLogic: 击杀怪物获得经验
-    GameLogic->>GameLogic: 经验值达到阈值
-    GameLogic->>EventManager: FireEvent<PlayerLevelUp>()
-    EventManager->>UI面板: 通知升级事件
-    EventManager->>音效系统: 通知升级事件
-    EventManager->>存档系统: 通知升级事件
-    UI面板->>UI面板: 显示升级特效
-    音效系统->>音效系统: 播放升级音效
-    存档系统->>存档系统: 保存玩家等级
+    player->>logic: 击杀怪物获得经验
+    logic->>logic: 经验值达到阈值
+    logic->>event: FireEvent PlayerLevelUp
+    event->>ui: 通知升级事件
+    event->>audio: 通知升级事件
+    event->>save: 通知升级事件
+    ui->>ui: 显示升级特效
+    audio->>audio: 播放升级音效
+    save->>save: 保存玩家等级
 ```
 
 **使用 KiraFramework 的代码：**
@@ -270,24 +270,24 @@ public class PlayerLevel : MonoBehaviour
 
 ```mermaid
 flowchart TB
-    subgraph 用户操作["用户操作流程"]
+    subgraph userflow["用户操作流程"]
         A["点击背包按钮"]
         B["背包面板弹出"]
         C["显示物品列表"]
         D["点击物品"]
         E["显示物品详情"]
-        F["使用/装备物品"]
+        F["使用装备物品"]
     end
 
     A --> B --> C --> D --> E --> F
 
-    subgraph 框架能帮忙["框架能帮忙的"]
-        H1["UIManager.Show&lt;BagPanel&gt;()"]
+    subgraph framework["框架能帮忙的"]
+        H1["UIManager.Show BagPanel"]
         H2["事件通知物品变化"]
-        H3["层级管理：弹窗在最上层"]
+        H3["层级管理弹窗在最上层"]
     end
 
-    subgraph 需要自己写["需要自己写的"]
+    subgraph custom["需要自己写的"]
         S1["物品数据结构"]
         S2["物品列表滚动视图"]
         S3["拖拽交换逻辑"]
@@ -335,25 +335,25 @@ public void UseItem(int itemId)
 
 ```mermaid
 flowchart TB
-    subgraph 对话流程["NPC对话流程"]
+    subgraph dialogflow["NPC对话流程"]
         A["玩家接近NPC"]
         B["按交互键"]
         C["对话面板弹出"]
         D["显示对话文本"]
         E["打字机效果"]
         F["点击继续"]
-        G["下一段对话/结束"]
+        G["下一段对话结束"]
     end
 
     A --> B --> C --> D --> E --> F --> G
 
-    subgraph 框架支持["框架支持"]
+    subgraph fwsupport["框架支持"]
         F1["UIManager管理对话面板"]
         F2["事件系统通知对话状态"]
         F3["层级管理确保对话在最上层"]
     end
 
-    subgraph 自行开发["自行开发"]
+    subgraph customdev["自行开发"]
         S1["对话数据解析"]
         S2["对话树逻辑"]
         S3["打字机动画效果"]
@@ -394,25 +394,29 @@ public void SaveSettings()
 
 ```mermaid
 flowchart LR
-    subgraph 适合["适合使用 KiraFramework"]
-        A1["中小型 RPG/卡牌游戏"]
+    subgraph suitable["适合使用 KiraFramework"]
+        A1["中小型 RPG卡牌游戏"]
         A2["休闲益智类游戏"]
         A3["需要复杂UI的游戏"]
         A4["独立游戏开发"]
     end
 
-    subgraph 不太适合["不太适合"]
-        B1["大型3D动作游戏<br/>需要更多物理/动画支持"]
-        B2["多人实时竞技游戏<br/>需要专业网络框架"]
-        B3["超休闲游戏<br/>框架可能过重"]
+    subgraph unsuitable["不太适合"]
+        B1["大型3D动作游戏"]
+        B2["多人实时竞技游戏"]
+        B3["超休闲游戏"]
     end
 
-    subgraph 需要扩展["需要大量扩展"]
+    subgraph extend["需要大量扩展"]
         C1["MMO类型游戏"]
         C2["需要热更新的游戏"]
         C3["跨平台手游"]
     end
 ```
+
+- **适合**：中小型 RPG/卡牌游戏、休闲益智类、需要复杂UI的游戏、独立游戏开发
+- **不太适合**：大型3D动作游戏（需要更多物理/动画支持）、多人实时竞技游戏（需要专业网络框架）、超休闲游戏（框架可能过重）
+- **需要扩展**：MMO类型游戏、需要热更新的游戏、跨平台手游
 
 #### 七、主要问题
 
@@ -475,3 +479,4 @@ Scripts/Generated/             // 自动生成代码目录
 
 - [2026-02-16] 初次记录，来源：KiraFramework 项目代码深度分析
 - [2026-02-16] 补充完整内容：添加生动例子、场景示例、Mermaid流程图
+- [2026-02-16] 修复 Mermaid 语法：将中文 ID 改为英文，中文作为显示标签
