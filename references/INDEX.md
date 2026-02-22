@@ -52,6 +52,7 @@
 | [color-space-gamma-linear.md](../data/color-space-gamma-linear.md) | #graphics #knowledge #color-space #gamma #linear | 📘 有效 | 色彩空间知识 |
 | [compute-shader-gpu-parallel.md](../data/compute-shader-gpu-parallel.md) | #graphics #shader #knowledge #compute-shader #gpgpu | 📘 有效 | GPU 通用计算 (GPGPU) 相关原理与概念 |
 | [docker-git-credential-persist.md](../data/docker-git-credential-persist.md) | #git #experience #pat #docker #credential | ✅ 已验证 | Docker 容器内 Git PAT 凭据持久化配置 {#docker-git-credential} |
+| [docker-container-git-auth-persist.md](../data/docker-container-git-auth-persist.md) | #git #experience #docker #credential #troubleshooting | ✅ 已验证 | Docker 容器重建后 Git 认证持久化配置 {#docker-git-auth-persist} |
 | [effect-system-code-review.md](../data/effect-system-code-review.md) | #unity #architecture #scriptable-object #effect-system | ✅ 已验证 | EffectSystem 效果系统 - 代码审查与架构分析 |
 | [git-commit-conventions.md](../data/git-commit-conventions.md) | #git #reference #conventional-commits | ✅ 已验证 | Git 团队协作工作流相关经验 |
 | [git-filter-repo-rewrite-history.md](../data/git-filter-repo-rewrite-history.md) | #git #experience #pat #docker #credential | ✅ 已验证 | 使用 git-filter-repo 重写提交历史（清除敏感信息） |
