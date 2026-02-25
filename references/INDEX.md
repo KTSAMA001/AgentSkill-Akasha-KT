@@ -83,6 +83,7 @@
 | [unity-ai-navigation.md](../data/unity-ai-navigation.md) | #unity #knowledge #nav-mesh #ai-navigation | 📘 有效 | Unity AI Navigation 知识 |
 | [unity-animation-scripting-notes.md](../data/unity-animation-scripting-notes.md) | #unity #animation #csharp #performance #knowledge #root-motion | ✅ 已验证 | Unity 动画与脚本开发核心知识清单：Root Motion、Animator API 与优化 |
 | [unity-blendtree-audio-sync.md](../data/unity-blendtree-audio-sync.md) | #unity #knowledge #animation #blend-tree #audio | 📘 有效 | Unity BlendTree 下动画驱动音效同步（脚步声等）常见方案汇总 |
+| [unity-cross-project-compilation-check.md](../data/unity-cross-project-compilation-check.md) | #unity #editor #csharp #experience | ✅ 已验证 | Unity 跨项目功能迁移的编译验证经验：必须同时编译运行时和 Editor 程序集 |
 | [unity-editor-api.md](../data/unity-editor-api.md) | #unity #knowledge #editor #custom-editor | 📘 有效 | Unity Editor 开发知识 |
 | [unity-framework-architecture.md](../data/unity-framework-architecture.md) | #unity #csharp #experience #architecture | ⚠️ 待验证 | Unity 中的 C# 脚本编程相关经验 |
 | [unity-generic-animation-import-config.md](../data/unity-generic-animation-import-config.md) | #unity #animation #root-motion #experience | ⚠️ 待验证 | Generic 动画导入配置完整流程：解决滑步、UI 消失与双重位移（Rig→Motion→Bake→Mask） |
