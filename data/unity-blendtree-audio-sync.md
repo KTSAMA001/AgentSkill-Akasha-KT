@@ -27,13 +27,13 @@
 #### Animation Curves 方案（当前主流）
 - 在每个 AnimationClip 上添加同名自定义曲线（如 `FootstepL` / `FootstepR`），脚触地时给高值，离地时给低值。
 - BlendTree 会像混合骨骼动画一样，自动按权重混合这些曲线值；运行时通过 `Animator.GetFloat("FootstepL")` 读取的是“混合后的落脚信号”。
-- 以“阈值穿越”（例如从 `<0.5` 到 `>=0.5`）触发脚步音，可天然覆盖过渡区、50/50 均分、四向 25% 中心等复杂混合场景。
+- 触发判定可用“阈值穿越”或“过零触发”；在曲线存在低幅抖动时，推荐 **过零触发 + 零值死区**（`abs(v) < eps => 0`）以减少误触发。
 - 关键前提：AnimatorController 中必须存在与曲线同名的 float 参数，否则 `GetFloat` 读不到值。
 
 ### 关键点
 
 - Animation Event 通常被认为是“最直接、最不容易错”的方案：事件跟随 Clip 的真实时间轴。
-- 但在 BlendTree 下，Animation Event 的常见问题是“多 Clip 同时触发导致重复播放”；社区近年更倾向用 **Animation Curves + 阈值穿越** 作为稳健方案。
+- 但在 BlendTree 下，Animation Event 的常见问题是“多 Clip 同时触发导致重复播放”；社区近年更倾向用 **Animation Curves 驱动信号触发**（阈值穿越或过零触发）作为稳健方案。
 - BlendTree 下 Animation Event 可能出现 **重复触发**（多个子 Clip 权重都不低时），社区常见的抑制手段：
   - **权重阈值过滤**：只响应权重 > $\epsilon$（例如 0.2）的事件。
   - **主导 Clip 策略**：只响应权重最高的那个 Clip 的事件/脚步。
@@ -48,14 +48,22 @@
 - **动画事件**：在 Walk/Run 各自的 Clip 上标记 LeftFoot/RightFoot 事件。
 - **主导 Clip**：运行时只使用权重最高的 Clip 作为脚步来源（避免混合期“双响”）。
 
-- **Animation Curves + 阈值穿越（推荐）**：
+- **Animation Curves + 过零触发（实践验证）**：
 
 ```csharp
 // 假设 AnimatorController 已添加同名 float 参数：FootstepL
 float current = animator.GetFloat("FootstepL");
-const float threshold = 0.5f;
+const float zeroDeadZone = 0.0001f;
+if (Mathf.Abs(current) < zeroDeadZone)
+{
+  current = 0f;
+}
 
-if (lastFootstepL < threshold && current >= threshold)
+bool crossedZero =
+  (lastFootstepL > 0f && current < 0f) ||
+  (lastFootstepL < 0f && current > 0f);
+
+if (crossedZero)
 {
   PlayFootstepAudio();
 }
@@ -131,5 +139,5 @@ lastFootstepL = current;
 ### 与经验关联（可选）
 
 - 2026-02-27：在 `MonsterAnimatorAudioManager` 的 BlendTree 音效改造中，使用 `BlendTreeWeightDebugger` 实测发现“权重主导 Clip”方案在过渡区与均分区存在根本缺陷（如 idle 58% + walk 34% 仍在移动、50/50 双向、25%×4 中心场景）。
-- 结论：仅靠 `GetCurrentAnimatorClipInfo` 权重无法稳定反映真实落脚相位；社区与实践一致推荐转向 **Animation Curves + 阈值穿越**。
-- 后续：待将现有权重检测逻辑替换为曲线驱动逻辑后，补充最终落地验证结果。
+- 结论：仅靠 `GetCurrentAnimatorClipInfo` 权重无法稳定反映真实落脚相位；社区与实践一致推荐转向 Animation Curves 驱动。
+- 2026-02-27（补充）：在独立测试脚本 `CurveTriggerLogTester` 与正式脚本改造验证中，采用 **过零触发 + 零值死区（0.0001）** 能稳定输出触发日志，适配当前项目曲线数据形态。
