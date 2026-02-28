@@ -3,7 +3,7 @@
 **来源**：多来源（Unity Manual / Unity Forum & Discussions / 第三方博客 / YouTube 教程；详见“来源链接”）
 **来源日期**：2021-04-12（CodeAndWeb）/ 2024-05-19（YouTube）/ 其他未标注
 **收录日期**：2026-02-04
-**更新日期**：2026-02-27
+**更新日期**：2026-02-28
 **可信度**：⭐⭐⭐⭐（多来源交叉验证，Animation Curves 方案有官方 API 支撑 + 社区广泛实践 + 项目实测）
 **状态**：✅ 已验证
 
@@ -27,17 +27,17 @@
 #### Animation Curves 方案（当前主流）
 - 在每个 AnimationClip 上添加同名自定义曲线（如 `FootstepL` / `FootstepR`），脚触地时给高值，离地时给低值。
 - BlendTree 会像混合骨骼动画一样，自动按权重混合这些曲线值；运行时通过 `Animator.GetFloat("FootstepL")` 读取的是“混合后的落脚信号”。
-- 触发判定可用“阈值穿越”或“过零触发”；在曲线存在低幅抖动时，推荐 **过零触发 + 零值死区**（`abs(v) < eps => 0`）以减少误触发。
+- 触发判定建议统一使用“**过零触发**”；在曲线存在低幅抖动时，推荐 **过零触发 + 零值死区**（`abs(v) < eps => 0`）以减少误触发。
 - 关键前提：AnimatorController 中必须存在与曲线同名的 float 参数，否则 `GetFloat` 读不到值。
 
 ### 关键点
 
 - Animation Event 通常被认为是“最直接、最不容易错”的方案：事件跟随 Clip 的真实时间轴。
-- 但在 BlendTree 下，Animation Event 的常见问题是“多 Clip 同时触发导致重复播放”；社区近年更倾向用 **Animation Curves 驱动信号触发**（阈值穿越或过零触发）作为稳健方案。
+- 但在 BlendTree 下，Animation Event 的常见问题是“多 Clip 同时触发导致重复播放”；社区近年更倾向用 **Animation Curves 驱动信号触发**（过零触发）作为稳健方案。
 - BlendTree 下 Animation Event 可能出现 **重复触发**（多个子 Clip 权重都不低时），社区常见的抑制手段：
   - **权重阈值过滤**：只响应权重 > $\epsilon$（例如 0.2）的事件。
   - **主导 Clip 策略**：只响应权重最高的那个 Clip 的事件/脚步。
-  - **冷却/去抖**：同一只脚/同一类脚步在 $\Delta t$ 内只允许触发一次。
+  - **冷却/去抖**：同一只脚/同一类脚步在 $\Delta t$ 内只允许触发一次（本项目当前实现未启用该限制）。
 - `GetCurrentAnimatorClipInfo` 能拿到混合中各 Clip 的 **权重**，但并不直接给每个 Clip 的独立 normalizedTime；如果要读到子 Clip 的精确时间，往往需要 **PlayableGraph** 深挖，或者改用资产事件/曲线。
 - 如果项目不方便改动画资产，社区会倾向于“工程折中”：
   - 用速度驱动脚步（步频随速度变化），并根据地面材质/类型切换脚步音色。
@@ -52,23 +52,27 @@
 
 ```csharp
 // 假设 AnimatorController 已添加同名 float 参数：FootstepL
-float current = animator.GetFloat("FootstepL");
+float raw = animator.GetFloat("FootstepL");
 const float zeroDeadZone = 0.0001f;
-if (Mathf.Abs(current) < zeroDeadZone)
+float current = Mathf.Abs(raw) < zeroDeadZone ? 0f : raw;
+
+// 关键：死区内不更新 last 值，避免 0 吞掉过零点
+if (current == 0f)
 {
-  current = 0f;
+  return;
 }
 
 bool crossedZero =
   (lastFootstepL > 0f && current < 0f) ||
   (lastFootstepL < 0f && current > 0f);
 
+// 无论是否触发，都先更新 last 为当前有效值
+lastFootstepL = current;
+
 if (crossedZero)
 {
   PlayFootstepAudio();
 }
-
-lastFootstepL = current;
 ```
 
 ### 来源链接
@@ -141,3 +145,4 @@ lastFootstepL = current;
 - 2026-02-27：在 `MonsterAnimatorAudioManager` 的 BlendTree 音效改造中，使用 `BlendTreeWeightDebugger` 实测发现“权重主导 Clip”方案在过渡区与均分区存在根本缺陷（如 idle 58% + walk 34% 仍在移动、50/50 双向、25%×4 中心场景）。
 - 结论：仅靠 `GetCurrentAnimatorClipInfo` 权重无法稳定反映真实落脚相位；社区与实践一致推荐转向 Animation Curves 驱动。
 - 2026-02-27（补充）：在独立测试脚本 `CurveTriggerLogTester` 与正式脚本改造验证中，采用 **过零触发 + 零值死区（0.0001）** 能稳定输出触发日志，适配当前项目曲线数据形态。
+- 2026-02-28（补充）：正式脚本确认采用“**死区内不更新 last 值**”规则（`current==0` 直接跳过），修复了“曲线经 0 时过零点被吞掉”问题；
