@@ -75,6 +75,68 @@ if (crossedZero)
 }
 ```
 
+- **独立验证组件 `CurveTriggerLogTester`（2026-02-28 实测）**：
+
+  将以下组件挂在角色上，无需修改 `MonsterAnimatorAudioManager`，即可在 Console 验证曲线过零触发是否正常工作。所有参数均可在 Inspector 实时调整。
+
+```csharp
+using System;
+using UnityEngine;
+
+namespace Proj_dlxb_vr.Monster
+{
+    /// <summary>
+    /// BlendTree 曲线过零触发验证组件。
+    /// 挂在角色上，在 Console 输出触发日志，用于确认曲线信号、死区、过零检测是否正常。
+    /// </summary>
+    public class CurveTriggerLogTester : MonoBehaviour
+    {
+        [SerializeField] private Animator _animator;
+        [SerializeField] private string _curveParamName = "FootStep";
+        [SerializeField, Min(0f)] private float _zeroDeadZone = 0.0001f;
+        [SerializeField] private bool _autoFindAnimator = true;
+
+        private float _lastCurveValue;
+
+        private void Awake()
+        {
+            if (_autoFindAnimator && _animator == null)
+                _animator = GetComponentInChildren<Animator>();
+        }
+
+        private void OnEnable()
+        {
+            _lastCurveValue = 0f;
+        }
+
+        private void Update()
+        {
+            if (_animator == null || string.IsNullOrEmpty(_curveParamName)) return;
+
+            float rawValue = _animator.GetFloat(_curveParamName);
+            float currentValue = Mathf.Abs(rawValue) < _zeroDeadZone ? 0f : rawValue;
+
+            // 死区内跳过，不更新 _lastCurveValue，防止死区吞掉过零点
+            if (currentValue == 0f) return;
+
+            bool crossedZero =
+                (_lastCurveValue > 0f && currentValue < 0f) ||
+                (_lastCurveValue < 0f && currentValue > 0f);
+
+            _lastCurveValue = currentValue;
+
+            if (crossedZero)
+                Debug.Log($"KT---{nameof(CurveTriggerLogTester)}---{nameof(Update)}---{name}---{DateTime.Now:HH:mm:ss}");
+        }
+    }
+}
+```
+
+  > **使用建议**：
+  > - `_curveParamName` 填写 AnimatorController 中已添加的 float 参数名（与 AnimationClip 曲线同名）。
+  > - 调高 `_zeroDeadZone`（如 `0.01f`~`0.1f`）可过滤曲线低幅抖动；调低则更灵敏。
+  > - 触发率符合预期后，再将逻辑迁移至 `MonsterAnimatorAudioManager.CurveAudioTrigger` 配置。
+
 ### 来源链接
 
 - Unity Manual：Events（Imported Animation Clips）
