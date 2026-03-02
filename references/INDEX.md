@@ -107,3 +107,4 @@
 | [vr-variant-collector-architecture.md](../data/vr-variant-collector-architecture.md) | #unity #shader #architecture #shader-variants | 📘 有效 | VR 变体收集器 - 架构与流程图解 |
 | [vscode-copilot-skills-config.md](../data/vscode-copilot-skills-config.md) | #vscode #tools #experience #copilot | ✅ 已验证 | GitHub Copilot 使用相关经验 |
 | [web-archive-mcp-blueprint.md](../data/web-archive-mcp-blueprint.md) | #mcp #python #playwright #architecture #web #tools | ✅ 已验证 | Web Archive MCP 实现蓝图 — FastMCP + Playwright (Edge) 网页归档服务完整设计与复现指南 |
+| [windows-system-path-missing-app-detection-failure.md](../data/windows-system-path-missing-app-detection-failure.md) | #vscode #tools #experience #claude-code #git #bug | ✅ 已验证 | Windows 系统 PATH 缺失关键目录导致应用依赖探测失败的通用排障经验（含 Claude Code 案例） |
