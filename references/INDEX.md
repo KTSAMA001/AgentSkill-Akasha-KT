@@ -110,3 +110,4 @@
 | [windows-system-path-missing-app-detection-failure.md](../data/windows-system-path-missing-app-detection-failure.md) | #vscode #tools #experience #claude-code #git #bug | ✅ 已验证 | Windows 系统 PATH 缺失关键目录导致应用依赖探测失败的通用排障经验（含 Claude Code 案例） |
 | [docker-vs-native-deployment-file-access.md](../data/docker-vs-native-deployment-file-access.md) | #docker #deployment #tools #experience #ai | ✅ 已验证 | Docker 与原生部署在文件操作需求下的选择分析 |
 | [browser-automation-search-mcp-dev.md](../data/browser-automation-search-mcp-dev.md) | #python #playwright #mcp #experience #web #tools | ⚠️ 待验证 | 浏览器自动化搜索 MCP 开发记录：Playwright + Bing 搜索实现，MCP封装待完成 |
+| [docker-vs-native-deployment-file-access.md](../data/docker-vs-native-deployment-file-access.md) | #docker #deployment #tools #experience #ai | ✅ 已验证 | Docker 与原生部署对比：文件操作场景下原生部署更优，含决策树 |
