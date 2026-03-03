@@ -108,3 +108,5 @@
 | [vscode-copilot-skills-config.md](../data/vscode-copilot-skills-config.md) | #vscode #tools #experience #copilot | ✅ 已验证 | GitHub Copilot 使用相关经验 |
 | [web-archive-mcp-blueprint.md](../data/web-archive-mcp-blueprint.md) | #mcp #python #playwright #architecture #web #tools | ✅ 已验证 | Web Archive MCP 实现蓝图 — FastMCP + Playwright (Edge) 网页归档服务完整设计与复现指南 |
 | [windows-system-path-missing-app-detection-failure.md](../data/windows-system-path-missing-app-detection-failure.md) | #vscode #tools #experience #claude-code #git #bug | ✅ 已验证 | Windows 系统 PATH 缺失关键目录导致应用依赖探测失败的通用排障经验（含 Claude Code 案例） |
+| [docker-vs-native-deployment-file-access.md](../data/docker-vs-native-deployment-file-access.md) | #docker #deployment #tools #experience #ai | ✅ 已验证 | Docker 与原生部署在文件操作需求下的选择分析 |
+| [browser-automation-search-mcp-dev.md](../data/browser-automation-search-mcp-dev.md) | #python #playwright #mcp #experience #web #tools | ⚠️ 待验证 | 浏览器自动化搜索 MCP 开发记录：Playwright + Bing 搜索实现，MCP封装待完成 |
