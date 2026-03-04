@@ -99,22 +99,33 @@ git clone https://github.com/KTSAMA001/AgentSkill-Akasha-KT.git ~/.claude/skills
 # 本仓库根目录（目录名由 clone 时指定）
 ├── README.md           # 本文件
 ├── SKILL.md            # 核心指令（Agent 识别技能的入口）
-├── references/          # 详细文档
-│  ├── INDEX.md         # 分类索引
-│  ├── scripts/         # 维护脚本
-│  ├── templates/       # 记录模板
-│  ├── workflows/       # 工作流指南
-│  │   ├── record.md
-│  │   ├── search.md
-│  │   └── validate.md
-│  ├── EXAMPLES.md      # 使用示例
-│  └── tag-registry.md  # 标签注册表
-└── data/               # 阿卡西记录数据（扁平化存储）
-    ├── *.md            # 所有经验/知识/灵感文件
-    └── ...
+├── assets/             # 记录关联资源（图片/导出件等）
+│  ├── <record-name>/
+│  └── archives/
+├── backup/             # 备份目录
+├── data/               # 阿卡西记录数据（扁平化存储）
+│  ├── *.md             # 所有经验/知识/灵感文件
+│  └── ...
+├── mailmap.txt         # 作者/提交映射
+└── references/         # 详细文档
+   ├── INDEX.md         # 分类索引
+   ├── EXAMPLES.md      # 使用示例
+   ├── tag-registry.md  # 标签注册表
+   ├── reports/         # 审计/验证报告
+   ├── scripts/         # 维护脚本
+   ├── templates/       # 记录模板
+   └── workflows/       # 工作流指南
+  ├── record.md
+  ├── search.md
+  └── validate.md
 ```
 
 ## ⚠️ 重要说明
+
+### 系统层与数据层边界
+
+- **数据层（用户知识）**：`data/*.md`，这是查找/引用/展示给用户的唯一知识来源。
+- **系统层（操作规范）**：`SKILL.md` 与 `references/*`，仅用于指导流程执行，不作为查询结果直接返回。
 
 ### 内容分类
 

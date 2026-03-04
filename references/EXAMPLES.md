@@ -39,8 +39,8 @@
 **用户**："帮我记录一下刚才解决的 Unity 协程问题"
 
 **操作**：
-1. 执行 `git pull origin main` 拉取仓库最新内容
-2. 识别为“记录”意图 → 先读取 `./workflows/record.md`
+1. 识别为“记录”意图 → 先读取 `./workflows/record.md`
+2. 按流程执行 `git pull origin main` 拉取仓库最新内容
 3. 执行重复检测与正确性验证（参考 `./workflows/validate.md`）
 4. 确定文件名为 `unity-coroutine-yield-return-null.md`，写入 `../data/unity-coroutine-yield-return-null.md`
 5. 提取关键信息：
@@ -48,7 +48,7 @@
    - 问题：协程中使用 yield return 0 导致性能问题
    - 解决：使用 yield return null 更高效
 6. 按模板补全标签（至少 2 个）与元数据
-7. 同步更新 `../INDEX.md` 文件清单
+7. 同步更新 `./INDEX.md` 文件清单
 8. 执行 `git add . && git commit -m "docs: add unity-coroutine-yield-return-null.md" && git push origin main`
 9. 反馈："已完成记录并更新索引，且已同步到远程仓库"
 
@@ -61,12 +61,12 @@
 **用户**："刚才那个协程问题，我发现还有个注意点要补充"
 
 **操作**：
-1. 执行 `git pull origin main` 拉取仓库最新内容
-2. 识别为“记录/更新”意图 → 先读取 `./workflows/record.md`
+1. 识别为“记录/更新”意图 → 先读取 `./workflows/record.md`
+2. 按流程执行 `git pull origin main` 拉取仓库最新内容
 3. 定位到 `../data/unity-coroutine-yield-return-null.md` 相关记录
 4. 先执行验证检查，再添加更新日期与新增内容
-5. 如状态或标签发生变化，同步更新 `../INDEX.md`
-6. 提交并推送
+5. 如状态或标签发生变化，同步更新 `./INDEX.md`
+6. 执行 `git add . && git commit -m "docs: update unity-coroutine-yield-return-null.md" && git push origin main`
 
 ---
 
@@ -77,8 +77,8 @@
 **用户**："把这个 VR 变体收集器的完整设计文档保存下来"
 
 **操作**：
-1. 执行 `git pull origin main`
-2. 识别为“记录”意图，读取 `./workflows/record.md`
+1. 识别为“记录”意图，读取 `./workflows/record.md`
+2. 按流程执行 `git pull origin main`
 3. 执行重复检测与正确性验证
 4. 创建独立文档：`../data/vr-variant-collector-architecture.md`
 5. 编写完整架构设计、打包策略、编译坑点
@@ -86,8 +86,8 @@
    - 标题：VR Shader 变体收集器架构
    - 内容：摘要核心的打包策略和优化点
    - 链接：`- [完整架构文档](./vr-variant-collector-architecture.md)`
-7. 更新 `../INDEX.md` 文件清单
-8. 提交并推送
+7. 更新 `./INDEX.md` 文件清单
+8. 执行 `git add . && git commit -m "docs: add vr-variant-collector-architecture.md" && git push origin main`
 
 ---
 
@@ -98,13 +98,16 @@
 **用户**："这个 WWW 类的用法是不是过时了？"
 
 **操作**：
-1. 搜索 Unity 官方文档确认 WWW 已在 Unity 2018.3 后被标记为 Obsolete
-2. 执行废弃流程：
+1. 识别为“修正/反馈”意图 → 先读取 `./workflows/validate.md`
+2. 执行 `git pull origin main`
+3. 搜索 Unity 官方文档确认 WWW 已在 Unity 2018.3 后被标记为 Obsolete
+4. 定位对应 `data/*.md` 记录并执行废弃流程：
    - 在原记录标题后添加 `[已废弃]` 标记
-   - 状态改为 🔄 已过时
+   - 状态改为 📕 已过时
    - 在开头添加废弃警告
    - 添加替代方案：推荐使用 UnityWebRequest
-3. 添加验证记录
+5. 添加验证记录并更新 `./INDEX.md`
+6. 执行 `git add . && git commit -m "fix: deprecate www usage record" && git push origin main`
 
 **废弃格式**：
 
@@ -125,12 +128,15 @@
 **用户**："我发现有两个地方说的不一样，一个说用 async/await 好，一个说用协程好"
 
 **操作**：
-1. 分析冲突原因：这是适用场景不同，不是正确性问题
-2. 在两条经验中添加"相关经验"链接，互相引用
-3. 明确标注各自的适用条件：
+1. 识别为“修正/反馈”意图 → 先读取 `./workflows/validate.md`
+2. 执行 `git pull origin main`
+3. 分析冲突原因：这是适用场景不同，不是正确性问题
+4. 在两条经验中添加"相关经验"链接，互相引用
+5. 明确标注各自的适用条件：
    - **async/await**：适用于纯计算、文件 IO、网络请求等不依赖 Unity 主线程
    - **协程**：适用于等待帧、物理更新、UnityWebRequest 等 Unity 特有异步
-4. 添加备注说明选择依据
+6. 添加备注说明选择依据，并更新 `./INDEX.md`（若状态/标签变化）
+7. 执行 `git add . && git commit -m "docs: clarify async-vs-coroutine scenarios" && git push origin main`
 
 ---
 
@@ -141,14 +147,18 @@
 **用户**："你之前记录的那个 Unity 协程用 yield return 0 的说法好像不对，我试了报错"
 
 **操作**：
-1. 收集错误信息和环境信息
-2. 查阅 Unity 官方文档确认 yield return 的正确用法
-3. 验证用户报告的具体错误
-4. 执行修正流程：
+1. 识别为“修正/反馈”意图 → 先读取 `./workflows/validate.md`
+2. 执行 `git pull origin main`
+3. 收集错误信息和环境信息
+4. 查阅 Unity 官方文档确认 yield return 的正确用法
+5. 验证用户报告的具体错误
+6. 执行修正流程：
    - 更新解决方案内容为正确写法
    - 添加版本说明和注意事项
    - 状态保持 ✅ 已验证
-5. 反馈用户修正结果
+7. 若标签/状态变化则更新 `./INDEX.md`
+8. 执行 `git add . && git commit -m "fix: correct coroutine yield return usage" && git push origin main`
+9. 反馈用户修正结果
 
 ---
 

@@ -41,8 +41,10 @@
 | #custom-editor | 自定义编辑器 | unity |
 | #cyberpunk | 赛博朋克 | monitor |
 | #design | 设计 | monitor |
+| #deployment | 部署 | network |
 | #dither | 抖动 | shader |
 | #docker | Docker | network |
+| #dotnet | .NET | code |
 | #draw-call | Draw Call | shader |
 | #ecs | ECS | unity |
 | #editor | 编辑器 | unity |
@@ -83,6 +85,7 @@
 | #rendering | 渲染 | shader |
 | #rendering-pipeline | 渲染管线 | shader |
 | #retarget-pro | Retarget Pro | unity |
+| #root-motion | Root Motion | unity |
 | #scriptable-object | ScriptableObject | unity |
 | #sdf | SDF 距离场 | shader |
 | #search-api | 搜索 API | wrench |
@@ -97,6 +100,7 @@
 | #srp | SRP | shader |
 | #srp-batcher | SRP Batcher | shader |
 | #tools | 工具 | wrench |
+| #troubleshooting | 故障排查 | wrench |
 | #ui | UI | monitor |
 | #unity | Unity 引擎 | unity |
 | #urp | URP | shader |

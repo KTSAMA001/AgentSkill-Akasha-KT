@@ -27,18 +27,19 @@ def parse_markdown_file(filepath):
     
     # Simple regex for metadata
     # **标签**：#tags
-    tags_match = re.search(r'\*\*标签\*\*：(.*)', content)
+    tags_match = re.search(r'\*\*标签\*\*\s*[:：]\s*(.*)', content)
     if tags_match:
         tags = tags_match.group(1).strip()
         
     # **状态**：✅ ...
-    status_match = re.search(r'\*\*状态\*\*：(.*)', content)
+    status_match = re.search(r'\*\*状态\*\*\s*[:：]\s*(.*)', content)
     if status_match:
         status = status_match.group(1).strip()
         
     return title, tags, status
 
 def generate_table_row(filename, title, tags, status):
+    status = normalize_status(status)
     link = f"[{filename}](../{DATA_DIR}/{filename})"
     # Format: | File Link | Tags | Status | Description |
     # Note: The current INDEX.md uses a slightly weird format "：#tags" in the column?
@@ -49,6 +50,19 @@ def generate_table_row(filename, title, tags, status):
     # I will just put the text.
     
     return f"| {link} | {tags} | {status} | {title} |"
+
+
+def normalize_status(status):
+    if not status:
+        return status
+
+    markers = ["✅", "⚠️", "📘", "🔄", "📕", "❌", "🔬", "💡"]
+    text = status.strip()
+    for marker in markers:
+        if text.startswith(marker):
+            remain = text[len(marker):].strip()
+            return f"{marker} {remain}" if remain else marker
+    return text
 
 def main():
     # 1. Get List of Files
