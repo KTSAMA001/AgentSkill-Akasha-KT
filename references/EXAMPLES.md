@@ -11,9 +11,9 @@
 **用户**："Unity 协程怎么正确等待一帧？"
 
 **操作**：
-1. 判断为 Unity C# 相关 → 读取 `../data/unity-framework-architecture.md`
-2. 搜索关键词"协程"、"yield"、"等待"
-3. 找到相关记录 → 展示给用户
+1. 判断为“查找”意图 → 先读取 `./workflows/search.md`
+2. 执行 `python references/scripts/search_records.py --keywords 协程 yield --limit 5`
+3. 命中后读取对应 `data/*.md` 记录并检查状态/适用版本
 4. 反馈："在经验记录中找到相关内容，建议使用 `yield return null` 替代 `yield return 0`"
 
 ---
@@ -23,10 +23,10 @@
 **用户**："Unity DOTS 的 IJobEntity 怎么用？"
 
 **操作**：
-1. 判断为 Unity 相关 → 读取 `../data/unity-framework-architecture.md`
-2. 搜索关键词"DOTS"、"IJobEntity"、"Job"
-3. 未找到相关记录 → 告知用户："未在经验记录中找到相关内容，正在上网搜索..."
-4. 搜索 Unity 官方文档关于 DOTS/IJobEntity 的内容
+1. 判断为“查找”意图 → 先读取 `./workflows/search.md`
+2. 先执行本地检索（脚本或 INDEX）搜索关键词"DOTS"、"IJobEntity"、"Job"
+3. 未找到相关记录 → 告知用户："未在记录中找到，正在上网搜索..."
+4. 按优先级搜索 Unity 官方文档与官方论坛
 5. 整理搜索结果并展示解决方案
 6. 询问："问题解决了吗？需要将此经验记录下来吗？"
 
@@ -40,15 +40,17 @@
 
 **操作**：
 1. 执行 `git pull origin main` 拉取仓库最新内容
-2. 识别为 Unity C# 协程相关 → 归类到 `unity-framework-architecture.md`
-3. 检查是否有类似记录 → 无
-4. 提取关键信息：
+2. 识别为“记录”意图 → 先读取 `./workflows/record.md`
+3. 执行重复检测与正确性验证（参考 `./workflows/validate.md`）
+4. 确定文件名为 `unity-coroutine-yield-return-null.md`，写入 `../data/unity-coroutine-yield-return-null.md`
+5. 提取关键信息：
    - 标题：Unity 协程优化
    - 问题：协程中使用 yield return 0 导致性能问题
    - 解决：使用 yield return null 更高效
-5. 追加到 `unity-framework-architecture.md`
-6. 执行 `git add . && git commit -m "update: 添加 Unity 协程优化经验" && git push origin main`
-7. 反馈："已将协程优化经验记录到 unity-framework-architecture.md，并已同步到远程仓库"
+6. 按模板补全标签（至少 2 个）与元数据
+7. 同步更新 `../INDEX.md` 文件清单
+8. 执行 `git add . && git commit -m "docs: add unity-coroutine-yield-return-null.md" && git push origin main`
+9. 反馈："已完成记录并更新索引，且已同步到远程仓库"
 
 ---
 
@@ -60,10 +62,11 @@
 
 **操作**：
 1. 执行 `git pull origin main` 拉取仓库最新内容
-2. 定位到 `unity-framework-architecture.md` 中的协程相关记录
-3. 判断为"补充"类型更新
-4. 添加更新日期、新增内容
-5. 提交并推送
+2. 识别为“记录/更新”意图 → 先读取 `./workflows/record.md`
+3. 定位到 `../data/unity-coroutine-yield-return-null.md` 相关记录
+4. 先执行验证检查，再添加更新日期与新增内容
+5. 如状态或标签发生变化，同步更新 `../INDEX.md`
+6. 提交并推送
 
 ---
 
@@ -75,14 +78,16 @@
 
 **操作**：
 1. 执行 `git pull origin main`
-2. 识别为大型内容，符合 Progressive Disclosure 原则
-3. 创建独立文档：`../data/vr-variant-collector-architecture.md`
-4. 编写完整架构设计、打包策略、编译坑点
-5. 在 `unity-shader-variants-tool.md` 中追加记录：
+2. 识别为“记录”意图，读取 `./workflows/record.md`
+3. 执行重复检测与正确性验证
+4. 创建独立文档：`../data/vr-variant-collector-architecture.md`
+5. 编写完整架构设计、打包策略、编译坑点
+6. 在 `../data/unity-shader-variants-tool.md` 中追加关联记录：
    - 标题：VR Shader 变体收集器架构
    - 内容：摘要核心的打包策略和优化点
    - 链接：`- [完整架构文档](./vr-variant-collector-architecture.md)`
-6. 提交并推送
+7. 更新 `../INDEX.md` 文件清单
+8. 提交并推送
 
 ---
 
@@ -150,7 +155,7 @@
 ## 使用提示
 
 - 示例可以增长，但建议只保留具有代表性的核心案例
-- 长篇内容应移至独立文档（如 docs/ 目录）
+- 长篇内容应移至独立文档（统一写入 `data/` 目录）
 - 定期清理过期或过时的示例
 
 ## 链接回操作指南

@@ -6,14 +6,14 @@
 
 ## 一、流程总览
 
-1. **同步仓库**：`git pull origin main`
-2. **确定文件名** → `kebab-case` 自解释命名
-3. **全面验证** → 按 [validate.md](./validate.md) 检查（重复检测、正确性、时效性等）
-4. **格式化写入** → 按 [record-template.md](../templates/record-template.md) 模板写入 `data/` 目录
-5. **保存资源** → 如有图片等资源，按资源文件规范保存至 `assets/` 并使用相对路径引用
-6. **打标签** → 确保至少 1 个领域标签 + 1 个类型标签
-7. **更新索引** → 更新 [INDEX.md](../INDEX.md) 的文件清单（如有新标签则同步更新标签概览）
-8. **提交推送** → Git Commit & Push
+1. 🔴 **CRITICAL - 同步仓库**：`git pull origin main`
+2. 🟡 **IMPORTANT - 确定文件名**：`kebab-case` 自解释命名
+3. 🔴 **CRITICAL - 全面验证**：按 [validate.md](./validate.md) 检查（重复检测、正确性、时效性等）
+4. 🔴 **CRITICAL - 格式化写入**：按 [record-template.md](../templates/record-template.md) 模板写入 `data/` 目录
+5. 🟡 **IMPORTANT - 保存资源**：如有图片等资源，按资源文件规范保存至 `assets/` 并使用相对路径引用
+6. 🟡 **IMPORTANT - 打标签**：确保至少 1 个领域标签 + 1 个类型标签
+7. 🔴 **CRITICAL - 更新索引**：更新 [INDEX.md](../INDEX.md) 的文件清单（如有新标签则同步更新标签概览）
+8. 🔴 **CRITICAL - 提交推送**：Git Commit & Push
 
 ---
 
@@ -162,3 +162,14 @@ git pull --rebase origin main
 git add . && git rebase --continue
 git push origin main
 ```
+
+---
+
+## ✅ 完成门控（回复用户前逐项确认）
+
+- [ ] 已执行 `git pull origin main`？
+- [ ] 已完成重复检测与正确性验证？
+- [ ] 记录已写入 `data/*.md`（非子目录）并符合模板？
+- [ ] 标签数量 ≥ 2（至少 1 个领域 + 1 个类型）？
+- [ ] `references/INDEX.md` 已同步更新？
+- [ ] 已执行 `git commit` 与 `git push`？
