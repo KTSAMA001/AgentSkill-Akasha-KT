@@ -5,7 +5,6 @@
 | 文档 | 路径 | 用途 |
 |------|------|------|
 | **查找流程** | [workflows/search.md](./workflows/search.md) | 检索记录、网络搜索 |
-| **快速检索脚本** | [scripts/search_records.py](./scripts/search_records.py) | 元数据检索（标签/关键词/状态） |
 | **记录流程** | [workflows/record.md](./workflows/record.md) | 记录经验/知识 |
 | **验证流程** | [workflows/validate.md](./workflows/validate.md) | 修正、废弃记录 |
 | 使用示例 | [EXAMPLES.md](./EXAMPLES.md) | 参考用法 |

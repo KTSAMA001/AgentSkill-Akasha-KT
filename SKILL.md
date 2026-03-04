@@ -36,7 +36,7 @@ license: MIT
 ## ⛔ 不可违反的执行规则
 
 1. **必须先读流程再执行**：收到用户请求后，必须先识别意图并读取对应 workflow 文件，禁止凭记忆直接执行。
-2. **查找禁止直接凭记忆回答**：必须先在本地记录中检索（脚本优先，索引兜底），未命中后再进行网络搜索。
+2. **查找禁止直接凭记忆回答**：必须先在 `data/` 目录下执行本地检索（使用 AI 可用的文件搜索/文本搜索工具），未命中后再进行网络搜索。
 3. **记录/更新必须走完整闭环**：`git pull`（执行前）→ 验证检查 → 写入 `data/` → 更新 `INDEX.md` → `git commit && git push`（执行后）。
 4. **索引维护是完成条件**：新增或修改记录后，未更新 `references/INDEX.md` 视为任务未完成。
 5. **写入前必须验证**：新记录写入或旧记录更新前，必须执行重复检测与正确性检查。
@@ -58,8 +58,8 @@ license: MIT
 |------|------|------|
 | `data/*.md` | 读/写/新建，删除需确认 | 用户知识记录，可作为查询结果返回 |
 | `assets/<record-name>/*` | 读/写/新建（存放记录关联的图片等资源） | 数据层资源文件，与记录配套使用 |
-| `references/INDEX.md` | 读/写（索引需实时更新） | 系统检索入口，用于定位 `data/*.md` 记录 |
-| `references/scripts/*.py` | 只读/可执行（用于索引与检索辅助） | 系统检索工具，仅辅助在 `data/` 中检索 |
+| `references/INDEX.md` | 读/写（索引需实时更新） | 索引维护（记录新增/修改时更新），不用于搜索 |
+| `references/scripts/*.py` | 只读/可执行 | 维护脚本（如索引生成），不作为查找流程依赖 |
 | `SKILL.md`、`references/` 其他文件 | 只读 | 系统操作规范，不可直接作为查询结果返回 |
 | 其他位置 | 禁止 | 非技能范围，禁止操作 |
 
@@ -86,8 +86,8 @@ license: MIT
 | **修正/反馈** | 指出内容错误、要求更新过时信息、"验证下"、"这个不对"、"信息过期了" | [workflows/validate.md](references/workflows/validate.md) |
 
 **辅助资源**：
-- 需定位 `data/*.md` 记录或按标签检索：[INDEX.md](references/INDEX.md)
-- 需快速检索 `data/*.md` 记录（推荐）：`python references/scripts/search_records.py --help`
+- 需检索 `data/*.md` 记录：使用 AI 可用的文件搜索/文本搜索工具，并将范围限定在 `data/`
+- 禁止将 `references/INDEX.md` 全文作为检索上下文直接发送给大模型
 - 需获取记录模板：[templates/record-template.md](references/templates/record-template.md)
 
 ## 记录格式

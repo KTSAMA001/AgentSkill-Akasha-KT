@@ -12,7 +12,7 @@
 
 **操作**：
 1. 判断为“查找”意图 → 先读取 `./workflows/search.md`
-2. 执行 `python references/scripts/search_records.py --keywords 协程 yield --limit 5`
+2. 在 `data/` 目录下执行本地检索（按关键词“协程”“yield”搜索）
 3. 命中后读取对应 `data/*.md` 记录并检查状态/适用版本
 4. 反馈："在经验记录中找到相关内容，建议使用 `yield return null` 替代 `yield return 0`"
 
@@ -24,7 +24,7 @@
 
 **操作**：
 1. 判断为“查找”意图 → 先读取 `./workflows/search.md`
-2. 先执行本地检索（脚本或 INDEX）搜索关键词"DOTS"、"IJobEntity"、"Job"
+2. 在 `data/` 目录下执行本地检索，搜索关键词"DOTS"、"IJobEntity"、"Job"
 3. 未找到相关记录 → 告知用户："未在记录中找到，正在上网搜索..."
 4. 按优先级搜索 Unity 官方文档与官方论坛
 5. 整理搜索结果并展示解决方案

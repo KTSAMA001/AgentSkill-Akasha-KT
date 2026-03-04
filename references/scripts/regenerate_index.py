@@ -1,5 +1,10 @@
 import os
 import re
+import sys
+
+# Windows 控制台默认编码为 GBK，无法输出 emoji（✅📘📕等），强制 UTF-8
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
 DATA_DIR = "data"
 INDEX_FILE = "references/INDEX.md"

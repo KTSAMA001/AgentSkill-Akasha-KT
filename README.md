@@ -112,7 +112,7 @@ git clone https://github.com/KTSAMA001/AgentSkill-Akasha-KT.git ~/.claude/skills
    ├── EXAMPLES.md      # 使用示例
    ├── tag-registry.md  # 标签注册表
    ├── reports/         # 审计/验证报告
-   ├── scripts/         # 维护脚本
+  ├── scripts/         # 维护脚本（如索引生成）
    ├── templates/       # 记录模板
    └── workflows/       # 工作流指南
   ├── record.md

@@ -150,6 +150,7 @@
 
 ## 相关文档
 
+- 检索边界：`INDEX.md` 与本模板属于系统层文档，仅用于维护规范；知识检索与回答仅允许基于 `data/*.md`。
 - 分类索引：[INDEX.md](../INDEX.md)
 - 记录流程：[workflows/record.md](../workflows/record.md)
 - 查找流程：[workflows/search.md](../workflows/search.md)
