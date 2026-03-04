@@ -7,15 +7,26 @@
 ## 一、查找步骤
 
 1. **提取关键词** → 从用户问题中提取核心概念
-2. **查索引** → 读取 [INDEX.md](../INDEX.md)，按标签或文件清单定位
-3. **读取记录** → 读取 `data/*.md` 对应文件
-4. **呈现结果**：
+2. **优先脚本搜索** → 执行 `python references/scripts/search_records.py`（元数据检索）
+3. **兜底查索引** → 若无法执行脚本，读取 [INDEX.md](../INDEX.md) 按标签或文件清单定位
+4. **读取记录** → 读取 `data/*.md` 对应文件
+5. **呈现结果**：
    - ✅ 找到 → 展示内容，询问是否适用
    - ❌ 未找到 → 转入 **网络搜索**
 
 ---
 
 ## 二、搜索策略
+
+### 脚本搜索（推荐）
+优先用脚本做元数据检索（标题/标签/状态/概要）：
+- 按标签：`python references/scripts/search_records.py --tags unity shader`
+- 按关键词：`python references/scripts/search_records.py --keywords 协程 yield`
+- 按状态：`python references/scripts/search_records.py --status ✅`
+- 组合过滤：`python references/scripts/search_records.py --tags unity --keywords renderer --limit 10`
+- 标签盘点：`python references/scripts/search_records.py --list-tags`
+
+> 说明：脚本当前仅做元数据检索；`--deep` 为预留参数，暂未实现全文搜索。
 
 ### 按标签检索（首选）
 在 INDEX.md 的文件清单表格中搜索标签列：
@@ -32,6 +43,7 @@
 
 | 技巧 | 说明 |
 |------|------|
+| **脚本优先** | 优先执行 `search_records.py`，减少读取 INDEX.md 的 token 开销 |
 | **标签过滤** | 在文件清单标签列搜索 `#tag` |
 | **关键词** | 使用核心概念而非整句 |
 | **状态优先** | 优先采纳 ✅ 已验证 / 📘 有效的内容 |

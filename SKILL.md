@@ -42,6 +42,7 @@ license: MIT
 | `data/*.md` | 读/写/新建，删除需确认 |
 | `assets/<record-name>/*` | 读/写/新建（存放记录关联的图片等资源） |
 | `references/INDEX.md` | 读/写（索引需实时更新） |
+| `references/scripts/*.py` | 只读/可执行（用于索引与检索辅助） |
 | `SKILL.md`、`references/` 其他文件 | 只读 |
 | 其他位置 | 禁止 |
 
@@ -61,6 +62,7 @@ license: MIT
 
 **辅助资源**：
 - 需定位文件或按标签检索：[INDEX.md](references/INDEX.md)
+- 需快速检索记录（推荐）：`python references/scripts/search_records.py --help`
 - 需获取记录模板：[templates/record-template.md](references/templates/record-template.md)
 
 ## 记录格式
