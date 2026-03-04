@@ -26,6 +26,11 @@ license: MIT
 
 > **重要**：所有路径均为 **相对于 SKILL.md 所在目录** 的相对路径，与用户工作区无关。
 
+### 系统层与数据层边界（必须区分）
+
+- **数据层（用户知识）**：`data/*.md`，这是查找/引用/展示给用户的唯一知识来源。
+- **系统层（操作规范）**：`SKILL.md` 与 `references/*`，仅用于指导 AI 如何执行流程，不可作为用户知识查询结果直接返回。
+
 ## ⛔ 不可违反的执行规则
 
 1. **必须先读流程再执行**：收到用户请求后，必须先识别意图并读取对应 workflow 文件，禁止凭记忆直接执行。
@@ -33,6 +38,8 @@ license: MIT
 3. **记录/更新必须走完整闭环**：`git pull`（执行前）→ 验证检查 → 写入 `data/` → 更新 `INDEX.md` → `git commit && git push`（执行后）。
 4. **索引维护是完成条件**：新增或修改记录后，未更新 `references/INDEX.md` 视为任务未完成。
 5. **写入前必须验证**：新记录写入或旧记录更新前，必须执行重复检测与正确性检查。
+6. **查找结果来源必须是数据层**：用户发起知识查询时，只能返回 `data/*.md` 中的记录内容；禁止把 `SKILL.md`、`references/workflows/*`、`references/templates/*`、`references/scripts/*` 的内容当作查询结果返回。
+7. **查找采用白名单**：可搜索并可返回的路径只有 `data/*.md`。对其他路径即使命中，也必须按“本地未命中”处理，不得直接返回。
 
 ## 核心规则
 
@@ -44,15 +51,15 @@ license: MIT
 
 **文件命名**：`kebab-case`，自解释，如 `urp-renderer-feature-custom.md`、`csharp-async-pitfalls.md`
 
-**权限**：
-| 路径 | 操作 |
-|------|------|
-| `data/*.md` | 读/写/新建，删除需确认 |
-| `assets/<record-name>/*` | 读/写/新建（存放记录关联的图片等资源） |
-| `references/INDEX.md` | 读/写（索引需实时更新） |
-| `references/scripts/*.py` | 只读/可执行（用于索引与检索辅助） |
-| `SKILL.md`、`references/` 其他文件 | 只读 |
-| 其他位置 | 禁止 |
+**权限与用途**：
+| 路径 | 操作 | 用途 |
+|------|------|------|
+| `data/*.md` | 读/写/新建，删除需确认 | 用户知识记录，可作为查询结果返回 |
+| `assets/<record-name>/*` | 读/写/新建（存放记录关联的图片等资源） | 数据层资源文件，与记录配套使用 |
+| `references/INDEX.md` | 读/写（索引需实时更新） | 系统检索入口，用于定位 `data/*.md` 记录 |
+| `references/scripts/*.py` | 只读/可执行（用于索引与检索辅助） | 系统检索工具，仅辅助在 `data/` 中检索 |
+| `SKILL.md`、`references/` 其他文件 | 只读 | 系统操作规范，不可直接作为查询结果返回 |
+| 其他位置 | 禁止 | 非技能范围，禁止操作 |
 
 **索引维护**：新增或修改记录时，同步更新 `references/INDEX.md` 的文件清单（如有新标签则同步更新标签概览）
 
@@ -64,20 +71,21 @@ license: MIT
 - ❌ 用户问“之前有没有做过”时直接基于记忆回答，不执行本地检索流程。
 - ❌ 使用旧目录结构（如 `data/experiences/`）或在 `data/` 外写记录。
 - ❌ 修改记录后未同步 `references/INDEX.md`，却对用户宣称“已完成”。
+- ❌ 将 `references/` 中的系统操作规范（流程、模板、脚本说明）当作用户知识查询结果返回。
 
 ## 意图识别与路由
 
-当收到用户指令时，必须先基于**语义理解**（而非仅限关键词匹配）识别用户意图。识别时需兼容各类自然语言变体（如口语、模糊描述），并且必须先读取对应的操作流程文件后再执行操作：
+当收到用户指令时，必须先基于**语义理解**（而非仅限关键词匹配）识别用户意图。识别时需兼容各类自然语言变体（如口语、模糊描述），并且必须先读取对应的操作流程文件后再执行操作。若意图为“查找”，返回内容必须来自 `data/*.md`：
 
 | 用户意图 | 语境示例 (支持自然语言泛化) | 路由目标 |
 |---------|-----------|----------|
-| **求助/提问** | 询问历史经验、查找解决方案、"帮我找下"、"记得...吗"、"之前好像遇到过" | [workflows/search.md](references/workflows/search.md) |
+| **求助/提问** | 询问历史经验、查找解决方案、"帮我找下"、"记得...吗"、"之前好像遇到过"（在 `data/` 中检索） | [workflows/search.md](references/workflows/search.md) |
 | **记录/归档** | 请求保存当前结论、整理知识点、"记一下"、"把这个存下来"、"作为经验归档" | [workflows/record.md](references/workflows/record.md) |
 | **修正/反馈** | 指出内容错误、要求更新过时信息、"验证下"、"这个不对"、"信息过期了" | [workflows/validate.md](references/workflows/validate.md) |
 
 **辅助资源**：
-- 需定位文件或按标签检索：[INDEX.md](references/INDEX.md)
-- 需快速检索记录（推荐）：`python references/scripts/search_records.py --help`
+- 需定位 `data/*.md` 记录或按标签检索：[INDEX.md](references/INDEX.md)
+- 需快速检索 `data/*.md` 记录（推荐）：`python references/scripts/search_records.py --help`
 - 需获取记录模板：[templates/record-template.md](references/templates/record-template.md)
 
 ## 记录格式
