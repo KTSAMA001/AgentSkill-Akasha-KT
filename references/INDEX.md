@@ -17,7 +17,7 @@
 
 > 完整元数据（显示名、图标）见 [tag-registry.md](./tag-registry.md)。新增标签时需同时注册。
 
-`#agent-skills` `#ai` `#ai-navigation` `#akasha` `#animation` `#animation-retarget` `#anti-bot` `#architecture` `#arknights` `#astrbot` `#audio` `#behavior-designer` `#bilibili` `#blend-tree` `#brdf` `#bug` `#cicd` `#claude-code` `#collider` `#color-banding` `#color-space` `#compute-shader` `#conventional-commits` `#cook-torrance` `#copilot` `#credential` `#csharp` `#culling` `#custom-editor` `#cyberpunk` `#deployment` `#design` `#dither` `#docker` `#dotnet` `#draw-call` `#ecs` `#editor` `#effect-system` `#effects` `#experience` `#gamma` `#git` `#github-actions` `#gpgpu` `#graphics` `#hdr` `#hlsl` `#idea` `#identity` `#ik` `#knowledge` `#ktsama` `#linear` `#material` `#math` `#mcp` `#meilisearch` `#mvvm` `#nav-mesh` `#npr` `#pat` `#pbr` `#performance` `#physics` `#playwright` `#post-processing` `#python` `#raycast` `#react` `#reference` `#renderer-feature` `#rendering` `#rendering-pipeline` `#retarget-pro` `#root-motion` `#scriptable-object` `#sdf` `#search-api` `#search-engine` `#searxng` `#selenium` `#serp` `#shader` `#shader-variants` `#smart-furniture` `#social` `#srp` `#srp-batcher` `#tools` `#troubleshooting` `#ui` `#unity` `#urp` `#vera` `#vitepress` `#vscode` `#web`
+`#agent-skills` `#ai` `#ai-navigation` `#akasha` `#animation` `#animation-retarget` `#anti-bot` `#architecture` `#arknights` `#astrbot` `#astc` `#audio` `#behavior-designer` `#bilibili` `#blend-tree` `#brdf` `#bug` `#cicd` `#claude-code` `#collider` `#color-banding` `#color-space` `#compute-shader` `#conventional-commits` `#cook-torrance` `#copilot` `#credential` `#csharp` `#culling` `#custom-editor` `#cyberpunk` `#deployment` `#design` `#dither` `#docker` `#dotnet` `#draw-call` `#ecs` `#editor` `#effect-system` `#effects` `#excel` `#experience` `#gamma` `#git` `#github-actions` `#gpgpu` `#graphics` `#hdr` `#hlsl` `#idea` `#identity` `#ik` `#knowledge` `#ktsama` `#linear` `#material` `#math` `#mcp` `#meilisearch` `#memory` `#mvvm` `#nav-mesh` `#npr` `#pat` `#pbr` `#performance` `#physics` `#playwright` `#post-processing` `#python` `#raycast` `#react` `#reference` `#renderer-feature` `#rendering` `#rendering-pipeline` `#retarget-pro` `#root-motion` `#scene` `#scriptable-object` `#sdf` `#search-api` `#search-engine` `#searxng` `#selenium` `#serialization` `#serp` `#shader` `#shader-variants` `#skybox` `#smart-furniture` `#social` `#srp` `#srp-batcher` `#texture` `#tools` `#troubleshooting` `#ui` `#unity` `#urp` `#vera` `#vitepress` `#vr` `#vscode` `#web`
 
 ---
 
@@ -27,6 +27,7 @@
 |------|------|------|------|
 | [agent-skills-spec.md](../data/agent-skills-spec.md) | #ai #knowledge #agent-skills | 📘 有效 | Agent Skills 规范 |
 | [akasha-semantic-search-architecture.md](../data/akasha-semantic-search-architecture.md) | #architecture #ai #mcp #akasha #search-engine #python | 💡 构想中 | 阿卡西记录语义搜索架构设计 |
+| [astc-compression-formula.md](../data/astc-compression-formula.md) | #unity #texture #memory #astc #experience | ✅ 已验证 | ASTC 纹理压缩内存估算公式 |
 | [akasha-visualization-web.md](../data/akasha-visualization-web.md) | #tools #web #reference #akasha | 📘 有效 | 阿卡西记录可视化网站 |
 | [animation-retarget-root-motion-algorithm.md](../data/animation-retarget-root-motion-algorithm.md) | #unity #animation #math #root-motion #animation-retarget #knowledge | 📘 有效 | 3D 动画重定向与根运动算法解析 (Animation Retargeting & Root Motion) |
 | [animation-retarget-technology-unity.md](../data/animation-retarget-technology-unity.md) | #unity #animation #animation-retarget #knowledge #ik | 📘 有效 | 动画重定向技术分析和 Unity 中的应用 |
@@ -55,6 +56,7 @@
 | [docker-vs-native-deployment-file-access.md](../data/docker-vs-native-deployment-file-access.md) | #docker #deployment #tools #experience #ai | ✅ 已验证 | Docker 与原生部署：文件操作需求下的选择 |
 | [dotnet-cross-platform-compile-verify.md](../data/dotnet-cross-platform-compile-verify.md) | #csharp #dotnet #tools #experience | ✅ 已验证 | .NET 跨平台编译环境验证 |
 | [effect-system-code-review.md](../data/effect-system-code-review.md) | #unity #architecture #scriptable-object #effect-system | ✅ 已验证 | EffectSystem 效果系统 - 代码审查与架构分析 |
+| [excel-id-enum-generator.md](../data/excel-id-enum-generator.md) | #unity #tools #excel #experience | ✅ 已验证 | Excel ID 一键导出枚举 |
 | [git-commit-conventions.md](../data/git-commit-conventions.md) | #git #reference #conventional-commits | ✅ 已验证 | Git 团队协作工作流相关经验 |
 | [git-filter-repo-rewrite-history.md](../data/git-filter-repo-rewrite-history.md) | #git #experience #pat #docker #credential | ✅ 已验证 | 使用 git-filter-repo 重写提交历史（清除敏感信息） |
 | [git-https-fail-switch-ssh.md](../data/git-https-fail-switch-ssh.md) | #git #experience #pat #docker #credential | ✅ 已验证 | Git HTTPS 拉取失败，改用 SSH 协议解决 |
@@ -68,24 +70,32 @@
 | [ktsama-bilibili-profile.md](../data/ktsama-bilibili-profile.md) | #social #reference #ktsama #bilibili | 📘 有效 | [KTSAMA的B站主页] |
 | [llm-api-image-url-deserialize-error.md](../data/llm-api-image-url-deserialize-error.md) | #ai #experience #astrbot #bug | ✅ 已解决 | LLM API image_url 字段反序列化错误 - "unknown variant `image_url`, expected `text`" |
 | [macos-git-osxkeychain-path.md](../data/macos-git-osxkeychain-path.md) | #git #experience #pat #docker #credential | ✅ 已验证 | macOS Git osxkeychain Credential Helper 路径问题 {#osxkeychain-path} |
+| [material-unified-management.md](../data/material-unified-management.md) | #unity #shader #material #experience | ✅ 已验证 | 角色/怪物材质统一管理 |
 | [mcp-protocol-agent-dev.md](../data/mcp-protocol-agent-dev.md) | #ai #experience #mcp | ✅ 已验证 | MCP 协议与 Agent 服务开发经验 |
 | [monster-siren-web-analysis.md](../data/monster-siren-web-analysis.md) | #web #design #knowledge #arknights #react #cyberpunk | 📘 有效 | 塞壬唱片官网 (Monster Siren) 深度技术与设计分析 |
 | [npr-rendering-outline.md](../data/npr-rendering-outline.md) | #shader #unity #experience #npr #renderer-feature #post-processing | ✅ 已验证 | 非真实感渲染 (Non-Photorealistic Rendering) 相关经验 |
 | [pbr-brdf-theory.md](../data/pbr-brdf-theory.md) | #graphics #knowledge #pbr #brdf #cook-torrance | 📘 有效 | 基于物理的渲染（Physically Based Rendering）相关原理与概念 |
 | [pbr-custom-shader-urp.md](../data/pbr-custom-shader-urp.md) | #shader #unity #experience #pbr #urp #hlsl | ✅ 已验证 | 基于物理的渲染 (Physically Based Rendering) 相关经验 |
+| [physics-update-timing.md](../data/physics-update-timing.md) | #unity #physics #experience | ✅ 已验证 | 物理碰撞更新时机 |
 | [python-web-scraping-antibot.md](../data/python-web-scraping-antibot.md) | #python #experience #playwright #selenium #anti-bot | ✅ 已验证 | 网页抓取与反爬虫绕过 |
+| [render-queue-design.md](../data/render-queue-design.md) | #unity #rendering #performance #experience | ✅ 已验证 | 渲染队列设计策略 |
 | [rendering-pipeline-overview.md](../data/rendering-pipeline-overview.md) | #graphics #knowledge #rendering-pipeline #draw-call | 📘 有效 | 渲染管线知识 |
 | [safari-svg-favicon-compat.md](../data/safari-svg-favicon-compat.md) | #tools #web #experience #vitepress | ⚠️ 待验证 | Safari SVG Favicon 兼容性 |
+| [scene-asset-loading.md](../data/scene-asset-loading.md) | #unity #performance #scene #experience | ✅ 已验证 | 场景引用资源加载机制 |
+| [serialize-reference-usage.md](../data/serialize-reference-usage.md) | #unity #csharp #serialization #experience | ✅ 已验证 | SerializeReference 多态序列化 |
 | [sdf-signed-distance-field.md](../data/sdf-signed-distance-field.md) | #graphics #knowledge #sdf | 📘 有效 | SDF（有向距离场）知识 |
 | [search-api-services.md](../data/search-api-services.md) | #tools #knowledge #search-api #serp | ✅ 已验证 | 搜索 API 服务对比 |
 | [self-hosted-search-engines.md](../data/self-hosted-search-engines.md) | #tools #knowledge #search-engine #meilisearch #searxng | ✅ 已验证 | 自搭建搜索引擎技术 |
 | [shader-effects-techniques.md](../data/shader-effects-techniques.md) | #shader #experience #effects | ✅ 已验证 | 具体特效实现相关经验 |
 | [shader-optimization-hlsl.md](../data/shader-optimization-hlsl.md) | #shader #experience #hlsl #performance | ✅ 已验证 | Shader 性能优化相关经验 |
 | [shader-variants-compile.md](../data/shader-variants-compile.md) | #shader #experience #hlsl #shader-variants | ✅ 已验证 | HLSL 着色器语言相关经验 |
+| [srp-batcher-optimization.md](../data/srp-batcher-optimization.md) | #unity #srp-batcher #performance #experience | ✅ 已验证 | SRP Batcher 场景优化要点 |
+| [srp-batcher-parameter-overhead.md](../data/srp-batcher-parameter-overhead.md) | #unity #srp-batcher #performance #experience | ✅ 已验证 | SRP Batcher 参数开销分析 |
 | [unity-ai-navigation.md](../data/unity-ai-navigation.md) | #unity #knowledge #nav-mesh #ai-navigation | 📘 有效 | Unity AI Navigation 知识 |
 | [unity-animation-scripting-notes.md](../data/unity-animation-scripting-notes.md) | #unity #animation #csharp #performance #knowledge #root-motion | ✅ 已验证 | Unity 动画与脚本开发核心知识清单 |
 | [unity-blendtree-audio-sync.md](../data/unity-blendtree-audio-sync.md) | #unity #knowledge #experience #animation #blend-tree #audio | ✅ 已验证 | Unity BlendTree 下动画驱动音效同步（脚步声等）常见方案汇总 |
 | [unity-cross-project-compilation-check.md](../data/unity-cross-project-compilation-check.md) | #unity #editor #csharp #experience | ✅ 已验证 | Unity 跨项目功能迁移的编译验证经验 |
+| [unity-dynamicres-foveated-conflict.md](../data/unity-dynamicres-foveated-conflict.md) | #unity #vr #bug #experience | ⚠️ 待验证 | Unity 动态分辨率与注视点渲染冲突 |
 | [unity-editor-api.md](../data/unity-editor-api.md) | #unity #knowledge #editor #custom-editor | 📘 有效 | Unity Editor 开发知识 |
 | [unity-framework-architecture.md](../data/unity-framework-architecture.md) | #unity #csharp #experience #architecture | ⚠️ 待验证 | Unity 中的 C# 脚本编程相关经验 |
 | [unity-generic-animation-import-config.md](../data/unity-generic-animation-import-config.md) | #unity #animation #root-motion #experience | ⚠️ 待验证 | Unity Generic 动画导入配置完整流程：解决滑步、UI 消失与双重位移 |
@@ -95,6 +105,7 @@
 | [unity-physics-system.md](../data/unity-physics-system.md) | #unity #knowledge #physics #collider #raycast | 📘 有效 | Unity 物理系统知识 |
 | [unity-shader-variants-tool.md](../data/unity-shader-variants-tool.md) | #unity #shader #experience #shader-variants #editor | ✅ 已验证 | Unity 中 Shader 相关经验 |
 | [urp-grabpass-alternative.md](../data/urp-grabpass-alternative.md) | #shader #unity #experience #urp #srp-batcher #renderer-feature | ✅ 已验证 | URP 中 GrabPass 替代方案 (GrabColor RenderFeature) {#grab-color-renderfeature} |
+| [urp-skybox-notes.md](../data/urp-skybox-notes.md) | #unity #urp #shader #skybox #experience | ✅ 已验证 | URP SkyBox 注意事项 |
 | [urp-renderer-feature-guide.md](../data/urp-renderer-feature-guide.md) | #shader #unity #experience #urp #srp-batcher #renderer-feature | ✅ 已验证 | URP Renderer Feature 开发要点 |
 | [urp-renderfeature-runtime-toggle.md](../data/urp-renderfeature-runtime-toggle.md) | #shader #unity #experience #urp #srp-batcher #renderer-feature | ✅ 已验证 | RenderFeature 运行时开关控制 {#renderfeature-toggler} |
 | [urp-srp-architecture.md](../data/urp-srp-architecture.md) | #unity #graphics #knowledge #urp #srp | 📘 有效 | URP / SRP 知识 |
