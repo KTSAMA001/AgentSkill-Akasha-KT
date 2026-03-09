@@ -16,7 +16,7 @@
 
 **根本原因**：
 1. Docker 容器重建后，`~/.gitconfig`（Git 全局配置）丢失
-2. 凭证文件若保存在挂载卷中（如 `/AstrBot/data/.git-credentials`）会幸存
+2. 凭证文件若保存在挂载卷中会幸存
 3. 但 Git 没有配置指向该凭证文件，导致无法找到认证信息
 
 **解决方案/结论**：
@@ -25,7 +25,8 @@
 
 ```bash
 # 配置 Git 使用挂载卷中的凭证文件
-git config --global credential.helper "store --file /AstrBot/data/.git-credentials"
+# <挂载路径> 替换为你的实际挂载路径
+git config --global credential.helper "store --file <挂载路径>/.git-credentials"
 ```
 
 ### 完整排查流程
@@ -39,12 +40,12 @@ ls -la /.dockerenv
 git config --global --list
 git config --global credential.helper
 
-# 3. 检查凭证文件是否存在
-ls -la /AstrBot/data/.git-credentials
-cat /AstrBot/data/.git-credentials
+# 3. 检查凭证文件是否存在（替换为你的挂载路径）
+ls -la <挂载路径>/.git-credentials
+cat <挂载路径>/.git-credentials
 
 # 4. 配置凭证 helper
-git config --global credential.helper "store --file /AstrBot/data/.git-credentials"
+git config --global credential.helper "store --file <挂载路径>/.git-credentials"
 
 # 5. 验证配置
 git config --global --list | grep credential
@@ -57,27 +58,24 @@ git push origin main
 
 ### 自动化方案（推荐）
 
-将配置命令添加到容器启动脚本中，实现自动配置：
+将 `.gitconfig` 文件保存到挂载卷，容器启动时重建软链接：
 
 ```bash
-# 在容器启动脚本（如 entrypoint.sh）中添加
-if [ -f /AstrBot/data/.git-credentials ]; then
-    git config --global credential.helper "store --file /AstrBot/data/.git-credentials"
-    echo "✅ Git 凭证配置完成"
-fi
+# 在容器启动脚本中添加
+ln -sf <挂载路径>/.gitconfig ~/.gitconfig
 ```
 
 **关键点**：
 
-- ✅ 凭证文件必须保存在**挂载卷**中（容器外持久化）
+- ✅ 凭证文件和 `.gitconfig` 必须保存在**挂载卷**中（容器外持久化）
 - ✅ 凭证文件权限建议 `600`（仅所有者可读写）
 - ✅ 远程 URL 应为干净的 HTTPS 格式（不含 token）
-- ⚠️ 容器重建后需重新配置 `credential.helper`
+- ✅ 推荐：`.gitconfig` 也放到挂载卷，用软链接指向它
 - ⚠️ 若凭证文件也不存在，需重新执行一次 `git push` 生成
 
 **验证记录**：
 
-- [2026-02-22] AstrBot Docker 容器内实践验证成功
+- [2026-02-22] Docker 容器内实践验证成功
   - Pull 测试：✅ 正常
   - Push 测试：✅ 正常
   - 警告：`unable to get credential storage lock` 不影响功能
