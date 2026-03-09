@@ -3,6 +3,25 @@
 > 创建时间：2026-03-09
 > 标签：#OpenClaw #Docker #插件 #持久化 #运维
 
+## 前提条件
+
+本方案**仅在以下条件下有效**：
+
+| 条件 | 说明 |
+|------|------|
+| OpenClaw 部署在 Docker 容器中 | 容器重建会丢失内置路径的内容 |
+| 工作空间已挂载到宿主机 | `~/.openclaw` 目录通过 volume 挂载到宿主机硬盘 |
+
+**典型 docker-compose.yml 配置**：
+```yaml
+volumes:
+  - /path/to/openclaw-data:/home/node/.openclaw  # 工作空间挂载
+```
+
+**不适用场景**：
+- 原生部署（非 Docker）
+- Docker 但未挂载工作空间（容器重建后所有数据丢失）
+
 ## 问题描述
 
 Docker 容器重建后，OpenClaw 插件丢失依赖，导致通道无法加载。
@@ -15,7 +34,7 @@ feishu failed to load: Cannot find module '@larksuiteoapi/node-sdk'
 ## 根因
 
 - `/app/extensions/` 是容器内置路径，容器重建会丢失
-- 插件的 `node_modules` 没有持久化
+- 插件的 `node_modules` 没有持久化到挂载的工作空间
 
 ## 完整解决方案
 
