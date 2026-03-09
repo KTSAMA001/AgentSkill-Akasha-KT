@@ -15,8 +15,13 @@
 **典型 docker-compose.yml 配置**：
 ```yaml
 volumes:
-  - /path/to/openclaw-data:/home/node/.openclaw  # 工作空间挂载
+  - /path/to/openclaw-data:/home/node/.openclaw  # OpenClaw 工作空间挂载
+  - /path/to/astrbot-data:/astrbot_data          # AstrBot 数据挂载（含 Git 凭证）
 ```
+
+**Git 凭证文件位置**：`/astrbot_data/.git-credentials`
+
+**自动配置脚本**：`~/.openclaw/workspace/scripts/git-credential-setup.sh`
 
 **不适用场景**：
 - 原生部署（非 Docker）
@@ -89,6 +94,17 @@ gateway action="config.patch" raw='{"plugins":{"load":{"paths":["~/.openclaw/ext
 - 任何需要持久化的 OpenClaw 插件
 - 自定义插件开发
 - 依赖第三方库的插件（如飞书的 `@larksuiteoapi/node-sdk`）
+
+## 相关配置
+
+**Git 凭证持久化**（容器重建后自动配置）：
+```bash
+# 运行配置脚本
+bash ~/.openclaw/workspace/scripts/git-credential-setup.sh
+
+# 凭证文件位置（AstrBot 挂载目录）
+/astrbot_data/.git-credentials
+```
 
 ## 注意事项
 
