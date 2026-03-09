@@ -48,6 +48,7 @@
 | [claude-code-comprehensive-guide.md](../data/claude-code-comprehensive-guide.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 完整指南 |
 | [claude-code-fork-session.md](../data/claude-code-fork-session.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code Fork 会话功能 (Branching Conversation) |
 | [claude-code-slash-commands.md](../data/claude-code-slash-commands.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 完整斜杠命令列表 (Slash Commands) |
+| [claude-code-latest-features-2026.md](../data/claude-code-latest-features-2026.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 最新功能 (2026-03)：Plugin System、Agent Teams、1M Context、Adaptive Thinking |
 | [color-banding-dither.md](../data/color-banding-dither.md) | #graphics #knowledge #color-banding #dither #hdr | 📘 有效 | 色带（Color Banding）与抖动（Dithering）知识 |
 | [color-space-gamma-linear.md](../data/color-space-gamma-linear.md) | #graphics #knowledge #color-space #gamma #linear | 📘 有效 | 色彩空间知识 |
 | [compute-shader-gpu-parallel.md](../data/compute-shader-gpu-parallel.md) | #graphics #shader #knowledge #compute-shader #gpgpu | 📘 有效 | GPU 通用计算 (GPGPU) 相关原理与概念 |
