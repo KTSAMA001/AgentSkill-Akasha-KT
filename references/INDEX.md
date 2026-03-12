@@ -79,6 +79,7 @@
 | [pbr-brdf-theory.md](../data/pbr-brdf-theory.md) | #graphics #knowledge #pbr #brdf #cook-torrance | 📘 有效 | 基于物理的渲染（Physically Based Rendering）相关原理与概念 |
 | [pbr-custom-shader-urp.md](../data/pbr-custom-shader-urp.md) | #shader #unity #experience #pbr #urp #hlsl | ✅ 已验证 | 基于物理的渲染 (Physically Based Rendering) 相关经验 |
 | [physics-update-timing.md](../data/physics-update-timing.md) | #unity #physics #experience | ✅ 已验证 | 物理碰撞更新时机 |
+| [prefab-variant-generator-v4-toolkit.md](../data/prefab-variant-generator-v4-toolkit.md) | #unity #tools #architecture #custom-editor #reference | ✅ 已验证 | PrefabVariantGeneratorV4 工具本体说明（定位、执行模型、端口机制、扩展规范） |
 | [python-web-scraping-antibot.md](../data/python-web-scraping-antibot.md) | #python #experience #playwright #selenium #anti-bot | ✅ 已验证 | 网页抓取与反爬虫绕过 |
 | [render-queue-design.md](../data/render-queue-design.md) | #unity #rendering #performance #experience | ✅ 已验证 | 渲染队列设计策略 |
 | [rendering-pipeline-overview.md](../data/rendering-pipeline-overview.md) | #graphics #knowledge #rendering-pipeline #draw-call | 📘 有效 | 渲染管线知识 |
