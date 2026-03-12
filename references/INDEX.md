@@ -124,6 +124,5 @@
 | [web-archive-mcp-blueprint.md](../data/web-archive-mcp-blueprint.md) | #mcp #python #playwright #architecture #web #tools | ✅ 已验证 | Web Archive MCP — 实现蓝图 |
 | [windows-system-path-missing-app-detection-failure.md](../data/windows-system-path-missing-app-detection-failure.md) | #vscode #tools #experience #claude-code #git #bug | ✅ 已验证 | Windows 系统 PATH 缺失关键目录导致工具检测失败（以 Claude Code 为案例） |
 | [pyinstaller-windows-exe-packaging.md](../data/pyinstaller-windows-exe-packaging.md) | #python #tools #experience #cross-platform | ✅ 已验证 | PyInstaller 打包 Python 为 Windows EXE 完整指南 |
-| [3dsmax-skin-normal-fbx-export.md](../data/3dsmax-skin-normal-fbx-export.md) | #unity #3dsmax #fbx #experience #troubleshooting | ⚠️ 待验证 | 3ds Max 蒙皮后法线异常问题解决方案 |
-| [feishu-operations-skill.md](../data/feishu-operations-skill.md) | #tools #feishu #ai #experience #openclaw | ✅ 已验证 | OpenClaw 飞书操作技能 - 文档/文件/权限 |
+| [3dsmax-skin-normal-fbx-export.md](../data/3dsmax-skin-normal-fbx-export.md) | #unity #3dsmax #fbx #experience #troubleshooting | ⚠️ 待验证 | 3ds Max 蒙皮后法线异常问题调查（待美术验证） |
 | [claude-mem-smart-tools-windows-fix.md](../data/claude-mem-smart-tools-windows-fix.md) | #tools #windows #mcp #experience #bug | ✅ 已验证 | ClaudeMem Smart Tools Windows 修复（tree-sitter 参数兼容） |
