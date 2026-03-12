@@ -125,4 +125,4 @@
 | [windows-system-path-missing-app-detection-failure.md](../data/windows-system-path-missing-app-detection-failure.md) | #vscode #tools #experience #claude-code #git #bug | ✅ 已验证 | Windows 系统 PATH 缺失关键目录导致工具检测失败（以 Claude Code 为案例） |
 | [pyinstaller-windows-exe-packaging.md](../data/pyinstaller-windows-exe-packaging.md) | #python #tools #experience #cross-platform | ✅ 已验证 | PyInstaller 打包 Python 为 Windows EXE 完整指南 |
 | [3dsmax-skin-normal-fbx-export.md](../data/3dsmax-skin-normal-fbx-export.md) | #unity #3dsmax #fbx #experience #troubleshooting | ⚠️ 待验证 | 3ds Max 蒙皮后法线异常问题调查（待美术验证） |
-| [claude-mem-smart-tools-windows-fix.md](../data/claude-mem-smart-tools-windows-fix.md) | #tools #windows #mcp #experience #bug | ✅ 已验证 | ClaudeMem Smart Tools Windows 修复（tree-sitter 参数兼容） |
+| [claude-mem-smart-tools-windows-fix.md](../data/claude-mem-smart-tools-windows-fix.md) | #tools #windows #mcp #experience #bug | ✅ 已验证 | ClaudeMem MCP 工具修复（Smart工具 + Memory工具 inputSchema） |
