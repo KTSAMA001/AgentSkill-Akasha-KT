@@ -1,7 +1,7 @@
 # Markdown to Word 转换器实现详解
 
 **标签**：#python #tools #experience #docx #markdown
-**来源**：实践总结 - D:\AI\md_to_word_converter 项目
+**来源**：实践总结
 **收录日期**：2026-03-13
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐
@@ -251,5 +251,5 @@ converter = MarkdownToWordConverter(options={
 
 ### 验证记录
 
-- [2026-03-13] 初次记录，基于 D:\AI\md_to_word_converter 项目源码分析
-- [2026-03-13] 实际转换 `PrefabVariantGeneratorV4-使用手册.md` 成功，输出 99KB docx 文件
+- [2026-03-13] 初次记录，基于项目源码分析
+- [2026-03-13] 实际转换测试成功，输出 99KB docx 文件
