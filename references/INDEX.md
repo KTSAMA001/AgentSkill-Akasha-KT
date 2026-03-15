@@ -129,4 +129,4 @@
 | [python-docx-emoji-font-solution.md](../data/python-docx-emoji-font-solution.md) | #python #docx #experience #font #unicode | ✅ 已验证 | python-docx Emoji 显示问题解决方案（w:hAnsi 字体属性） |
 | [3dsmax-skin-normal-fbx-export.md](../data/3dsmax-skin-normal-fbx-export.md) | #unity #3dsmax #fbx #experience #troubleshooting | ⚠️ 待验证 | 3ds Max 蒙皮后法线异常问题调查（待美术验证） |
 | [claude-mem-smart-tools-windows-fix.md](../data/claude-mem-smart-tools-windows-fix.md) | #tools #windows #mcp #experience #bug | ✅ 已验证 | ClaudeMem MCP 工具修复（Smart工具 + Memory工具 inputSchema） |
-| [test-workflow-verification.md](../data/test-workflow-verification.md) | #测试 #workflow | ✅ 已验证 | 阿卡西记录工作流测试（git push 验证） |
+| [test-workflow-verification.md](../data/test-workflow-verification.md) | #akasha #tools #测试 #experience | ✅ 已验证 | 阿卡西记录工作流测试（git push 验证） |

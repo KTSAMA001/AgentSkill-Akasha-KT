@@ -1,45 +1,68 @@
 # 阿卡西记录工作流测试
 
-标签 | 来源/收录/更新日期 | 状态 | 可信度 | 适用版本
-`#测试` `#workflow` | 收录:2026-03-15 | ✅ 已验证 | 💯% | 2026-03
+**标签**：#akasha #tools #测试 #experience
+**来源**：实践总结
+**收录日期**：2026-03-15
+**来源日期**：2026-03-15
+**更新日期**：2026-03-15
+**状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐⭐ (官方流程)
 
-## 概要
+### 概要
 
-验证阿卡西记录的 git push 流程是否正常工作。这是一条测试记录，用于确认记录创建 → 索引更新 → 提交推送的完整闭环。
+验证阿卡西记录的完整记录流程是否正常工作，包括 git pull → 验证检查 → 写入 data/ → 更新 INDEX.md → git commit & push。
 
-## 内容
+### 内容
 
-### 测试目的
+#### 测试目的
 
-1. 验证 `git pull` 是否能正常同步远程变更
-2. 验证新记录写入 `data/` 目录是否正常
-3. 验证 `references/INDEX.md` 索引更新是否正常
-4. 验证 `git commit && git push` 是否能正常推送到远程仓库
+验证阿卡西记录 skill 的记录流程（workflows/record.md）是否能正确执行。
 
-### 测试结果
+#### 流程步骤
 
-| 步骤 | 状态 |
-|------|------|
-| git pull | ✅ 成功 |
-| 写入 data/ | 待验证 |
-| 更新 INDEX.md | 待验证 |
-| git commit | 待验证 |
-| git push | 待验证 |
+| 步骤 | 操作 | 状态 |
+|------|------|------|
+| 1 | git pull origin main | ✅ |
+| 2 | 读取 workflows/validate.md | ✅ |
+| 3 | 读取 templates/record-template.md | ✅ |
+| 4 | 执行重复检测 | ✅ |
+| 5 | 按模板格式写入 data/ | ✅ |
+| 6 | 更新 references/INDEX.md | ✅ |
+| 7 | git commit | ✅ |
+| 8 | git push origin main | ✅ |
 
-## 关键代码
+#### 验证结果
+
+- ✅ git pull 正常同步
+- ✅ data/ 目录写入成功
+- ✅ INDEX.md 更新成功
+- ✅ git push 推送成功
+
+### 关键代码
+
+```bash
+# 完整流程命令
+cd /path/to/akasha-kt
+git pull origin main
+# ... 验证和写入 ...
+git add data/xxx.md references/INDEX.md
+git commit -m "docs: add [文件名]"
+git push origin main
+```
+
+### 参考链接
+
+- [记录流程](../references/workflows/record.md)
+- [验证流程](../references/workflows/validate.md)
+- [记录模板](../references/templates/record-template.md)
+
+### 相关记录
 
 无
 
-## 参考链接
+### 验证记录
 
-无
+- [2026-03-15] 初次记录，来源：实践验证
+- [2026-03-15] 流程验证通过，git push 成功
 
-## 相关记录
-
-无
-
-## 验证记录
-
-| 日期 | 验证人 | 结果 |
-|------|--------|------|
-| 2026-03-15 | 璃 | 创建测试记录 |
+---
