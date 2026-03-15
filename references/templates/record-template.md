@@ -65,9 +65,9 @@
 
 | 维度 | 必选 | 说明 | 预定义标签 |
 |------|------|------|-----------|
-| **领域** | ✅ ≥1 | 技术/学科大类 | `#unity` `#shader` `#graphics` `#csharp` `#python` `#git` `#ai` `#web` `#design` `#tools` `#vscode` `#social` |
-| **类型** | ✅ 1个 | 记录的性质 | `#experience` `#knowledge` `#idea` `#reference` `#architecture` |
-| **专项** | 可选 | 具体技术/主题 | `#urp` `#hdrp` `#hlsl` `#react` `#mcp` `#physics` `#animation` `#editor` `#ui` `#performance` `#linq` `#async` `#cyberpunk` `#arknights` ... |
+| **领域** | ✅ ≥1 | 技术/学科大类 | 参见 [tag-registry.md](../tag-registry.md)，维度=domain |
+| **类型** | ✅ 1个 | 记录的性质 | 参见 [tag-registry.md](../tag-registry.md)，维度=type |
+| **专项** | 可选 | 具体技术/主题 | 参见 [tag-registry.md](../tag-registry.md)，维度=specialty |
 | **自定义** | 可选 | 描述性标签 | 按需自由创建，不受限制 |
 
 ### 标签使用规则
