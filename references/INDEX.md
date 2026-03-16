@@ -25,6 +25,7 @@
 
 | 文件 | 标签 | 状态 | 简述 |
 |------|------|------|------|
+| [unity-mcp-ai-editor-bridge.md](../data/unity-mcp-ai-editor-bridge.md) | #unity #mcp #tools #claude-code #ai #knowledge | ⚠️ 待验证 | Unity MCP AI 驱动编辑器操控（7100★，35+工具） |
 | [agent-skills-spec.md](../data/agent-skills-spec.md) | #ai #knowledge #agent-skills | 📘 有效 | Agent Skills 规范 |
 | [akasha-semantic-search-architecture.md](../data/akasha-semantic-search-architecture.md) | #architecture #ai #mcp #akasha #search-engine #python | 💡 构想中 | 阿卡西记录语义搜索架构设计 |
 | [astc-compression-formula.md](../data/astc-compression-formula.md) | #unity #texture #memory #astc #experience | ✅ 已验证 | ASTC 纹理压缩内存估算公式 |
