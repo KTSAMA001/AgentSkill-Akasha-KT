@@ -130,3 +130,4 @@
 | [python-docx-emoji-font-solution.md](../data/python-docx-emoji-font-solution.md) | #python #docx #experience #font #unicode | ✅ 已验证 | python-docx Emoji 显示问题解决方案（w:hAnsi 字体属性） |
 | [3dsmax-skin-normal-fbx-export.md](../data/3dsmax-skin-normal-fbx-export.md) | #unity #3dsmax #fbx #experience #troubleshooting | ⚠️ 待验证 | 3ds Max 蒙皮后法线异常问题调查（待美术验证） |
 | [claude-mem-smart-tools-windows-fix.md](../data/claude-mem-smart-tools-windows-fix.md) | #tools #windows #mcp #experience #bug | ✅ 已验证 | ClaudeMem MCP 工具修复（Smart工具 + Memory工具 inputSchema） |
+| [unity-strict-variant-matching-enum-keyword.md](../data/unity-strict-variant-matching-enum-keyword.md) | #unity #shader #shader-variants #urp #experience #bug #vr | ✅ 已验证 | 严格变体匹配下 Shader Graph Enum 关键字报 variant not found（引擎已知行为，Won't Fix） |
