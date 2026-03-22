@@ -1,4 +1,4 @@
-# Unity 2022.3 → Unity 6.3 LTS 完整迁移指南
+# Unity 6.3 LTS 完整迁移指南
 
 **标签**：#unity #urp #shader #knowledge #reference #rendering #dots #migration
 **来源**：官方文档 + 社区搜索整理 / 2026-03
@@ -6,11 +6,11 @@
 **来源日期**：2025-2026
 **状态**：⚠️待验证
 **可信度**：⭐⭐⭐⭐（官方文档 + 社区验证）
-**适用版本**：Unity 2022.3.62f3 → Unity 6000.3.x LTS
+**适用版本**：Unity 6000.3.x LTS
 
 ### 概要
 
-从 Unity 2022.3.62f3 升级到 Unity 6.3 LTS (6000.3.x) 的完整参考。Unity 6 经历了 6.0→6.1→6.2→6.3 四个迭代，6.3 是当前推荐 LTS（支持至 2027 年 12 月）。本文覆盖各版本累计变化、Breaking Changes、新功能、已知问题和迁移路线图。
+Unity 6.3 LTS (6000.3.x) 完整参考，覆盖 6.0→6.1→6.2→6.3 各版本累计变化、Breaking Changes、新功能速查、TA/客户端影响评估、已知问题和 5 阶段迁移路线图。6.3 是当前推荐 LTS（支持至 2027 年 12 月）。
 
 ---
 
@@ -79,7 +79,7 @@
 
 ---
 
-### 三、Breaking Changes（2022.3 → 6.3 累计）
+### 三、Breaking Changes（6.0 → 6.3 累计）
 
 #### 已移除
 
@@ -118,7 +118,7 @@ Object.FindAnyObjectByType<T>()
 
 #### 平台工具版本
 
-| 工具 | 2022.3 | 6.3 |
+| 工具 | 旧版 | 6.3 |
 |------|--------|-----|
 | Gradle | 7.x | **8.4** |
 | Android Gradle Plugin | 7.x | **8.3.0** |
@@ -200,7 +200,7 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 
 #### 4.4 Adaptive Probe Volumes
 
-| 对比项 | Light Probe Groups (2022.3) | Adaptive Probe Volumes (6.x) |
+| 对比项 | Light Probe Groups（旧版） | Adaptive Probe Volumes（6.x） |
 |--------|---------------------------|---------------------------|
 | 采样精度 | Per-Object | **Per-Pixel** |
 | 放置方式 | 手动 | 自动 |
@@ -296,7 +296,7 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 
 ---
 
-### 七、迁移路线图（2022.3.62f3 → 6.3 LTS）
+### 七、迁移路线图（迁移至 6.3 LTS）
 
 #### Phase 1：升级准备（1-2 天）
 1. 备份项目，创建迁移分支
