@@ -18,7 +18,7 @@
 
 | 版本 | 格式 | 状态 | 最新补丁 | 支持期限 |
 |------|------|------|---------|---------|
-| **Unity 2022.3** | 2022.3.x | 3年 LTS | 2022.3.73f1 | 2026 年结束 |
+| **Unity 2022.3** | 2022.3.x | 3年 LTS | 2022.3.73f1 | 标准支持已结束，补丁仍发布 |
 | Unity 6.0 | 6000.0.x | LTS（即将结束） | 6000.0.71f1 | 至 2026-10 |
 | Unity 6.1 | 6000.1.x | **已停止支持** | 6000.1.2f1 | 已结束 |
 | Unity 6.2 | 6000.2.x | **已停止支持** | 6000.2.15f1 | 已结束 |
@@ -35,8 +35,8 @@
 
 | 模块 | 变化 |
 |------|------|
-| 渲染 | Render Graph 引入（默认关闭）、GPU Resident Drawer、WebGPU 实验性 |
-| ECS | Entities 1.0 发布 |
+| 渲染 | Render Graph 引入（默认开启）、GPU Resident Drawer、WebGPU 实验性 |
+| ECS | Entities 1.0 独立包可用（不绑定 6.0，可在旧版使用） |
 | 网络 | Multiplayer Play Mode |
 | AI | Unity Sentis（Barracuda 继任者） |
 | 平台 | WebGPU 实验性、Gradle 8.4、JDK 17 |
@@ -45,7 +45,7 @@
 
 | 模块 | 变化 |
 |------|------|
-| 渲染 | **URP Deferred+**（无限光源）、**DX12 成为 Windows 默认**、VRS、双三次 Lightmap 采样 |
+| 渲染 | **URP Forward+**（延迟平铺多光源）、**DX12 成为 Windows 默认**、VRS、双三次 Lightmap 采样 |
 | Shader | Shader Variants 精简（减少构建时间） |
 | 编辑器 | 菜单结构重组、脚本创建可选保存位置 |
 | WebGPU | 计算着色器、间接渲染、GPU Skinning、VFX Graph |
@@ -137,11 +137,11 @@ Object.FindAnyObjectByType<T>()
 
 | 版本 | 状态 |
 |------|------|
-| 6.0 | 默认**关闭**（Compatibility Mode） |
-| 6.1+ | 推荐启用，Compatibility Mode 不再是生产路径 |
+| 6.0 | 默认**开启**，可通过 Compatibility Mode 手动关闭（用于过渡旧代码） |
+| 6.1+ | 推荐保持启用，Compatibility Mode 不再是生产路径 |
 | 6.3 | URP/HDRP 共享统一 Render Graph 基础，新增 Render Graph Viewer（支持设备连接） |
 
-**升级策略**：6.0 兼容模式可跑旧代码，6.1+ 必须迁移。6.3 提供 Render Graph Viewer 可在移动端实时调试。
+**升级策略**：6.0 开启 Render Graph 但提供 Compatibility Mode 兼容旧代码。6.1+ Compatibility Mode 不再作为生产路径。6.3 提供 Render Graph Viewer 可在移动端实时调试。
 
 ```csharp
 // ❌ 旧 — Execute()
@@ -178,15 +178,15 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 | `cmd.ReleaseTemporaryRT()` | 不需要 |
 | `cameraColorTarget` | `cameraColorTargetHandle` |
 
-#### 4.2 URP Deferred+ — 6.1 新增
+#### 4.2 URP Forward+ — 6.1 新增
 
-| 特性 | Forward+ | Deferred+ |
-|------|----------|-----------|
-| 光源数量 | 有限（性能下降） | **无限** |
-| 透明物体 | 支持 | Forward+ 回退 |
+| 特性 | Forward（旧） | Forward+（6.1+） |
+|------|---------------|------------------|
+| 光源数量 | 有限（性能下降） | **大幅提升**（延迟平铺） |
+| 透明物体 | 支持 | 支持 |
 | 光照贴图 | 支持 | 支持 |
-| GPU Resident Drawer | 支持 | 支持 |
-| 适用场景 | 移动端、VR | 多光源室内/开放世界 |
+| GPU Resident Drawer | 不支持 | 支持 |
+| 适用场景 | 移动端低端 | 移动端中高端、VR、多光源场景 |
 
 **DX12 注意**：6.1 起 DX12 是 Windows 新项目默认图形 API。
 
@@ -251,11 +251,11 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 
 | 变更项 | 影响度 | 紧急度 | 工作量 | 涉及版本 |
 |--------|--------|--------|--------|---------|
-| Render Graph 迁移 | 🔴 高 | P0 | 大 | 6.0+ |
+| Render Graph 迁移 | 🔴 高 | P0 | 大 | 6.0+（默认开启） |
 | Shader Graph 升级（模板/动态分支） | 🔴 高 | P0 | 中 | 6.2-6.3 |
 | DX12 默认 | 🔴 高 | P0 | 小 | 6.1+ |
 | Cinemachine 3 | 🔴 高 | P1 | 中 | 6.5 起 |
-| URP Deferred+ | 🔴 高 | P1 | 小 | 6.1+ |
+| URP Forward+ | 🔴 高 | P1 | 小 | 6.1+ |
 | GPU Resident Drawer | 🔴 高 | P1 | 小 | 6.0+ |
 | APV 替换探针 | 🔴 高 | P1 | 中 | 6.0+ |
 | Enlighten 移除 | 🔴 高 | P0 | 小 | 6.0+ |
@@ -321,7 +321,7 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 6. 测试全部后处理效果
 
 #### Phase 4：新功能接入（按需，1-2 周）
-1. 评估 URP Deferred+（多光源场景）
+1. 评估 URP Forward+（多光源场景）
 2. 评估 GRD（Forward+/Deferred+ + Compute Shader）
 3. 评估 APV 替换 Light Probes
 4. 评估 Mesh LOD 自动生成（减少美术手动 LOD 工作）
@@ -346,7 +346,7 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 | GPU Resident Drawer | 6.0+ | GPU 驱动剔除+绘制 |
 | Multiplayer Play Mode | 6.0+ | 编辑器多客户端联机 |
 | WebGPU | 6.0+ | 下一代网页图形 API |
-| URP Deferred+ | 6.1+ | 无限光源 |
+| URP Forward+ | 6.1+ | 延迟平铺多光源 |
 | Shader Variants 精简 | 6.1+ | 减少构建时间 |
 | Unity AI 套件 | 6.2+ | AI 助手 + 生成器 |
 | Mesh LOD 自动生成 | 6.2+ | 导入时自动生成 |
@@ -383,3 +383,9 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 
 - [2026-03-23] 初次记录，来源：官方文档 + 搜索引擎收集，未经实践验证
 - [2026-03-23] 修正：基于 6.3 LTS（6000.3.x）重写，覆盖 6.0→6.1→6.2→6.3 完整变化历程
+- [2026-03-23] 验证修正（交叉验证 22 条事实）：
+  - ✅ 修正：Render Graph 在 6.0 默认**开启**（非关闭），Compatibility Mode 是手动关闭选项
+  - ✅ 修正：6.1 新增的是 **URP Forward+**（非 Deferred+），延迟平铺多光源
+  - ✅ 修正：Entities 1.0 是独立包，不绑定 Unity 6.0 发布
+  - ✅ 修正：2022.3 标准支持已于 2025-05 结束，补丁仍发布（非"2026 年结束"）
+  - ✅ 确认：6000.4.0f1 于 2026-03-18 发布（版本现状表已包含）
