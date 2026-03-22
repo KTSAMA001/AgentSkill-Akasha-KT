@@ -131,4 +131,4 @@
 | [3dsmax-skin-normal-fbx-export.md](../data/3dsmax-skin-normal-fbx-export.md) | #unity #3dsmax #fbx #experience #troubleshooting | ⚠️ 待验证 | 3ds Max 蒙皮后法线异常问题调查（待美术验证） |
 | [claude-mem-smart-tools-windows-fix.md](../data/claude-mem-smart-tools-windows-fix.md) | #tools #windows #mcp #experience #bug | ✅ 已验证 | ClaudeMem MCP 工具修复（Smart工具 + Memory工具 inputSchema） |
 | [unity-strict-variant-matching-enum-keyword.md](../data/unity-strict-variant-matching-enum-keyword.md) | #unity #shader #shader-variants #urp #experience #bug #vr | ✅ 已验证 | 严格变体匹配下 Shader Graph Enum 关键字报 variant not found（引擎已知行为，Won't Fix） |
-| [unity6-migration-guide.md](../data/unity6-migration-guide.md) | #unity #urp #shader #knowledge #reference #rendering #dots #migration | ⚠️ 待验证 | Unity 2022.3 → Unity 6.3 LTS 迁移完整指南：6.0-6.3 各版本累计变化、Breaking Changes、新功能速查、TA 影响评估、5 阶段迁移路线图 |
+| [unity6-migration-guide.md](../data/unity6-migration-guide.md) | #unity #urp #shader #knowledge #reference #rendering #dots #migration | ⚠️ 待验证 | Unity 2022.3 → 6.3 LTS 迁移指南：6.0→6.1→6.2→6.3 各版本累计变化、Breaking Changes、新功能速查、TA 影响评估、5 阶段迁移路线图 |
