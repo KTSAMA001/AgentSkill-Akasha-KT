@@ -1,11 +1,12 @@
 # Unity 2022.3 → 6.3 LTS 完整迁移指南
 
-**标签**：#unity #urp #shader #knowledge #reference #rendering #dots #migration
-**来源**：官方文档 + 社区搜索整理 / 2026-03
+**标签**：#unity #urp #shader #knowledge #reference #rendering #ecs
+**来源**：官方文档逐项校验 + Unity 发布页 + 社区讨论（问题项单独标注） / 2026-03
 **收录日期**：2026-03-23
 **来源日期**：2025-2026
-**状态**：⚠️待验证
-**可信度**：⭐⭐⭐⭐（官方文档 + 社区验证）
+**更新日期**：2026-03-23
+**状态**：📘 有效
+**可信度**：⭐⭐⭐⭐⭐（官方文档逐项校验，社区问题已降级标注）
 **适用版本**：Unity 2022.3 → Unity 6000.3.x LTS
 
 ### 概要
@@ -39,13 +40,13 @@
 | ECS | Entities 1.0 独立包可用（不绑定 6.0，可在旧版使用） |
 | 网络 | Multiplayer Play Mode |
 | AI | Unity Sentis（Barracuda 继任者） |
-| 平台 | WebGPU 实验性、Gradle 8.4、JDK 17 |
+| 平台 | WebGPU 实验性、Android 工具链升级（JDK 17 / 新 Gradle 体系） |
 
 #### 6.1 — 图形跃迁
 
 | 模块 | 变化 |
 |------|------|
-| 渲染 | **URP Forward+**（延迟平铺多光源）、**DX12 成为 Windows 默认**、VRS、双三次 Lightmap 采样 |
+| 渲染 | **Deferred+ 渲染路径**、**DX12 成为 Windows 默认**、VRS、双三次 Lightmap 采样 |
 | Shader | Shader Variants 精简（减少构建时间） |
 | 编辑器 | 菜单结构重组、脚本创建可选保存位置 |
 | WebGPU | 计算着色器、间接渲染、GPU Skinning、VFX Graph |
@@ -69,11 +70,11 @@
 | 2D | **Box2D v3 集成**（多线程性能提升）、3D 网格渲染为 2D |
 | 渲染 | **URP/HDRP 共享 Render Graph 基础**、自定义地形着色器、Per-Renderer User Value、Bloom 过滤选项 |
 | 光照 | **GPU Lightmapper 默认启用**、xAtlas Lightmap 打包、反射探针旋转、UnifiedRayTracing API |
-| 动画 | Legacy Animation 性能提升 30%、`Animator.ResetControllerState` |
+| 动画 | Legacy Animation 性能提升最高可达 30%、`Animator.ResetControllerState` |
 | 音频 | **可脚本化音频管线**（Burst 编译 C# 音频处理单元） |
 | UI | UI Test Framework、USS Filter（模糊/灰度）、内置 Vector Graphics（SVG） |
 | 无障碍 | 桌面原生屏幕阅读器支持 |
-| 编辑器 | 工具栏自定义、新版 Hierarchy（Preview）、Search LMDB 后端、深度链接、Package Manager 签名验证 |
+| 编辑器 | 工具栏自定义、新版 Hierarchy（Preview）、Search LMDB 后端、Package Manager 签名验证 |
 | 平台 | **Android 最低版本提升至 7.1 (API 25)**、UnityWebRequest HTTP/2 默认、Web IL2CPP 优化 |
 | XR | On-tile 后处理、自动视口动态分辨率 |
 
@@ -86,9 +87,7 @@
 | 功能 | 版本 | 替代方案 |
 |------|------|----------|
 | Enlighten Baked GI | 6.0 | Progressive Lightmapper |
-| Auto Generate Lighting | 6.0 | 手动 Bake / `Lightmapping.BakeAsync()` |
-| Ambient Probe 自动烘焙 | 6.0 | 手动 Generate Lighting |
-| Cinemachine 2 | 6.5 起 | Cinemachine 3（API 完全重写） |
+| URP Compatibility Mode | 6.3 | 迁移到 URP Render Graph；6.3 仅可用 `URP_COMPATIBILITY_MODE` 临时转换，不应作为正式发布路径 |
 | Magic Leap XR | 6.3 后 | 仅限现有项目 |
 | Android < 7.1 | 6.3 | 最低 API 提升至 25 |
 
@@ -120,14 +119,14 @@ Object.FindAnyObjectByType<T>()
 
 | 工具 | 2022.3 | 6.3 |
 |------|--------|-----|
-| Gradle | 7.x | **8.4** |
-| Android Gradle Plugin | 7.x | **8.3.0** |
-| SDK Build Tools | 33.x | **34.0.0+** |
+| Gradle | 7.x | **8.13** |
+| Android Gradle Plugin | 7.x | **8.10.0** |
+| SDK Build Tools | 34.0.0 | **36.0.0** |
 | JDK | 11 | **17** |
-| .NET | .NET Standard 2.1 (Mono) | .NET 6 Framework (Mono) |
-| C# | C# 9 | C# 9 (部分) |
+| API Compatibility Level | .NET Standard 2.1 / .NET Framework 4.x | .NET Standard 2.1 / .NET Framework 4.8 |
+| C# | C# 9 | C# 9.0 |
 
-> ⚠️ 6.3 仍是 Mono/.NET 6，**不是 .NET 8**。.NET 8 预计 6.4+。
+> ⚠️ Unity 6.3 官方文档强调的是 **API Compatibility Level**（`.NET Standard 2.1` / `.NET Framework 4.8`），不要把它直接等同为“项目已经升级到 .NET 6 / .NET 8 运行时”。
 
 ---
 
@@ -138,10 +137,10 @@ Object.FindAnyObjectByType<T>()
 | 版本 | 状态 |
 |------|------|
 | 6.0 | 默认**开启**，可通过 Compatibility Mode 手动关闭（用于过渡旧代码） |
-| 6.1+ | 推荐保持启用，Compatibility Mode 不再是生产路径 |
-| 6.3 | URP/HDRP 共享统一 Render Graph 基础，新增 Render Graph Viewer（支持设备连接） |
+| 6.1-6.2 | 推荐保持启用，Compatibility Mode 仅适合作为短期过渡路径 |
+| 6.3 | URP/HDRP 共享统一 Render Graph 基础，新增 Render Graph Viewer（支持设备连接）；Compatibility Mode 默认已移除 |
 
-**升级策略**：6.0 开启 Render Graph 但提供 Compatibility Mode 兼容旧代码。6.1+ Compatibility Mode 不再作为生产路径。6.3 提供 Render Graph Viewer 可在移动端实时调试。
+**升级策略**：6.0 默认启用 Render Graph，旧项目可暂借 Compatibility Mode 过渡。到 6.3 时，Compatibility Mode 默认已移除；如果仍在迁移，只能通过 `URP_COMPATIBILITY_MODE` 脚本宏临时带回转换代码，而且 6.4 将彻底不可用。因此，目标版本若是 6.3，应该把 Render Graph 迁移视为必做项。
 
 ```csharp
 // ❌ 旧 — Execute()
@@ -178,17 +177,11 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 | `cmd.ReleaseTemporaryRT()` | 不需要 |
 | `cameraColorTarget` | `cameraColorTargetHandle` |
 
-#### 4.2 URP Forward+ — 6.1 新增
+#### 4.2 URP Deferred+ — 6.1 重点变化
 
-| 特性 | Forward（旧） | Forward+（6.1+） |
-|------|---------------|------------------|
-| 光源数量 | 有限（性能下降） | **大幅提升**（延迟平铺） |
-| 透明物体 | 支持 | 支持 |
-| 光照贴图 | 支持 | 支持 |
-| GPU Resident Drawer | 不支持 | 支持 |
-| 适用场景 | 移动端低端 | 移动端中高端、VR、多光源场景 |
+Unity 6.1 官方新增的是 **Deferred+ 渲染路径**，而不是“Forward+ 首次引入”。Deferred+ 对不透明物体提供更高的多光源扩展能力，并在透明与 forward-only opaque pass 中使用 Forward+ 路径。
 
-**DX12 注意**：6.1 起 DX12 是 Windows 新项目默认图形 API。
+**DX12 注意**：6.1 起 DX12 是 Windows 默认 Auto Graphics API。升级旧项目时，Unity 会保留旧项目的图形 API 设置；只有在重新启用 Auto Graphics API 或新建项目时，才会直接采用 DX12 默认值。
 
 #### 4.3 GPU Resident Drawer
 
@@ -226,7 +219,7 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 
 | 版本 | 变化 |
 |------|------|
-| 6.3 | Legacy Animation 性能提升 **30%** |
+| 6.3 | Legacy Animation 性能提升**最高可达** 30% |
 | 6.3 | `Animator.ResetControllerState` 简化对象池化 |
 | 路线图 | 新动画系统计划中（HPC# 底层，预计 6.5-7.0） |
 
@@ -251,11 +244,10 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 
 | 变更项 | 影响度 | 紧急度 | 工作量 | 涉及版本 |
 |--------|--------|--------|--------|---------|
-| Render Graph 迁移 | 🔴 高 | P0 | 大 | 6.0+（默认开启） |
+| Render Graph 迁移 | 🔴 高 | P0 | 大 | 6.0+（默认开启，6.3 已移除 Compatibility Mode） |
 | Shader Graph 升级（模板/动态分支） | 🔴 高 | P0 | 中 | 6.2-6.3 |
 | DX12 默认 | 🔴 高 | P0 | 小 | 6.1+ |
-| Cinemachine 3 | 🔴 高 | P1 | 中 | 6.5 起 |
-| URP Forward+ | 🔴 高 | P1 | 小 | 6.1+ |
+| URP Deferred+ / Forward+ 路径 | 🔴 高 | P1 | 小 | 6.1+ |
 | GPU Resident Drawer | 🔴 高 | P1 | 小 | 6.0+ |
 | APV 替换探针 | 🔴 高 | P1 | 中 | 6.0+ |
 | Enlighten 移除 | 🔴 高 | P0 | 小 | 6.0+ |
@@ -272,27 +264,27 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 
 ---
 
-### 六、已知问题
+### 六、已知风险与验证结论
 
-#### 🔴 严重
+> 本节按“证据等级”区分，避免把社区讨论误写成官方已确认事实。
 
-| 问题 | 影响版本 | 说明 |
+#### 官方已确认
+
+| 项目 | 影响版本 | 结论 |
 |------|---------|------|
-| 编辑器内存泄漏 | 6000.x 多版本 | Terrain 操作可能冻结 |
-| DX12 兼容性 | 6.1+（默认） | 部分项目/插件崩溃 |
-| Vulkan + Render Graph 崩溃 | 6000.0.25/.32 | 特定版本组合 |
-| 物理性能退化 | 6000.x | Trigger 事件异常频繁 |
-| VFX Graph 损坏 | 6.51+ | 旧版 VFX 可能完全损坏 |
-| Shader Graph 编译失败 | 6.x | 第三方着色器兼容性差 |
+| URP Compatibility Mode 移除 | 6.3 | 官方升级指南明确说明已移除；6.3 目标项目必须完成 Render Graph 迁移 |
+| Android 最低版本提升 | 6.3 | 官方 Android 要求文档确认最低支持 Android 7.1 / API 25 |
+| UnityWebRequest 默认 HTTP/2 | 6.3 | 官方 6.3 新功能页确认 Android/Windows/macOS 等平台默认使用 HTTP/2 |
+| Developer Data Framework 默认启用 | 6.2+ 新项目 | 官方 6.2 新功能页确认新项目默认启用诊断数据收集 |
 
-#### 🟡 中等
+#### 社区观察，需项目实测
 
-| 问题 | 说明 |
-|------|------|
-| Build 后 Shader 失效 | Editor 正常但 Build 异常 |
-| GRD 构建时间增长 | 编译所有 BRG shader 变体 |
-| Android 兼容性 | GRD 在部分设备不稳定 |
-| Developer Data Framework | 6.2+ 新项目默认启用遥测收集 |
+| 项目 | 影响版本 | 结论 |
+|------|---------|------|
+| DX12 兼容性风险 | 6.1+ | 官方确认 DX12 成为默认图形 API；社区有多起崩溃/兼容性反馈，升级时应保留回退到 DX11/Vulkan 的验证路径 |
+| 物理性能回归 / Trigger 频繁 | 6000.x | 社区存在多起回归反馈，但缺少统一的官方问题单可直接引用，需结合项目 Profiler 实测 |
+| Shader Graph / 第三方 Shader 兼容性 | 6.x | 社区有编译失败、构建后表现不一致等报告；第三方 shader 包升级前必须单独回归 |
+| GRD 构建时间增长 | 6.x | 官方功能特性与社区经验都提示会增加相关 shader 变体/构建成本，需在目标平台做收益评估 |
 
 ---
 
@@ -303,17 +295,17 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 2. 全局搜索替换废弃 API（`FindObjectsOfType` → `FindObjectsByType`）
 3. 检查所有 Asset Store 包的 Unity 6 兼容性声明
 4. 替换渲染管线属性标记
-5. 评估 Cinemachine 使用情况（6.5 前需迁移到 CM3）
+5. 列出所有自定义 URP Render Feature / Render Pass，提前评估 Render Graph 迁移成本
 
 #### Phase 2：基础升级（2-5 天）
 1. 升级到 6000.3.x 最新补丁
 2. 修复编译错误（重点关注第三方包）
 3. 替换 Enlighten → Progressive/GPU Lightmapper
-4. 验证渲染管线兼容模式正常工作
+4. 确认项目不依赖 URP Compatibility Mode；若仍依赖，先在 6.0-6.2 过渡版本完成迁移
 5. 验证 Android 最低 API 25（影响目标设备）
 
 #### Phase 3：渲染管线迁移（1-2 周）
-1. 启用 Render Graph（关闭 Compatibility Mode）
+1. 完成 Render Graph 迁移（6.3 已不再支持常规 Compatibility Mode）
 2. 重写所有自定义 Render Feature / Render Pass
 3. 迁移 `RenderTargetHandle` → `RTHandle`
 4. 利用 Shader Graph 6.3 新功能（模板、动态分支、Per-Renderer User Value）
@@ -321,12 +313,11 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 6. 测试全部后处理效果
 
 #### Phase 4：新功能接入（按需，1-2 周）
-1. 评估 URP Forward+（多光源场景）
+1. 评估 URP Deferred+ / Forward+ 路径（多光源场景）
 2. 评估 GRD（Forward+/Deferred+ + Compute Shader）
 3. 评估 APV 替换 Light Probes
 4. 评估 Mesh LOD 自动生成（减少美术手动 LOD 工作）
-5. 迁移 Cinemachine 2 → 3（6.5 截止前）
-6. 评估 Per-Renderer User Value 减少材质变体
+5. 评估 Per-Renderer User Value 减少材质变体
 
 #### Phase 5：高级优化（按需）
 1. Box2D v3 2D 物理评估
@@ -346,7 +337,7 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 | GPU Resident Drawer | 6.0+ | GPU 驱动剔除+绘制 |
 | Multiplayer Play Mode | 6.0+ | 编辑器多客户端联机 |
 | WebGPU | 6.0+ | 下一代网页图形 API |
-| URP Forward+ | 6.1+ | 延迟平铺多光源 |
+| URP Deferred+ | 6.1+ | 官方新增渲染路径；透明与部分通道使用 Forward+ |
 | Shader Variants 精简 | 6.1+ | 减少构建时间 |
 | Unity AI 套件 | 6.2+ | AI 助手 + 生成器 |
 | Mesh LOD 自动生成 | 6.2+ | 导入时自动生成 |
@@ -366,16 +357,16 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 ### 参考链接
 
 - [Unity 6 升级指南](https://docs.unity3d.com/6000.3/Documentation/Manual/UpgradeGuideUnity6.html) — 官方迁移文档
-- [Unity 6.3 新功能](https://docs.unity3d.com/6000.3/Documentation/Manual/WhatsNewUnity6.html) — 6.3 更新日志
-- [Unity 6.1 新功能](https://docs.unity3d.com/6000.1/Documentation/Manual/WhatsNewUnity6_1.html) — 6.1 更新日志
-- [Unity 6.2 新功能](https://docs.unity3d.com/6000.2/Documentation/Manual/WhatsNewUnity6_2.html) — 6.2 更新日志
+- [Unity 6.3 新功能](https://docs.unity3d.com/6000.3/Documentation/Manual/WhatsNewUnity63.html) — 6.3 更新日志
+- [Unity 6.1 新功能](https://docs.unity3d.com/6000.1/Documentation/Manual/WhatsNewUnity61.html) — 6.1 更新日志
+- [Unity 6.2 新功能](https://docs.unity3d.com/6000.3/Documentation/Manual/WhatsNewUnity62.html) — 6.2 更新日志
 - [URP 升级指南](https://docs.unity3d.com/6000.0/Documentation/Manual/urp/upgrade-guide-unity-6.html) — URP 迁移
-- [Render Graph Viewer](https://docs.unity3d.com/6000.3/Documentation/Manual/render-graph-debugger.html) — 6.3 设备端调试
+- [Render Graph Viewer](https://docs.unity3d.com/6000.3/Documentation/Manual/urp/render-graph-view.html) — 6.3 设备端调试
 
 ### 相关记录
 
-- [自定义 PBR BRDF 实现](./pbr-custom-brdf-implementation.md) — 渲染管线相关
-- [URP Renderer Feature 开发经验](./urp-renderer-feature-custom.md) — 需迁移的代码模式
+- [URP 自定义 PBR Shader 实现](./pbr-custom-shader-urp.md) — 渲染管线与材质实现相关
+- [URP Renderer Feature 指南](./urp-renderer-feature-guide.md) — 需迁移的代码模式
 - [CBUFFER 与 SRP Batcher 合批机制](./cbuffer-srp-batcher-mechanism.md) — 仍适用
 - [Shader 性能优化](./shader-optimization-hlsl.md) — 参考策略
 
@@ -385,7 +376,13 @@ public override void RecordRenderGraph(RenderGraph renderGraph,
 - [2026-03-23] 修正：基于 6.3 LTS（6000.3.x）重写，覆盖 6.0→6.1→6.2→6.3 完整变化历程
 - [2026-03-23] 验证修正（交叉验证 22 条事实）：
   - ✅ 修正：Render Graph 在 6.0 默认**开启**（非关闭），Compatibility Mode 是手动关闭选项
-  - ✅ 修正：6.1 新增的是 **URP Forward+**（非 Deferred+），延迟平铺多光源
+  - ✅ 修正：6.1 应表述为 **Deferred+ 渲染路径**；Forward+ 在其中承担透明与 forward-only opaque pass
   - ✅ 修正：Entities 1.0 是独立包，不绑定 Unity 6.0 发布
   - ✅ 修正：2022.3 标准支持已于 2025-05 结束，补丁仍发布（非"2026 年结束"）
   - ✅ 确认：6000.4.0f1 于 2026-03-18 发布（版本现状表已包含）
+  - ✅ 修正：6.3 的 URP Compatibility Mode 默认已移除，不能再把它当作正式迁移路径
+  - ✅ 修正：6.3 Android 工具链应以官方依赖文档为准（Gradle 8.13 / AGP 8.10.0 / SDK Build Tools 36.0.0 / JDK 17）
+  - ✅ 修正：`.NET` 表述改为 API Compatibility Level，避免误写为“.NET 6 Framework”
+  - ✅ 修正：替换 4 条失效或错误的官方链接（6.3/6.1/6.2/Render Graph Viewer）
+  - ✅ 修正：替换 2 条失效相关记录引用
+  - ✅ 修正：将“已知问题”改为按证据等级记录，未再把社区讨论直接写成官方结论
