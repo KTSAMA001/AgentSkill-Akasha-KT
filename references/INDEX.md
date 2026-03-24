@@ -33,6 +33,7 @@
 | [animation-retarget-root-motion-algorithm.md](../data/animation-retarget-root-motion-algorithm.md) | #unity #animation #math #root-motion #animation-retarget #knowledge | 📘 有效 | 3D 动画重定向与根运动算法解析 (Animation Retargeting & Root Motion) |
 | [animation-retarget-technology-unity.md](../data/animation-retarget-technology-unity.md) | #unity #animation #animation-retarget #knowledge #ik | 📘 有效 | 动画重定向技术分析和 Unity 中的应用 |
 | [arknights-ui-industrial-style.md](../data/arknights-ui-industrial-style.md) | #design #knowledge #arknights #ui | 📘 有效 | 明日方舟工业风 UI：网点、网格、切角、噪点等视觉元素总结 |
+| [amplify-shader-editor-architecture.md](../data/amplify-shader-editor-architecture.md) | #unity #shader #graphics #knowledge #architecture #urp | ✅ 已验证 | Amplify Shader Editor 的架构、序列化协议、模板系统、多 Pass 机制与 Shader Function 实现解析 |
 | [ase-shader-bakery-integration.md](../data/ase-shader-bakery-integration.md) | #shader #unity #experience #urp #srp-batcher #renderer-feature | ✅ 已验证 | ASE Shader 架构与 Bakery 光照集成最佳实践 |
 | [astrbot-mcp-service-config.md](../data/astrbot-mcp-service-config.md) | #ai #experience #mcp #astrbot | ✅ 已验证 | AstrBot 集成 MCP 服务经验 |
 | [astrbot-messages-param-error.md](../data/astrbot-messages-param-error.md) | #ai #experience #astrbot #bug | ⚠️ 部分解决（v4.13.2 仍有报告） | AstrBot "messages 参数非法" 错误 |
