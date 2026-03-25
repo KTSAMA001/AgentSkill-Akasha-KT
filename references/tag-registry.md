@@ -55,6 +55,7 @@
 | #experience | 经验 | book | type | 实践经验类记录 |
 | #gamma | Gamma | shader | specialty | Gamma 校正 |
 | #git | Git | code | domain | Git 版本控制 |
+| #hook | Hook | wrench | specialty | Claude Code Hooks 机制 |
 | #github-actions | GitHub Actions | network | specialty | GitHub CI/CD |
 | #gpgpu | GPGPU | shader | specialty | GPU 通用计算 |
 | #graphics | 图形学 | shader | domain | 计算机图形学 |
