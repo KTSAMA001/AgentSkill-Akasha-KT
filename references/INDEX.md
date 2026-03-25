@@ -47,6 +47,7 @@
 | [cbuffer-srp-batcher-mechanism.md](../data/cbuffer-srp-batcher-mechanism.md) | #shader #unity #experience #urp #srp-batcher #renderer-feature | ✅ 已验证 | CBUFFER 与 SRP Batcher 合批机制 |
 | [cicd-vitepress-deploy.md](../data/cicd-vitepress-deploy.md) | #tools #experience #cicd #vitepress #github-actions | ✅ 已验证 | 持续集成/持续部署相关经验 |
 | [claude-code-backend-models.md](../data/claude-code-backend-models.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 作为 Agent 框架接入多种模型 (LLM Gateway) |
+| [claude-code-2.1-feature-inventory.md](../data/claude-code-2.1-feature-inventory.md) | #claude-code #reference #tools #ai | ✅ 已验证 | Claude Code 2.1.81 完整功能清单（15 大能力域） |
 | [claude-code-comprehensive-guide.md](../data/claude-code-comprehensive-guide.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 完整指南 |
 | [claude-code-fork-session.md](../data/claude-code-fork-session.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code Fork 会话功能 (Branching Conversation) |
 | [claude-code-slash-commands.md](../data/claude-code-slash-commands.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 完整斜杠命令列表 (Slash Commands) |
