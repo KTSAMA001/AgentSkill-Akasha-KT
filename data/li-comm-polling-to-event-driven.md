@@ -1,91 +1,129 @@
-# 双璃通信从轮询到事件驱动优化
+# 双璃通信架构演进（v3.2 轮询 → v4.0 纯 API）
 
-**标签**：#openclaw #macos #docker #experience #architecture
+**标签**：#openclaw #astrbot #docker #architecture #experience
 **来源**：实践总结
 **收录日期**：2026-03-26
-**来源日期**：2026-03-26
+**来源日期**：2026-03-22 ~ 2026-03-26
+**更新日期**：2026-03-26
 **状态**：✅已验证
 **可信度**：⭐⭐⭐⭐
-**适用版本**：OpenClaw 2026.3.13, AstrBot openclaw_bridge v3.3
+**适用版本**：OpenClaw 2026.3.13+, AstrBot openclaw_bridge v4.0
 
 ### 概要
 
-将 OpenClaw 与 AstrBot（星璃）之间的双璃通信从高频轮询模式改为 macOS launchd WatchPaths + 文件 mtime watchdog 的事件驱动模式，token 消耗降低约 96%，响应延迟从最长 30 分钟降至约 1 秒。
+OpenClaw（璃）与 AstrBot（星璃）之间的双璃通信经过三次架构迭代：v3.2 高频轮询 → v3.3 事件驱动 → v4.0 纯 API 直连。最终方案零文件队列、零 cron 轮询、零 watchdog，双向通过 HTTP API 实时投递。
 
 ### 内容
 
-#### 问题背景
+#### 架构演进时间线
 
-双璃通信 v3.2 使用轮询模式：
-- **璃侧**：cron 每 2 分钟扫描 inbox（后改为 30 分钟），每次触发完整会话消耗 ~30k tokens
-- **星璃侧**：bridge 插件每 3 秒完整扫描收件箱目录（空 30 次后降频到 30s）
-- **HTTP 通知**：星璃 POST 到 `/v1/responses`，每次创建完整 agent turn
+| 版本 | 日期 | 方案 | 问题 |
+|------|------|------|------|
+| v3.2 | 2026-03-22 | 双向写 JSON 文件 + cron 轮询 + ACK 文件确认 | token 消耗极高（~100万+/小时） |
+| v3.3 | 2026-03-26 | macOS launchd WatchPaths + watchdog mtime + event_queue 注入 | 文件队列仍是中间层，代码复杂 |
+| **v4.0** | **2026-03-26** | **双向 HTTP API 直连，零文件** | **无** ✅ |
 
-导致每小时 token 消耗超过 100 万，大部分浪费在空轮询上。
+#### v4.0 最终架构
 
-#### 解决方案
+```
+星璃 → 璃：  send_to_openclaw 工具
+              → POST OpenClaw /v1/responses API（HTTP 直连，即时投递）
+              → 璃实时收到并处理
 
-**璃侧（macOS 主机）**：
-
-使用 `launchd WatchPaths` 监听 `inbox/openclaw/` 目录，新文件写入时触发 `li-inbox-watcher.sh`，脚本通过 `openclaw system event --mode now` 唤醒主会话处理。launchd 配置文件：
-
-```xml
-<!-- ~/Library/LaunchAgents/ai.openclaw.li-inbox-watcher.plist -->
-<key>WatchPaths</key>
-<array>
-    <string>/Users/ktsama/docker/shared/li-comm/inbox/openclaw/</string>
-</array>
-<key>QueueDirectories</key>
-<array>
-    <string>/Users/ktsama/docker/shared/li-comm/inbox/openclaw/</string>
-</array>
+璃 → 星璃：   li-inbox.py --send "消息"
+              → POST AstrBot /api/v1/chat API（SSE 流式响应）
+              → 星璃 LLM 实时处理并回复
 ```
 
-> `QueueDirectories` 确保同一目录 30 秒内的多次变化只触发一次，防止突发消息风暴。
+**核心设计原则**：
+- **零中间层**：不经过文件系统，不经过 cron 轮询，不经过 watchdog
+- **即时投递**：HTTP 请求发出即投递，无需等待扫描周期
+- **极简代码**：bridge 插件 ~100 行，li-inbox.py ~60 行
+- **无需确认机制**：API 本身返回成功/失败，不依赖 ACK 文件
 
-**星璃侧（Docker 容器内）**：
+#### 关键配置
 
-将 bridge 插件 v3.2 升级到 v3.3：
-- 高频轮询（3s 扫描）→ **watchdog mtime 监听**（2s 检查目录 mtime，不读文件内容，几乎零开销）
-- 新增 **5 分钟兜底轮询**（防止 watchdog 丢失事件）
-- HTTP 通知从 POST `/v1/responses`（完整 agent turn）→ POST `/v1/system/events`（轻量 system event）
+**OpenClaw 侧**：
+- 启用 `/v1/responses` endpoint：`gateway.http.endpoints.responses.enabled: true`
+- Gateway 端口：`18789`（默认 WebSocket 端口，同时承载 HTTP API）
+- 认证：`Authorization: Bearer <gateway.auth.token>`
 
-**心跳优化**（附加）：
-- `lightContext: true`：心跳只注入 HEARTBEAT.md，不注入全部 bootstrap 文件
-- 双璃 inbox 扫描 cron 已禁用（事件驱动替代）
+**AstrBot 侧**：
+- Open API 端点：`/api/v1/chat`（POST，返回 SSE 流）
+- 认证：`Authorization: Bearer <open_api_token>`
+- 通信 session：`username=openclaw-li`，`session_id=li-comm`
 
-#### 效果对比
+**Docker 网络访问**：
+- 容器内访问宿主机 OpenClaw：`http://host.docker.internal:18789`
+- 宿主机访问容器内 AstrBot：`http://localhost:6185`（端口映射）
 
-| 指标 | v3.2 轮询 | v3.3 事件驱动 |
-|------|----------|--------------|
-| 璃侧 inbox 扫描频率 | 每 30 分钟（cron） | 仅新消息时触发 |
-| 星璃侧扫描频率 | 每 3 秒 | 每 2 秒 mtime 检查（极轻量） |
-| HTTP 通知 token 开销 | 完整 agent turn | 轻量 system event |
-| 璃侧响应延迟 | 最长 30 分钟 | ~1 秒（实测） |
-| 星璃侧兜底 | 无 | 每 5 分钟完整扫描 |
-| 预估 token 消耗/小时 | ~100 万+ | ~6-10 万 |
+#### 星璃侧 bridge 插件（v4.0）
 
-#### 关键文件
+核心变更：
+- `send_to_openclaw` 工具：从「写文件 + HTTP 通知 + ACK」简化为「单次 POST /v1/responses」
+- 移除 `_watch_loop`、`_fallback_loop`、`_check_inbox`、`_deliver`（event_queue 注入）
+- 移除 `check_openclaw_messages` 工具（不再需要检查文件收件箱）
+- 保留 `openclaw_test` 命令（改为 API 连通性测试）
 
-| 文件 | 位置 | 作用 |
-|------|------|------|
-| launchd plist | `~/Library/LaunchAgents/ai.openclaw.li-inbox-watcher.plist` | macOS 文件事件监听 |
-| watcher 脚本 | `~/.openclaw/workspace/scripts/li-inbox-watcher.sh` | 事件触发后调用 system event |
-| bridge 插件 | `/AstrBot/data/plugins/openclaw_bridge/main.py` | 星璃侧通信插件 v3.3 |
-| 心跳配置 | `~/.openclaw/openclaw.json` → `heartbeat.lightContext` | 减少心跳 token |
+#### 璃侧通信脚本（v4.0）
 
-#### 注意事项
+`li-inbox.py` 简化为两个命令：
+- `--send "消息"`：POST AstrBot `/api/v1/chat`，读取 SSE 流提取 message_id
+- `--test`：发送测试消息验证连通性
 
-- `launchd WatchPaths` 需要 `QueueDirectories` 配合，否则高并发写入会触发多次
-- Docker 容器内无法使用 macOS FSEvents，只能用 Python mtime 轮询（已实现）
-- 星璃的兜底轮询（5 分钟）不可省略，防止 watchdog 进程异常退出导致消息丢失
-- 星璃 HTTP 通知 API 从 `/v1/responses` 改为 `/v1/system/events`，前者是 OpenAI 兼容 API 会创建完整 agent turn
+注意：AstrBot `/api/v1/chat` 返回 SSE 流而非 JSON，需要逐行解析 `data: {...}` 行。
+
+#### 已清理的旧组件
+
+| 组件 | 说明 |
+|------|------|
+| launchd plist | macOS WatchPaths 文件事件监听 |
+| watcher 脚本 | 事件触发后的 shell 脚本 |
+| inbox 扫描 cron | 璃侧定时检查收件箱 |
+| 归档文件 | `/shared/li-comm/archive/` 下的旧 JSON |
+| ACK 文件 | `/shared/li-comm/ack/` 下的确认记录 |
+| 旧 inbox 文件 | `inbox-openclaw.md`、`inbox-astrbot.md` |
+
+### 关键代码
+
+**星璃 send_to_openclaw 核心逻辑**：
+```python
+async with aiohttp.ClientSession() as session:
+    async with session.post(
+        "http://host.docker.internal:18789/v1/responses",
+        json={"model": "<model>", "input": content},
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer <token>"
+        },
+        timeout=aiohttp.ClientTimeout(total=15)
+    ) as resp:
+        if resp.status == 200:
+            return "✅ 消息已通过API发送"
+```
+
+**璃→星璃 SSE 流解析**：
+```python
+# AstrBot 返回 SSE 流，提取 message_id 后退出
+with urllib.request.urlopen(req, timeout=60) as resp:
+    for line in resp:
+        line = line.decode("utf-8").strip()
+        if line.startswith("data: ") and '"type": "complete"' in line:
+            break
+```
 
 ### 参考链接
 
-- [launchd WatchPaths 文档](https://developer.apple.com/documentation/launchd) - macOS 原生事件监听
+- [OpenAI Responses API 规范](https://www.open-responses.com/) - OpenClaw /v1/responses 兼容此规范
+
+### 相关记录
+
+- 无
 
 ### 验证记录
 
-- [2026-03-26] 初次记录，来源：从 v3.2 轮询迁移到 v3.3 事件驱动的完整实践
-- [2026-03-26] 端到端测试通过：launchd WatchPaths 触发 → system event 发出 → 璃处理消息 → 星璃 watchdog 检测 → 正常通信
+- [2026-03-22] 初次记录：v3.2 轮询模式建立
+- [2026-03-26] 更新 v3.3：事件驱动优化，launchd WatchPaths + watchdog mtime
+- [2026-03-26] 重大更新 v4.0：纯 API 直连，移除全部文件队列机制。双向端到端测试通过（Docker 内 → 宿主机 OpenClaw /v1/responses 返回 200，宿主机 → AstrBot /api/v1/chat SSE 流正常）
+
+---
