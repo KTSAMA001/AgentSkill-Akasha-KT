@@ -111,3 +111,4 @@
 | #vitepress | VitePress | network | domain | VitePress 静态站点 |
 | #vscode | VS Code | monitor | specialty | VS Code 编辑器 |
 | #web | Web 开发 | network | domain | Web 前端开发 |
+| #macos | macOS | monitor | domain | macOS 系统与工具链 |
