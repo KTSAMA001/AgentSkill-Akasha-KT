@@ -112,3 +112,5 @@
 | #vscode | VS Code | monitor | specialty | VS Code 编辑器 |
 | #web | Web 开发 | network | domain | Web 前端开发 |
 | #macos | macOS | monitor | domain | macOS 系统与工具链 |
+| #yaml | YAML | network | specialty | YAML 配置格式 |
+| #zhihu | 知乎 | network | specialty | 知乎平台内容 |
