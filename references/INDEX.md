@@ -138,4 +138,5 @@
 | [unity-strict-variant-matching-enum-keyword.md](../data/unity-strict-variant-matching-enum-keyword.md) | #unity #shader #shader-variants #urp #experience #bug #vr | ✅ 已验证 | 严格变体匹配下 Shader Graph Enum 关键字报 variant not found（引擎已知行为，Won't Fix） |
 | [li-comm-polling-to-event-driven.md](../data/li-comm-polling-to-event-driven.md) | #openclaw #astrbot #docker #architecture #experience | ✅ 已验证 | 双璃通信架构演进（v3.2轮询→v4.0纯API直连，零文件队列） |
 | [shader-normal-space-transformation.md](../data/shader-normal-space-transformation.md) | #graphics #shader #math #knowledge | 📘 有效 | 法线空间变换矩阵（逆转置矩阵原理 + GLSL/ASE 用法速查） |
+| [msaa-texture-display-optimization.md](../data/msaa-texture-display-optimization.md) | #unity #graphics #rendering #texture #performance #knowledge | ✅ 已验证 | MSAA 与纹理显示效果优化 — 纹理边缘对齐对抗锯齿的影响（含 7 张对比截图） |
 | [unity6-migration-guide.md](../data/unity6-migration-guide.md) | #unity #urp #shader #knowledge #reference #rendering #ecs | ⚠️ 待验证 | Unity 2022.3 → 6.3 LTS 迁移指南：已完成官方文档交叉校验并修正关键事实与引用，但尚未经过真实项目迁移实测 |
