@@ -62,7 +62,7 @@
 | [docker-vs-native-deployment-file-access.md](../data/docker-vs-native-deployment-file-access.md) | #docker #deployment #tools #experience #ai | ✅ 已验证 | Docker 与原生部署：文件操作需求下的选择 |
 | [dotnet-cross-platform-compile-verify.md](../data/dotnet-cross-platform-compile-verify.md) | #csharp #dotnet #tools #experience | ✅ 已验证 | .NET 跨平台编译环境验证 |
 | [effect-system-code-review.md](../data/effect-system-code-review.md) | #unity #architecture #scriptable-object #effect-system | ✅ 已验证 | EffectSystem 效果系统 - 代码审查与架构分析 |
-| [endfield-rendering-study.md](../data/endfield-rendering-study.md) | #rendering #shader #pbr #knowledge #zhihu | ⚠️ 待验证 | 终末地角色渲染技术分析（shader效果解读、渲染管线、GitHub原图） |
+| [endfield-rendering-study.md](../data/endfield-rendering-study.md) | #rendering #shader #pbr #knowledge #zhihu | 📘 有效 | 终末地角色渲染技术分析（shader效果解读、渲染管线、GitHub原图） |
 | [excel-id-enum-generator.md](../data/excel-id-enum-generator.md) | #unity #tools #excel #experience | ✅ 已验证 | Excel ID 一键导出枚举 |
 | [git-commit-conventions.md](../data/git-commit-conventions.md) | #git #reference #conventional-commits | ✅ 已验证 | Git 团队协作工作流相关经验 |
 | [git-filter-repo-rewrite-history.md](../data/git-filter-repo-rewrite-history.md) | #git #experience #pat #docker #credential | ✅ 已验证 | 使用 git-filter-repo 重写提交历史（清除敏感信息） |
