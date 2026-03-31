@@ -102,6 +102,7 @@
 | [srp-batcher-optimization.md](../data/srp-batcher-optimization.md) | #unity #srp-batcher #performance #experience | ✅ 已验证 | SRP Batcher 场景优化要点 |
 | [srp-batcher-parameter-overhead.md](../data/srp-batcher-parameter-overhead.md) | #unity #srp-batcher #performance #experience | ✅ 已验证 | SRP Batcher 参数开销分析 |
 | [unity-ai-navigation.md](../data/unity-ai-navigation.md) | #unity #knowledge #nav-mesh #ai-navigation | 📘 有效 | Unity AI Navigation 知识 |
+| [unity-asset-import-tool-architecture.md](../data/unity-asset-import-tool-architecture.md) | #unity #custom-editor #tools #architecture #scriptable-object #fbx #texture | ✅ 已验证 | Unity 编辑器资源导入工具架构（配置驱动 + AssetPostprocessor 自动化） |
 | [unity-animation-scripting-notes.md](../data/unity-animation-scripting-notes.md) | #unity #animation #csharp #performance #knowledge #root-motion | ✅ 已验证 | Unity 动画与脚本开发核心知识清单 |
 | [unity-blendtree-audio-sync.md](../data/unity-blendtree-audio-sync.md) | #unity #knowledge #experience #animation #blend-tree #audio | ✅ 已验证 | Unity BlendTree 下动画驱动音效同步（脚步声等）常见方案汇总 |
 | [unity-cross-project-compilation-check.md](../data/unity-cross-project-compilation-check.md) | #unity #editor #csharp #experience | ✅ 已验证 | Unity 跨项目功能迁移的编译验证经验 |
