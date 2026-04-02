@@ -1,279 +1,48 @@
 # Claude Code 完整指南
 
-**标签**：#ai #tools #reference #claude-code
-**来源**：KTSAMA 实践经验 + 官方文档
+**标签**：#claude-code #reference #tools #knowledge
+**来源**：官方文档 + 实践经验
 **收录日期**：2026-01-30
-**更新日期**：2026-03-10
-**状态**：✅ 已验证
-**可信度**：⭐⭐⭐⭐ (实践验证)
+**来源日期**：2026-04-02
+**更新日期**：2026-04-02
+**状态**：✅已验证
+**可信度**：⭐⭐⭐⭐（官方文档验证）
+**适用版本**：Claude Code v2.1.88+
 
-**问题/场景**：
+### 概要
 
-Claude Code 是什么？有哪些核心功能？如何最大化发挥其价值？
+Claude Code 是 Anthropic 推出的 AI 编程助手，支持终端 CLI、桌面应用、Web 浏览器、VS Code 和 JetBrains IDE 五大平台，提供 1M token 上下文窗口、多代理协调、插件系统、Hook 自动化等能力。
 
-**解决方案/结论**：
+### 内容
 
-### 一、Claude Code 是什么？
+## 一、Claude Code 是什么？
 
-Claude Code 是 Anthropic 推出的**终端原生 AI 编程助手**，直接在终端中运行，无需切换 IDE 或聊天窗口。
+Claude Code 是 Anthropic 推出的**终端原生 AI 编程助手**，现已扩展为多平台产品：
 
-```mermaid
-flowchart TB
-    subgraph 传统方式
-        A[编写代码] --> B[切换到 IDE]
-        B --> C[切换到 Chat 工具]
-        C --> D[复制粘贴]
-        D --> E[手动执行]
-    end
-
-    subgraph Claude Code 方式
-        F[编写代码] --> G[终端直接对话]
-        G --> H[自动执行]
-        H --> I[无缝流程]
-    end
-
-    style A fill:#f5f5f5
-    style B fill:#f5f5f5
-    style C fill:#f5f5f5
-    style D fill:#f5f5f5
-    style E fill:#f5f5f5
-    style F fill:#e8f5e9
-    style G fill:#e8f5e9
-    style H fill:#e8f5e9
-    style I fill:#e8f5e9
-```
+| 平台 | 入口 | 特点 |
+|------|------|------|
+| **CLI** | `claude` 命令 | 终端原生，功能最完整 |
+| **Desktop** | Claude 桌面端 "Code" 标签 | 可视化 Diff、实时预览、Computer Use(macOS)、GitHub PR 监控、调度任务 |
+| **Web** | claude.ai/code | 浏览器运行，无需本地安装，云端执行 |
+| **VS Code** | 扩展市场 | Diff 查看、文件引用、Git Worktree |
+| **JetBrains** | 插件市场 | IntelliJ/PyCharm/WebStorm 等 |
 
 **核心定位**：项目级开发助手，而非文件级代码补全工具
 
-### 二、核心优势
+## 二、核心优势
 
-| 优势 | 说明 | 带来价值 |
-|------|------|----------|
-| **终端原生** | 直接在 CLI 中运行 | 无需切换窗口，工作流不中断 |
-| **200k 超长上下文** | 比传统工具多 10 倍以上 | 理解整个大型项目 |
-| **支持 40+ 语言** | 覆盖主流编程语言 | 适用于全栈开发 |
-| **项目级视野** | 扫描整个代码库 | 全局理解架构和依赖 |
-| **直接操作** | 可编辑文件、运行命令、创建提交 | 所想即所得，无需手动复制 |
-| **MCP 扩展** | 可连接外部工具 | 无限扩展能力 |
+| 优势 | 说明 |
+|------|------|
+| **1M 上下文窗口** | Opus 4.6 / Sonnet 4.6 标准定价（GA） |
+| **项目级视野** | 扫描整个代码库，全局理解架构 |
+| **直接操作** | 编辑文件、运行命令、创建提交 |
+| **多代理协调** | Agent Teams、Subagents、Worktree 隔离 |
+| **插件生态** | 50+ 官方插件，可捆绑 skills + hooks + MCP |
+| **Hook 自动化** | 20+ 事件类型，prompt/agent/http 三种 Hook |
+| **跨平台** | CLI + Desktop + Web + VS Code + JetBrains |
+| **跨设备** | Remote Control：本地会话在手机/浏览器继续 |
 
-### 三、与 VS Code Copilot 对比
-
-```mermaid
-flowchart LR
-    subgraph VSCode["VS Code Copilot"]
-        V1[实时代码补全]
-        V2[单文件上下文]
-        V3[语法提示]
-    end
-
-    subgraph ClaudeCode["Claude Code"]
-        C1[项目级规划]
-        C2[200k 超长上下文]
-        C3[自动化任务]
-        C4[调试修复]
-        C5[终端原生]
-    end
-
-    VSCode -->|互补| ClaudeCode
-    ClaudeCode -->|互补| VSCode
-
-    style VSCode fill:#e3f2fd
-    style ClaudeCode fill:#e8f5e9
-```
-
-| 特性 | VS Code Copilot | Claude Code |
-|------|----------------|-------------|
-| **定位** | 文件级代码补全 | 项目级开发助手 |
-| **上下文** | 单文件为主 | 200k 超长上下文 |
-| **核心功能** | 实时代码补全 | 全局规划、自动化、调试 |
-| **适用场景** | 日常编码、局部逻辑 | 复杂项目、重构、文档 |
-| **推荐用法** | 搭配使用效果最佳 | 搭配使用效果最佳 |
-
-**结论**：两者不是替代关系，而是**互补关系**。建议同时使用：
-- **VS Code Copilot**：负责实时代码补全
-- **Claude Code**：负责整体方案和复杂任务
-
-### 四、核心功能详解
-
-#### 4.1 代码生成（自然语言转代码）
-
-```
-你：帮我用 React + TypeScript 写一个 TodoList 组件，要求支持添加、删除和状态切换，使用 Tailwind CSS 样式
-
-Claude Code：
-  1. 分析需求
-  2. 规划方案
-  3. 创建文件
-  4. 编写代码
-  5. 确保可运行
-```
-
-**支持场景**：
-- 前端组件（React, Vue, Svelte 等）
-- 后端接口（Spring Boot, Gin, Express 等）
-- 数据脚本（SQL, Python 数据处理）
-- 配置文件（Docker, Kubernetes 等）
-
-#### 4.2 调试修复（一键解决问题）
-
-```mermaid
-flowchart TB
-    A[粘贴错误日志] --> B{分析类型}
-    B -->|编译错误| C[检查语法]
-    B -->|运行时错误| D[检查逻辑]
-    B -->|依赖问题| E[检查包管理]
-
-    C --> F[定位根因]
-    D --> F
-    E --> F
-
-    F --> G[修复代码]
-    G --> H[验证修复]
-    H --> I[返回结果]
-```
-
-**支持输入方式**：
-- 文本错误日志
-- 截图调试（macOS: `Ctrl+V`, Windows: `Alt+V`）
-
-#### 4.3 代码库导航（全局理解项目）
-
-```
-你：分析 @src/services/api.ts 的接口设计
-Claude Code：
-  - 扫描文件
-  - 分析接口结构
-  - 总结设计模式
-  - 提出优化建议
-
-你：这个项目的权限认证逻辑是怎样的？
-Claude Code：
-  - 扫描认证相关文件
-  - 追踪调用链
-  - 绘制流程图
-  - 解释安全机制
-```
-
-#### 4.4 自动化任务（解放重复劳动）
-
-| 任务类型 | 示例命令 | 说明 |
-|---------|----------|------|
-| 修复 lint | `帮我批量修复项目中的所有 ESLint 错误` | 自动修复代码规范问题 |
-| 解决冲突 | `处理当前分支的 Git 合并冲突` | 智能合并代码 |
-| 生成文档 | `为 @src/utils/date.ts 写详细注释和使用示例` | 自动生成文档 |
-| 运行测试 | `claude -p "检测新提交的代码，生成测试用例并运行"` | CI 集成 |
-| 重构代码 | `重构 @src/components/Button 组件，提取通用逻辑` | 代码优化 |
-
-### 五、进阶功能
-
-#### 5.1 权限模式切换（`Shift + Tab`）
-
-```mermaid
-stateDiagram-v2
-    [*] --> 普通模式
-    普通模式 --> 自动接受模式: Shift+Tab
-    普通模式 --> Plan模式: 再次Shift+Tab
-    自动接受模式 --> Plan模式: Shift+Tab
-    Plan模式 --> 普通模式: Shift+Tab
-
-    note right of 普通模式: 所有操作需手动确认<br/>适合新手
-    note right of 自动接受模式: 自动执行所有操作<br/>效率最高（信任场景）
-    note right of Plan模式: 先生成详细计划<br/>确认后再执行
-```
-
-#### 5.2 高效交互技巧
-
-| 技巧 | 用法 | 示例 |
-|------|------|------|
-| 文件提及 | `@文件路径` | `分析 @src/App.tsx 的结构` |
-| Bash 模式 | `!命令` | `! git status` |
-| 多行输入 | `\` + Enter 或 `Shift+Enter` | 输入复杂需求 |
-| 快捷键 | `Ctrl+R` 搜索历史 | 快速查找之前的问题 |
-
-#### 5.3 记忆管理（CLAUDE.md）
-
-`CLAUDE.md` 是项目的"第二大脑"，记录项目架构、编码规范、数据库结构等信息。
-
-```mermaid
-flowchart LR
-    A[项目启动] --> B[加载 CLAUDE.md]
-    B --> C[理解项目背景]
-    C --> D[无需重复解释]
-    D --> E[高效协作]
-```
-
-**CLAUDE.md 内容示例**：
-
-```markdown
-# 项目规范
-
-## 代码风格
-- 使用 ESLint + Prettier
-- 单引号，无分号
-- 组件命名：PascalCase
-
-## 架构说明
-- 前端：React + TypeScript + Tailwind
-- 后端：Node.js + Express
-- 数据库：PostgreSQL
-
-## 接口规范
-- 所有请求统一使用 @src/services/request.ts
-- 错误处理统一格式：{ code, message, data }
-```
-
-#### 5.4 自定义斜杠命令
-
-在项目根目录创建 `.claude/commands/review.md`：
-
-```markdown
-# /review 命令逻辑
-1. 检查最近修改的代码是否符合项目规范
-2. 识别潜在性能问题和安全漏洞
-3. 建议补充必要的测试用例
-```
-
-使用：输入 `/review` 即可执行自定义流程。
-
-#### 5.5 MCP 扩展（连接外部工具）
-
-```json
-// ~/.config/claude/settings.json
-{
-  "mcp_servers": {
-    "github": {
-      "command": "npx",
-      "args": ["-y", "@model-context-protocol/server-github"],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_xxx"
-      }
-    }
-  }
-}
-```
-
-**常用 MCP 服务器**：
-- GitHub：代码仓库操作
-- Google Drive：文件管理
-- Figma：设计协作
-- Jira：项目管理
-
-### 六、使用场景矩阵
-
-| 场景 | Claude Code | VS Code Copilot | 推荐选择 |
-|------|-------------|-----------------|----------|
-| 新建项目骨架 | ✅ 擅长 | ⚠️ 较弱 | Claude Code |
-| 重构代码 | ✅ 全局理解 | ⚠️ 单文件 | Claude Code |
-| 修复 bug | ✅ 上下文丰富 | ⚠️ 需复制 | Claude Code |
-| 实时代码补全 | ⚠️ 需手动 | ✅ 实时 | Copilot |
-| 快速生成函数 | ⚠️ 需切换 | ✅ 就在 IDE | Copilot |
-| 处理 Git 冲突 | ✅ 直接操作 | ❌ 不支持 | Claude Code |
-| 生成文档 | ✅ 理解项目 | ⚠️ 局部理解 | Claude Code |
-| 学习新框架 | ✅ 项目级讲解 | ⚠️ 片段式 | Claude Code |
-
-### 七、安装与配置
-
-#### 7.1 安装
+## 三、安装方式
 
 ```bash
 # macOS / Linux / WSL
@@ -282,49 +51,264 @@ curl -fsSL https://claude.ai/install.sh | bash
 # Windows PowerShell
 irm https://claude.ai/install.ps1 | iex
 
-# 验证安装
-claude --version
+# Windows CMD
+curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd
+
+# Homebrew (macOS)
+brew install --cask claude-code
+
+# WinGet (Windows)
+winget install Anthropic.ClaudeCode
+
+# IDE 扩展
+# VS Code / JetBrains / Cursor → 各自扩展市场搜索 "Claude Code"
 ```
 
-#### 7.2 首次认证
+## 四、支持模型
+
+| 模型 | 状态 | 特点 |
+|------|------|------|
+| **Claude Opus 4.6** | GA | 最智能，自适应思考，1M 上下文，Fast Mode（预览） |
+| **Claude Sonnet 4.6** | GA | 接近 Opus 的编码性能，1M 上下文，低 token 消耗 |
+| **Claude Haiku 4.5** | GA | 最快，Explore 代理默认 |
+| Claude Opus 4.5 / Sonnet 4.5 | GA | 前代 |
+| Claude Sonnet 3.7 / Haiku 3.5 | 已退役 | 请求报错 |
+| Claude Haiku 3 | 即将退役 | 预计 2026-04-19 |
+
+Fast Mode（`/fast`）：同一 Opus 4.6 模型加速输出，不切换到其他模型。
+
+## 五、权限模式
+
+| 模式 | 切换 | 适用 |
+|------|------|------|
+| **默认** | - | 所有操作需手动确认，适合新手 |
+| **Plan** | Shift+Tab | 只读探索，生成计划后确认再执行 |
+| **Auto** | - | AI 分类器评估每个工具调用 |
+| **DontAsk** | - | 自动拒绝权限提示 |
+| **AcceptEdits** | - | 自动接受文件编辑 |
+| **Bypass** | - | 跳过所有权限提示（仅 CLI/headless） |
+
+可通过 `/permissions` 配置信任路径和工具规则。
+
+## 六、核心功能
+
+### 6.1 代码生成与编辑
+自然语言转代码，支持 React/Vue/Svelte/Unity/Python 等 40+ 语言。
+
+### 6.2 调试修复
+粘贴错误日志或截图（Windows: `Alt+V`），自动定位并修复。
+
+### 6.3 代码库导航
+`@文件路径` 引用文件，扫描整个项目理解架构。
+
+### 6.4 自动化任务
+重构、lint 修复、Git 冲突处理、文档生成、测试编写。
+
+### 6.5 Subagents（子代理）
+独立的 AI 实例执行特定任务：
+
+| 能力 | 说明 |
+|------|------|
+| **Worktree 隔离** | `isolation: worktree`，独立 Git 副本，互不冲突 |
+| **持久记忆** | `memory: user/project/local`，跨会话知识积累 |
+| **后台运行** | `background: true`，不阻塞主对话 |
+| **模型选择** | 可指定不同模型（Explore 默认用 Haiku） |
+| **工具限制** | 可禁用特定工具（如 Explore 禁止文件修改） |
+| **CLI 定义** | `--agents` JSON 或 `/agents` 命令管理 |
+
+内置代理类型：`general-purpose`（全工具）、`Explore`（只读搜索）、`Plan`（架构规划）、`verification`（对抗验证）。
+
+### 6.6 Agent Teams（多代理协调，实验性）
+多个 Claude Code 实例作为团队协作：
 
 ```bash
-cd your-project
-claude
-# 按提示在浏览器中完成 OAuth 授权
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 ```
 
-### 八、最佳实践
+- Team Lead 协调多个 Teammate 并行工作
+- 共享任务列表，支持依赖关系
+- 同伴间可直接通信（mailbox 系统）
+- 通过 Hook 实现质量门控
+
+### 6.7 Hooks（自动化钩子）
+20+ 事件，3 种类型：
+
+| 类型 | 说明 |
+|------|------|
+| `command` | 执行 shell 命令 |
+| `prompt` | 单轮 LLM 评估（默认 Haiku） |
+| `agent` | 多轮验证（最多 50 轮） |
+| `http` | POST 事件到 URL |
+
+关键事件：`UserPromptSubmit`、`PreToolUse`、`PostToolUse`、`InstructionsLoaded`、`ConfigChange`、`CwdChanged`、`FileChanged`、`PreCompact`/`PostCompact`、`SessionEnd`、`SubagentStart`/`SubagentStop`、`TeammateIdle`、`Elicitation`、`PermissionDenied`、`StopFailure` 等。
+
+Hook 可返回 `additionalContext` 注入上下文，支持 `if` 字段按工具名+参数过滤。
+
+### 6.8 Plugins（插件系统）
+50+ 官方插件，可捆绑 skills + agents + hooks + MCP：
+
+```
+# 官方插件示例
+typescript-lsp    — TypeScript 语言服务
+security-guidance — 安全审计
+context7           — 文档上下文
+playwright         — 浏览器自动化
+code-review        — 多代理并行 PR 审查
+```
+
+安装：`claude plugins add <name>`，管理：`/plugins`。
+
+### 6.9 Skills（技能系统）
+自定义提示词模板，frontmatter 控制触发模式：
+
+| 配置 | 效果 |
+|------|------|
+| 默认 | Claude 自动触发 + 用户 `/skill` 手动触发 |
+| `disable-model-invocation: true` | 仅手动触发 |
+| `user-invocable: false` | 仅 Claude 自动触发 |
+
+### 6.10 Scheduled Tasks（定时任务）
+- CLI：`/loop 5m /review` 或 CronCreate 工具
+- Desktop：本地定时（需应用打开）
+- Web/Cloud：云端定时（Anthropic 基础设施）
+
+### 6.11 Remote Control（远程控制）
+本地会话可通过 `claude.ai/code` 或 Claude 移动端继续，支持跨设备。
+
+### 6.12 Channels（外部集成，预览）
+从 Telegram、Discord、iMessage 或自定义 webhook 接收事件推送到会话。
+
+### 6.13 Sandboxing（沙箱隔离）
+OS 级文件系统和网络隔离，防止恶意操作。
+
+## 七、交互技巧
+
+| 技巧 | 用法 |
+|------|------|
+| 文件提及 | `@src/App.tsx` |
+| Bash 模式 | `! git status` |
+| 多行输入 | `Shift+Enter` |
+| 历史搜索 | `Ctrl+R` |
+| Plan 模式 | `Shift+Tab` 切换 |
+| Fast 模式 | `/fast` 切换 |
+| 压缩上下文 | `/compact` |
+| 侧边问题 | `/btw <问题>` 无工具单轮回答 |
+| Agent 管理 | `/agents` 查看/创建/编辑子代理 |
+| 插件管理 | `/plugins` |
+| 查看成本 | `/cost` |
+
+## 八、CLAUDE.md 与记忆
+
+### CLAUDE.md 层级
+
+| 层级 | 位置 | 用途 |
+|------|------|------|
+| 项目 | `项目/CLAUDE.md` | 项目规范（提交到 Git） |
+| 用户 | `~/.claude/CLAUDE.md` | 个人偏好 |
+| 组织 | 管理设置 | 团队统一 |
+| 规则目录 | `.claude/rules/*.md` | 路径特定的细粒度规则 |
+| AGENTS.md | `项目/AGENTS.md` | 子代理定义 |
+
+### Auto Memory（自动记忆）
+- Claude Code 自动将值得记住的信息写入 `~/.claude/projects/.../memory/`
+- 使用 Sonnet 作为廉价选择器，最多选 5 条相关记忆
+- MEMORY.md 是索引，单条不超过 150 字符
+
+## 九、MCP 扩展
+
+| 传输方式 | 用途 |
+|----------|------|
+| stdio | 本地 MCP 服务器 |
+| HTTP/SSE | 远程 MCP 服务器 |
+| SDK | 程序化连接 |
+
+作用域：`local`（仅本机）、`project`（项目级）、`user`（用户级）。
+
+支持将 Claude Code **本身作为 MCP 服务器**暴露给其他工具。
+
+## 十、第三方部署
+
+| 平台 | 文档 |
+|------|------|
+| **Amazon Bedrock** | IAM 认证，Guardrails |
+| **Google Vertex AI** | 区域配置，凭证 |
+| **Microsoft Foundry** | Azure 预配，RBAC |
+| **LLM Gateway** | LiteLLM 等网关配置 |
+
+## 十一、Agent SDK
+程序化使用 Claude Code，适用于 CI/CD 自动化：
+
+- GitHub Actions / GitLab CI/CD 自动 PR 审查和 issue 分类
+- 构建自定义工作流代理
+
+## 十二、与 VS Code Copilot 对比
+
+| 特性 | VS Code Copilot | Claude Code |
+|------|----------------|-------------|
+| 定位 | 文件级代码补全 | 项目级开发助手 |
+| 上下文 | 单文件为主 | 1M token |
+| 核心功能 | 实时补全 | 全局规划、自动化、调试、多代理 |
+| 推荐用法 | 搭配使用 | 搭配使用 |
+
+两者是**互补关系**，建议同时使用。
+
+## 十三、新增/不常用功能速查
+
+| 功能 | 说明 |
+|------|------|
+| Voice Dictation | 语音输入（设置 → Voice Dictation） |
+| Output Styles | 自定义输出格式（设置 → Output Styles） |
+| Statusline | 可配置状态栏（上下文/Git/费用） |
+| Computer Use (CLI) | 终端直接操控屏幕（macOS） |
+| Chrome Integration | 浏览器自动化（测试/调试/表单） |
+| Checkpointing | 自动追踪 Git 状态，支持回滚 |
+| Headless Mode | 非交互模式，结构化输出（CI/CD） |
+| Managed Settings | 组织级统一配置下发 |
+
+## 十四、最佳实践
 
 1. **善用 CLAUDE.md**：记录项目规范，避免重复解释
-2. **先 Plan 再执行**：复杂任务先切换到 Plan 模式
-3. **合理使用权限模式**：信任场景用自动接受，新手用普通模式
-4. **定期压缩上下文**：大型项目用 `/compact` 节省 token
-5. **配置 .claudeignore**：排除 `node_modules/` 等不必要的目录
-6. **结合 VS Code Copilot**：实时补全 + 项目级规划 = 最佳组合
+2. **合理使用权限模式**：信任场景用 Auto/Bypass，复杂任务用 Plan
+3. **配置 .claudeignore**：排除 `node_modules/`、`dist/` 等
+4. **利用 Worktree**：子代理用 `isolation: worktree` 实现并行开发
+5. **Hook 自动化**：格式化、lint、提交规范自动执行
+6. **定期压缩上下文**：`/compact` 或自动压缩
+7. **Plugin 生态**：探索官方插件提升效率
+8. **Agent Teams**：大型重构用多实例并行
+9. **结合 Copilot**：实时补全 + 项目级规划 = 最佳组合
 
-### 九、常见问题
+## 十五、常见问题
 
 | 问题 | 解决方案 |
 |------|---------|
-| 命令未找到 | 检查环境变量，将 npm 全局路径添加到 PATH |
-| 认证失败 | 运行 `/logout` 退出登录，重新授权 |
-| 权限被拒 | 运行 `/permissions` 配置信任路径 |
-| 性能慢 | 使用 `/compact` 压缩上下文，配置 `.claudeignore` |
+| 命令未找到 | 检查 PATH，或用 `winget install Anthropic.ClaudeCode` |
+| 认证失败 | `/logout` 退出后重新授权 |
+| 权限被拒 | `/permissions` 配置信任路径 |
+| 性能慢 | `/compact` 压缩上下文，配置 `.claudeignore` |
+| 上下文不足 | 使用 1M 上下文模型（Opus 4.6 / Sonnet 4.6） |
+| Hook 不生效 | 检查 settings.json 中的 hooks 配置 |
 
-**参考链接**：
+### 参考链接
 
-- [Claude Code 官方文档](https://code.claude.com/docs/en)
-- [Claude Code Skills 官方文档](https://code.claude.com/docs/en/skills)
+- [Claude Code 官方文档](https://code.claude.com/docs/en) — 完整文档（70+ 页面）
+- [Claude Code 文档地图](https://code.claude.com/docs/en/claude_code_docs_map.md) — 所有文档页索引
 - [MCP 官方规范](https://modelcontextprotocol.io/)
-- [阿里云全攻略文章](https://developer.aliyun.com/article/1705912)
+- [Agent Teams 文档](https://code.claude.com/docs/en/agent-teams) — 多代理协调
+- [Subagents 文档](https://code.claude.com/docs/en/sub-agents) — 子代理配置
+- [Hooks 指南](https://code.claude.com/docs/en/hooks-guide) — Hook 自动化
+- [Desktop 文档](https://code.claude.com/docs/en/desktop) — 桌面应用
+- [Plugins 文档](https://code.claude.com/docs/en/discover-plugins) — 插件系统
 
-**验证记录**：
-
-- [2026-01-30] 初次记录，来源：[阿里云全攻略](https://developer.aliyun.com/article/1705912)、官方文档整合
-
-**相关经验**：
+### 相关记录
 
 - [完整斜杠命令列表](./claude-code-slash-commands.md) — 更多命令用法
 - [接入多种模型 (GLM/Bedrock)](./claude-code-backend-models.md) — 模型配置
 - [Fork 会话功能](./claude-code-fork-session.md) — 多方案探索
+- [2.1 功能清单](./claude-code-2.1-feature-inventory.md) — 功能清单
+- [Skill Hook 触发](./claude-code-skill-hook-trigger-boost.md) — 触发率提升
+- [源码架构分析](./claude-code-source-architecture.md) — 内部设计原理
+
+### 验证记录
+
+- [2026-01-30] 初次记录，来源：官方文档 + 实践经验整合
+- [2026-04-02] 重大更新：基于 code.claude.com 最新文档全面重写。新增 Agent Teams、Plugins、Hooks、Subagents、Desktop/Web/JetBrains 平台、1M 上下文、Remote Control、Channels、Agent SDK、Scheduled Tasks、Sandboxing、Output Styles、Statusline、Voice Dictation 等内容。更新模型信息（Opus 4.6/Sonnet 4.6/Haiku 4.5 GA，旧版退役）。安装方式扩展至 7 种。权限模式从 3 种更新至 5 种。
