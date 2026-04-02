@@ -51,6 +51,7 @@
 | [claude-code-config-dialog-settings.md](../data/claude-code-config-dialog-settings.md) | #claude-code #reference #tools | ✅ 已验证 | `/config` 设置界面各配置项说明（~/.claude.json，非 settings.json） |
 | [claude-code-comprehensive-guide.md](../data/claude-code-comprehensive-guide.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 完整指南 |
 | [claude-code-fork-session.md](../data/claude-code-fork-session.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code Fork 会话功能 (Branching Conversation) |
+| [claude-code-source-architecture.md](../data/claude-code-source-architecture.md) | #claude-code #architecture #knowledge #agent-skills #mcp | ✅ 已验证 | Claude Code v2.1.88 源码架构深度分析（提示词/Agent/Tool/查询循环/权限管线） |
 | [claude-code-slash-commands.md](../data/claude-code-slash-commands.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 完整斜杠命令列表 (Slash Commands) |
 | [claude-code-latest-features-2026.md](../data/claude-code-latest-features-2026.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 最新功能 (2026-03)：Plugin System、Agent Teams、1M Context、Adaptive Thinking |
 | [claude-code-skill-hook-trigger-boost.md](../data/claude-code-skill-hook-trigger-boost.md) | #claude-code #agent-skills #hook #experience | ✅ 已验证 | Claude Code Skill 触发模式与 Hook 提升自动触发率 |
