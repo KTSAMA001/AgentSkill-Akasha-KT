@@ -3,7 +3,7 @@
 **标签**：#rendering #graphics #knowledge #reference #renderdoc #anti-bot #hook #windows
 **来源**：[知乎专栏 - 魔改RenderDoc截帧PC端《鸣潮》](https://zhuanlan.zhihu.com/p/2020093825977168718)
 **收录日期**：2026-04-04
-**来源日期**：未知（知乎文章）
+**来源日期**：编辑于 2026-03-25（重庆）
 **状态**：⚠️ 待验证
 **可信度**：⭐⭐⭐（社区经验，有详细代码路径但未实测）
 **适用版本**：RenderDoc v1.x | Windows | PC 端鸣潮
