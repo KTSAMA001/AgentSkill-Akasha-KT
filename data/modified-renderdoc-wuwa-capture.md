@@ -1,6 +1,6 @@
 # 魔改RenderDoc截帧PC端《鸣潮》
 
-**标签**：#rendering #graphics #knowledge #reference #renderdoc #anti-bot #hook #windows
+**标签**：#rendering #graphics #knowledge #reference #renderdoc #anti-bot #hook #windows #zhihu
 **来源**：[知乎专栏 - 魔改RenderDoc截帧PC端《鸣潮》](https://zhuanlan.zhihu.com/p/2020093825977168718)
 **收录日期**：2026-04-04
 **来源日期**：编辑于 2026-03-25（重庆）
