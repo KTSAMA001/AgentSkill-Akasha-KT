@@ -114,6 +114,7 @@
 | [unity-generic-animation-import-config.md](../data/unity-generic-animation-import-config.md) | #unity #animation #root-motion #experience | ⚠️ 待验证 | Unity Generic 动画导入配置完整流程：解决滑步、UI 消失与双重位移 |
 | [unity-layer-vs-renderlayer.md](../data/unity-layer-vs-renderlayer.md) | #unity #experience #rendering | ✅ 已验证 | Unity 中 Layer 与 Render Layer 的核心区别与使用场景 |
 | [unity-material-renderer.md](../data/unity-material-renderer.md) | #unity #knowledge #rendering #material | 📘 有效 | Unity 渲染相关知识 |
+| [unity-meta-touch-via-userdata.md](../data/unity-meta-touch-via-userdata.md) | #unity #editor #tools #experience #serialization | ✅ 已验证 | 通过 AssetImporter.userData 稳定触发 `.meta` 变化，并采用批量写入避免逐资源重导入 |
 | [unity-performance-ecs-culling.md](../data/unity-performance-ecs-culling.md) | #unity #experience #performance #ecs #culling | ⚠️ 待验证（需根据 Unity 版本和 DOTS 版本调整） | Unity 性能优化相关经验 |
 | [unity-physics-system.md](../data/unity-physics-system.md) | #unity #knowledge #physics #collider #raycast | 📘 有效 | Unity 物理系统知识 |
 | [unity-shader-variants-tool.md](../data/unity-shader-variants-tool.md) | #unity #shader #experience #shader-variants #editor | ✅ 已验证 | Unity 中 Shader 相关经验 |
