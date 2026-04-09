@@ -146,3 +146,4 @@
 | [unity6-migration-guide.md](../data/unity6-migration-guide.md) | #unity #urp #shader #knowledge #reference #rendering #ecs | ⚠️ 待验证 | Unity 2022.3 → 6.3 LTS 迁移指南：已完成官方文档交叉校验并修正关键事实与引用，但尚未经过真实项目迁移实测 |
 | [modified-renderdoc-wuwa-capture.md](../data/modified-renderdoc-wuwa-capture.md) | #rendering #graphics #knowledge #reference #renderdoc #anti-bot #hook #windows #zhihu | ⚠️ 待验证 | 魔改 RenderDoc 截帧 PC 端《鸣潮》（源码特征替换 + CrashSight 绕过，11 类修改点） |
 || [git-merge-3way-file-not-in-base.md](../data/git-merge-3way-file-not-in-base.md) | #git #knowledge #experience | ⚠️ 待验证 | Git 三方合并：合并基点不存在的文件执行 git rm 后合并不会误删目标分支文件 |
+| [unity-animation-curve-filter-motionnodename-pitfall.md](../data/unity-animation-curve-filter-motionnodename-pitfall.md) | #unity #animation #fbx #experience #bug #custom-editor | ✅ 已验证 | OnPostprocessAnimation 动画曲线过滤：motionNodeName 返回空值需改用 SerializedObject 读取 m_RootMotionBoneName |
