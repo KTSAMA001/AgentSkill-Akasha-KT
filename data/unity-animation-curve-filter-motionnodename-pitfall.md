@@ -1,4 +1,4 @@
-# Unity OnPostprocessAnimation 动画曲线过滤：motionNodeName 返回空值的坑
+# Unity OnPostprocessAnimation 动画曲线过滤：不要用 motionNodeName 读取 Rig Root node
 
 **标签**：#unity #animation #fbx #experience #bug #custom-editor
 **来源**：实践验证 + Unity API 调查
@@ -9,76 +9,60 @@
 
 ### 概要
 
-在 `AssetPostprocessor.OnPostprocessAnimation` 中实现动画曲线过滤（删除非 Root 节点的 Position/Scale 曲线）时，`ModelImporter.motionNodeName` 公开 API 在很多情况下返回空字符串，即使 Inspector Rig 页签的 "Root node" 已正确设置。必须通过 `SerializedObject` 读取内部属性 `m_HumanDescription.m_RootMotionBoneName` 来获取真实的 Root 节点配置。
+在 `AssetPostprocessor.OnPostprocessAnimation` 中实现动画曲线过滤时，**不能把** `ModelImporter.motionNodeName` **当成** Inspector `Rig` 页签里 Generic 动画的 `Root node`。`motionNodeName` 对应的是 `Animation` 页签 `Motion` 区域的 `Root Motion Node`，不是同一个设置。当前已验证可用的做法，是通过 `SerializedObject` 读取内部属性 `m_HumanDescription.m_RootMotionBoneName`，再按 `EditorCurveBinding.path` 的 Transform 路径字符串做匹配。
 
 ### 内容
 
 #### 需求场景
 
 FBX 模型导入时，自动过滤动画曲线：
-- **保留** Root 节点（Rig 页签中配置的 Root node）的 Position + Rotation 曲线
-- **删除** 所有其他节点的 Position 和 Scale 曲线（只保留 Rotation）
-- 目的是减少动画数据量，只让 Root 节点驱动位移
+- **保留** Root 节点（`Rig` 页签中配置的 `Root node`）自身的指定曲线
+- **删除** 其他节点的指定曲线
+- 目的是减少动画数据量，并保证 Root 节点曲线不被误删
 
-#### 核心坑点：motionNodeName 返回空值
+#### 核心结论：Rig Root node 与 Root Motion Node 不是一回事
 
-Unity Inspector Rig 页签中 "Root node" 下拉框（如显示 `root/Bip001`）的值，并不存储在公开 API `ModelImporter.motionNodeName` 中。实际测试中 `motionNodeName` 经常返回空字符串。
+根据 Unity 官方文档：
 
-真正的存储位置是内部序列化属性：
+- `Rig` 页签 Generic 配置中的 `Root node`：用于指定 Generic 骨架的根节点
+- `Animation` 页签 `Motion` 区域中的 `Root Motion Node`：用于指定 Root Motion 的提取来源
+
+`ModelImporter.motionNodeName` 对应的是后者，不是前者。因此，拿 `motionNodeName` 去读取 `Rig` 页签的 `Root node` 在语义上就是错的，不能因为“有时返回空值”就把它当成一个不稳定但可用的 API。
+
+当前已验证的 `Rig Root node` 存储位置是内部序列化属性：
 ```
 m_HumanDescription.m_RootMotionBoneName
 ```
 
-这个事实在 Unity 官方文档中没有明确说明，只能从 [Unity 社区讨论](https://discussions.unity.com/t/using-modelimporter-to-set-root-node-from-script/543933) 和 [UnityCsReference 源码](https://github.com/Unity-Technologies/UnityCsReference/blob/master/Modules/AssetPipelineEditor/ImportSettings/ModelImporterRigEditor.cs) 中找到线索。
+这个字段不是公开 API。Unity 官方文档说明了 `Rig Root node` 与 `Root Motion Node` 的概念区别，但没有提供读取 `Rig Root node` 的公开脚本接口。该字段可从 [Unity 社区讨论](https://discussions.unity.com/t/using-modelimporter-to-set-root-node-from-script/543933) 和 [UnityCsReference 源码](https://github.com/Unity-Technologies/UnityCsReference/blob/master/Modules/AssetPipelineEditor/ImportSettings/ModelImporterRigEditor.cs) 中得到佐证。
 
-#### 解决方案：三级回退链
+#### 当前已验证可用的读取方式
 
 ```csharp
 private static string ResolveRootMotionNodePath(ModelImporter importer)
 {
     if (importer == null) return "";
 
-    // 1. 尝试 motionNodeName（公开 API）
-    string rootPath = importer.motionNodeName;
-    if (!string.IsNullOrEmpty(rootPath))
-        return rootPath;
-
-    // 2. 通过 SerializedObject 读取 Rig 页签的 Root node
     var so = new SerializedObject(importer);
-    var prop = so.FindProperty("m_HumanDescription.m_RootMotionBoneName");
-    string rootBoneName = prop?.stringValue;
-    if (string.IsNullOrEmpty(rootBoneName))
-        return "";
-
-    // 3. 在 transformPaths 中查找骨骼名对应的完整路径
-    string[] paths = importer.transformPaths;
-    if (paths != null)
-    {
-        // 先精确路径匹配（m_RootMotionBoneName 可能已经是完整路径）
-        foreach (string path in paths)
-        {
-            if (string.IsNullOrEmpty(path)) continue;
-            if (string.Equals(path, rootBoneName, StringComparison.OrdinalIgnoreCase))
-                return path;
-        }
-        // 再叶节点名匹配
-        foreach (string path in paths)
-        {
-            if (string.IsNullOrEmpty(path)) continue;
-            int lastSlash = path.LastIndexOf('/');
-            string leafName = lastSlash >= 0 ? path.Substring(lastSlash + 1) : path;
-            if (string.Equals(leafName, rootBoneName, StringComparison.OrdinalIgnoreCase))
-                return path;
-        }
-    }
-
-    return rootBoneName;
+    string rootPath = so.FindProperty("m_HumanDescription.m_RootMotionBoneName")?.stringValue ?? "";
+    return rootPath;
 }
 ```
 
-#### binding.path 匹配也需要容错
+说明：
 
-`EditorCurveBinding.path` 与获取到的 Root 路径之间可能存在大小写差异、路径分隔符差异、或完整路径 vs 叶节点名差异。需要模糊匹配：
+- 这仍然属于**依赖内部序列化字段**的做法，不是公开 API
+- 但就当前已知信息和项目实测而言，这是读取 `Rig Root node` 的正确方向
+- `motionNodeName` 应只在你要处理 `Root Motion Node` 时使用
+
+#### Root 匹配本质上是 Transform 路径字符串匹配
+
+`OnPostprocessAnimation` 中拿到的不是 `Transform` 对象引用，而是 `EditorCurveBinding.path`。因此过滤逻辑的本质是：
+
+- 先读取 `Rig Root node` 的字符串
+- 再和每条曲线的 `binding.path` 做字符串匹配
+
+当前项目中，为避免导入后的 `binding.path` 与配置值在层级前缀上不完全一致，使用了“完全匹配 + 后缀匹配”的兼容策略：
 
 ```csharp
 private static bool IsRootNodeBinding(string bindingPath, string rootPath)
@@ -107,7 +91,7 @@ private static bool IsRootNodeBinding(string bindingPath, string rootPath)
 
 - 通过 `AnimationUtility.GetCurveBindings(clip)` 获取所有曲线绑定
 - 跳过 Root 节点的曲线
-- 对非 Root 节点，用 `AnimationUtility.SetEditorCurve(clip, binding, null)` 删除 `m_LocalPosition.*` 和 `m_LocalScale.*` 曲线
+- 对非 Root 节点，用 `AnimationUtility.SetEditorCurve(clip, binding, null)` 删除指定曲线
 - 此回调在模型导入管线中，clip 可写，修改会被持久化
 
 #### 配置集成建议
@@ -121,12 +105,13 @@ private static bool IsRootNodeBinding(string bindingPath, string rootPath)
 | `animCurveFilterSuffixes` | 后缀列表（`_` 分割取末段匹配） |
 | `animCurveFilterCustomRoot` | 是否自定义 Root 路径（否则自动从 Rig 读取） |
 | `animCurveFilterRootPath` | 手动指定的 Root 路径 |
-| `animCurveFilterRemovePosition` | 删除非 Root 的 Position 曲线 |
-| `animCurveFilterRemoveScale` | 删除非 Root 的 Scale 曲线 |
+| `animCurveFilterPropertyTypes` | 删除哪些内置曲线类型（当前项目已改为多选枚举） |
 
 ### 参考链接
 
-- [Unity ModelImporter.motionNodeName 官方文档](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/ModelImporter-motionNodeName.html) - 公开 API（实际常返回空值）
+- [Unity ModelImporter.motionNodeName 官方文档](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/ModelImporter-motionNodeName.html) - 对应 Animation 页签 Motion 的 Root Motion Node，而非 Rig Root node
+- [Unity Rig tab 官方文档](https://docs.unity3d.com/2020.3/Documentation/Manual/FBXImporter-Rig.html) - Generic 动画需指定 Root node
+- [Unity Motion 官方文档](https://docs.unity3d.com/2023.1/Documentation/Manual/AnimationRootMotionNodeOnImportedClips.html) - Root Motion Node 说明
 - [Unity 社区：Setting Root Node from script](https://discussions.unity.com/t/using-modelimporter-to-set-root-node-from-script/543933) - 揭示 `m_RootMotionBoneName` 的帖子
 - [Unity OnPostprocessAnimation 官方文档](https://docs.unity3d.com/Documentation/ScriptReference/AssetPostprocessor.OnPostprocessAnimation.html) - 动画后处理回调
 - [Unity AnimationUtility.SetEditorCurve 官方文档](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/AnimationUtility.SetEditorCurve.html) - 传 null 移除曲线
@@ -138,6 +123,7 @@ private static bool IsRootNodeBinding(string bindingPath, string rootPath)
 
 ### 验证记录
 
-- [2026-04-08] 初次记录。实际项目中验证：`motionNodeName` 对 Generic 动画类型返回空字符串，通过 `SerializedObject` 读取 `m_HumanDescription.m_RootMotionBoneName` 后成功获取 Root 节点路径。动画曲线过滤功能在 FBX 导入后正确保留 Root 节点的 Position/Rotation 曲线，删除其他节点的 Position/Scale 曲线。
+- [2026-04-08] 初次记录。将 `motionNodeName` 误判为读取 Rig Root node 的公开 API，后续需继续核验其语义边界。
+- [2026-04-09] 修正：结合 Unity `Rig` / `Motion` 官方文档与项目代码复核，确认 `motionNodeName` 对应的是 `Root Motion Node`，不是 `Rig Root node`。当前已验证的正确方向是使用 `SerializedObject` 读取 `m_HumanDescription.m_RootMotionBoneName`，并按 `EditorCurveBinding.path` 做字符串匹配过滤。移除了“三级回退链 / transformPaths 映射”为已验证结论的表述。
 
 ---
