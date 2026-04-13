@@ -140,4 +140,4 @@
 | [shader-normal-space-transformation.md](../data/shader-normal-space-transformation.md) | #graphics #shader #math #knowledge | 📘 有效 | 法线空间变换矩阵（逆转置矩阵原理 + GLSL/ASE 用法速查） |
 | [msaa-texture-display-optimization.md](../data/msaa-texture-display-optimization.md) | #unity #graphics #rendering #texture #performance #knowledge | ✅ 已验证 | MSAA 与纹理显示效果优化 — 纹理边缘对齐对抗锯齿的影响（含 7 张对比截图） |
 | [unity6-migration-guide.md](../data/unity6-migration-guide.md) | #unity #urp #shader #knowledge #reference #rendering #ecs | ⚠️ 待验证 | Unity 2022.3 → 6.3 LTS 迁移指南：已完成官方文档交叉校验并修正关键事实与引用，但尚未经过真实项目迁移实测 |
-| [shader-debug-alpha-srgb-encoding-pitfall.md](../data/shader-debug-alpha-srgb-encoding-pitfall.md) | #shader #urp #color-space #experience #graphics #unity | ✅ 已验证 | Shader 调试 Alpha 通道输出到 RGB 时的 sRGB 伽马偏差（分段函数导致 pow 补偿失效） |
+| [shader-debug-alpha-srgb-encoding-pitfall.md](../data/shader-debug-alpha-srgb-encoding-pitfall.md) | #shader #urp #color-space #experience #graphics #unity | ✅ 已验证 | Shader 调试 Alpha→RGB 时 sRGB 伽马偏差（分段函数 + DXT5 压缩 + 暗部量化三因素叠加） |
