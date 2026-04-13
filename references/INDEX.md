@@ -49,13 +49,11 @@
 | [claude-code-backend-models.md](../data/claude-code-backend-models.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 作为 Agent 框架接入多种模型 (LLM Gateway) |
 | [claude-code-2.1-feature-inventory.md](../data/claude-code-2.1-feature-inventory.md) | #claude-code #reference #tools #ai | ✅ 已验证 | Claude Code 2.1.81 完整功能清单（15 大能力域） |
 | [claude-code-config-dialog-settings.md](../data/claude-code-config-dialog-settings.md) | #claude-code #reference #tools | ✅ 已验证 | `/config` 设置界面各配置项说明（~/.claude.json，非 settings.json） |
-| [claude-code-comprehensive-guide.md](../data/claude-code-comprehensive-guide.md) | #claude-code #reference #tools #knowledge | ✅ 已验证 | Claude Code 完整指南（五平台、1M上下文、Agent Teams、Hooks、Plugins、Subagents） |
+| [claude-code-comprehensive-guide.md](../data/claude-code-comprehensive-guide.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 完整指南 |
 | [claude-code-fork-session.md](../data/claude-code-fork-session.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code Fork 会话功能 (Branching Conversation) |
-| [claude-code-source-architecture.md](../data/claude-code-source-architecture.md) | #claude-code #architecture #knowledge #agent-skills #mcp | ✅ 已验证 | Claude Code v2.1.88 源码架构深度分析（提示词/Agent/Tool/查询循环/权限管线） |
 | [claude-code-slash-commands.md](../data/claude-code-slash-commands.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 完整斜杠命令列表 (Slash Commands) |
 | [claude-code-latest-features-2026.md](../data/claude-code-latest-features-2026.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 最新功能 (2026-03)：Plugin System、Agent Teams、1M Context、Adaptive Thinking |
 | [claude-code-skill-hook-trigger-boost.md](../data/claude-code-skill-hook-trigger-boost.md) | #claude-code #agent-skills #hook #experience | ✅ 已验证 | Claude Code Skill 触发模式与 Hook 提升自动触发率 |
-| [copilot-claude-code-mcp-setup.md](../data/copilot-claude-code-mcp-setup.md) | #copilot #claude-code #mcp #vscode #ai #experience | ⚠️ 待验证 | Copilot 调用 Claude Code 作为子 Agent 的 MCP 配置 |
 | [color-banding-dither.md](../data/color-banding-dither.md) | #graphics #knowledge #color-banding #dither #hdr | 📘 有效 | 色带（Color Banding）与抖动（Dithering）知识 |
 | [color-space-gamma-linear.md](../data/color-space-gamma-linear.md) | #graphics #knowledge #color-space #gamma #linear | 📘 有效 | 色彩空间知识 |
 | [compute-shader-gpu-parallel.md](../data/compute-shader-gpu-parallel.md) | #graphics #shader #knowledge #compute-shader #gpgpu | 📘 有效 | GPU 通用计算 (GPGPU) 相关原理与概念 |
@@ -104,7 +102,6 @@
 | [srp-batcher-optimization.md](../data/srp-batcher-optimization.md) | #unity #srp-batcher #performance #experience | ✅ 已验证 | SRP Batcher 场景优化要点 |
 | [srp-batcher-parameter-overhead.md](../data/srp-batcher-parameter-overhead.md) | #unity #srp-batcher #performance #experience | ✅ 已验证 | SRP Batcher 参数开销分析 |
 | [unity-ai-navigation.md](../data/unity-ai-navigation.md) | #unity #knowledge #nav-mesh #ai-navigation | 📘 有效 | Unity AI Navigation 知识 |
-| [unity-asset-import-tool-architecture.md](../data/unity-asset-import-tool-architecture.md) | #unity #custom-editor #tools #architecture #scriptable-object #fbx #texture | ✅ 已验证 | Unity 编辑器资源导入工具架构（配置驱动 + AssetPostprocessor 自动化） |
 | [unity-animation-scripting-notes.md](../data/unity-animation-scripting-notes.md) | #unity #animation #csharp #performance #knowledge #root-motion | ✅ 已验证 | Unity 动画与脚本开发核心知识清单 |
 | [unity-blendtree-audio-sync.md](../data/unity-blendtree-audio-sync.md) | #unity #knowledge #experience #animation #blend-tree #audio | ✅ 已验证 | Unity BlendTree 下动画驱动音效同步（脚步声等）常见方案汇总 |
 | [unity-cross-project-compilation-check.md](../data/unity-cross-project-compilation-check.md) | #unity #editor #csharp #experience | ✅ 已验证 | Unity 跨项目功能迁移的编译验证经验 |
@@ -114,7 +111,6 @@
 | [unity-generic-animation-import-config.md](../data/unity-generic-animation-import-config.md) | #unity #animation #root-motion #experience | ⚠️ 待验证 | Unity Generic 动画导入配置完整流程：解决滑步、UI 消失与双重位移 |
 | [unity-layer-vs-renderlayer.md](../data/unity-layer-vs-renderlayer.md) | #unity #experience #rendering | ✅ 已验证 | Unity 中 Layer 与 Render Layer 的核心区别与使用场景 |
 | [unity-material-renderer.md](../data/unity-material-renderer.md) | #unity #knowledge #rendering #material | 📘 有效 | Unity 渲染相关知识 |
-| [unity-meta-touch-via-userdata.md](../data/unity-meta-touch-via-userdata.md) | #unity #editor #tools #experience #serialization | ✅ 已验证 | 通过 AssetImporter.userData 稳定触发 `.meta` 变化，并采用批量写入避免逐资源重导入 |
 | [unity-performance-ecs-culling.md](../data/unity-performance-ecs-culling.md) | #unity #experience #performance #ecs #culling | ⚠️ 待验证（需根据 Unity 版本和 DOTS 版本调整） | Unity 性能优化相关经验 |
 | [unity-physics-system.md](../data/unity-physics-system.md) | #unity #knowledge #physics #collider #raycast | 📘 有效 | Unity 物理系统知识 |
 | [unity-shader-variants-tool.md](../data/unity-shader-variants-tool.md) | #unity #shader #experience #shader-variants #editor | ✅ 已验证 | Unity 中 Shader 相关经验 |
@@ -144,6 +140,4 @@
 | [shader-normal-space-transformation.md](../data/shader-normal-space-transformation.md) | #graphics #shader #math #knowledge | 📘 有效 | 法线空间变换矩阵（逆转置矩阵原理 + GLSL/ASE 用法速查） |
 | [msaa-texture-display-optimization.md](../data/msaa-texture-display-optimization.md) | #unity #graphics #rendering #texture #performance #knowledge | ✅ 已验证 | MSAA 与纹理显示效果优化 — 纹理边缘对齐对抗锯齿的影响（含 7 张对比截图） |
 | [unity6-migration-guide.md](../data/unity6-migration-guide.md) | #unity #urp #shader #knowledge #reference #rendering #ecs | ⚠️ 待验证 | Unity 2022.3 → 6.3 LTS 迁移指南：已完成官方文档交叉校验并修正关键事实与引用，但尚未经过真实项目迁移实测 |
-| [modified-renderdoc-wuwa-capture.md](../data/modified-renderdoc-wuwa-capture.md) | #rendering #graphics #knowledge #reference #renderdoc #anti-bot #hook #windows #zhihu | ⚠️ 待验证 | 魔改 RenderDoc 截帧 PC 端《鸣潮》（源码特征替换 + CrashSight 绕过，11 类修改点） |
-|| [git-merge-3way-file-not-in-base.md](../data/git-merge-3way-file-not-in-base.md) | #git #knowledge #experience | ⚠️ 待验证 | Git 三方合并：合并基点不存在的文件执行 git rm 后合并不会误删目标分支文件 |
-| [unity-animation-curve-filter-motionnodename-pitfall.md](../data/unity-animation-curve-filter-motionnodename-pitfall.md) | #unity #animation #fbx #experience #bug #custom-editor | ✅ 已验证 | OnPostprocessAnimation 动画曲线过滤：不要用 motionNodeName 读取 Rig Root node，应改读 m_RootMotionBoneName |
+| [shader-debug-alpha-srgb-encoding-pitfall.md](../data/shader-debug-alpha-srgb-encoding-pitfall.md) | #shader #urp #color-space #experience #graphics #unity | ✅ 已验证 | Shader 调试 Alpha 通道输出到 RGB 时的 sRGB 伽马偏差（分段函数导致 pow 补偿失效） |
