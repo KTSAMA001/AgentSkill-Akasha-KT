@@ -8,6 +8,10 @@
 
 **问题/场景**：
 
+
+### 概要
+VitePress 动态侧边栏标签 + 分类索引页自动生成
+
 VitePress 站点的侧边栏类目名称和各 section（经验/知识/灵感）的 index.md 首页都是手写硬编码的，每次新增分类都要手动改多处代码。
 
 **解决方案/结论**：
@@ -29,7 +33,6 @@ sync-content.mjs 中新增：
 - generateCategoryIndexes()：为 experiences/knowledge/ideas 各自动生成 index.md，包含标题、描述、分类表格
 - INDEX.md 是唯一的元数据来源，新增分类只需修改这一个文件
 
-**验证记录**：
-
+### 验证记录
 - 2026-02-07 动态侧边栏标签生效，所有分类名称正确显示
 - 2026-02-07 三个 section 的 index.md 均从 INDEX.md 自动生成，表格内容一致

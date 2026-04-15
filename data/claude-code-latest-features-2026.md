@@ -2,10 +2,15 @@
 
 **收录日期**：2026-03-10
 **标签**：#ai #tools #reference #claude-code
+**来源**：Claude Code 官方发布说明 / 官方文档
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐ (官方文档)
 
 **问题/场景**：
+
+
+### 概要
+Claude Code 最新功能 (2026-03)
 
 了解 Claude Code 2026 年最新发布的功能和改进。
 
@@ -91,6 +96,5 @@
 - [Claude Opus 4.6 发布](https://www.anthropic.com/news/claude-opus-4-6)
 - [Claude Code 插件文档](https://docs.claude.com/en/docs/claude-code/plugins)
 
-**验证记录**：
-
+### 验证记录
 - [2026-03-10] 来源：官方 CHANGELOG + 博客

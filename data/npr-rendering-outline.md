@@ -1,5 +1,9 @@
 # 非真实感渲染 (Non-Photorealistic Rendering) 相关经验
 
+### 概要
+非真实感渲染 (Non-Photorealistic Rendering) 相关经验
+
+
 > 非真实感渲染 (Non-Photorealistic Rendering) 相关经验
 >
 > 包含：卡通渲染、描边、屏幕空间刘海阴影等风格化渲染技术
@@ -93,8 +97,7 @@ public override void AddRenderPasses(...)
 - [Unity_URP_Learning/RenderFeature](https://github.com/KTSAMA001/Unity_URP_Learning/tree/main/Assets/Products/RenderFeature) - 完整源码
 - [可盖大人 Bilibili](https://www.bilibili.com/read/cv29054886/) - RTHandle 用法参考
 
-**验证记录**：
-
+### 验证记录
 - [2026-02-07] 从 Unity_URP_Learning 仓库整合，实际项目运行验证
 
 **相关经验**：
@@ -166,8 +169,7 @@ context.DrawRenderers(cullResults, ref draw3, ref hairFiltering);
 
 - [Unity_URP_Learning/RenderFeature](https://github.com/KTSAMA001/Unity_URP_Learning/tree/main/Assets/Products/RenderFeature) - 完整源码
 
-**验证记录**：
-
+### 验证记录
 - [2026-02-07] 从 Unity_URP_Learning 仓库整合
 
 **相关经验**：

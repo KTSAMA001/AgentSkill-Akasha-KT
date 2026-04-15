@@ -2,6 +2,10 @@
 
 **标签**：#design #knowledge #arknights #ui
 **来源**：
+
+### 概要
+明日方舟工业风 UI：网点、网格、切角、噪点等视觉元素总结
+
 - 机核：《明日方舟》UI/UX设计复盘（蓝湿父，2020-04-30）https://www.gcores.com/articles/123154
 - 腾讯游戏学堂：《明日方舟》UI/UX 分析——藏在好看背后的先进性（AJ，2019-07-17）https://mp.weixin.qq.com/s/276iXWXkLCf_T3IheN0MAA
 **来源日期**：2019-07-17 / 2020-04-30
@@ -64,4 +68,6 @@ Web 侧常见实现手法（不绑定特定颜色）：
 - 实践验证：CI/CD 经验里的“工业风站点 + Mermaid 渲染 + 自动部署”
   - [experiences/tools/cicd.md](./cicd-vitepress-deploy.md)
 
----
+
+### 验证记录
+- [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。

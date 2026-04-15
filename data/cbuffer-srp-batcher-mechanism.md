@@ -8,6 +8,10 @@
 
 **问题/场景**：
 
+
+### 概要
+CBUFFER 与 SRP Batcher 合批机制
+
 在 URP 中，如何让同 Shader 不同材质的物体被 SRP Batcher 合批？为什么 CBUFFER 能避免合批打断？
 
 **核心概念**：
@@ -102,6 +106,5 @@ ENDHLSL
 
 在 Frame Debugger 中查看 "SRP Batcher" 标签，确认物体是否被合批。
 
-**验证记录**：
-
+### 验证记录
 - [2026-01-31] 从 Technical_Artist_Technotes 整理提取

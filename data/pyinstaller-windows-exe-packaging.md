@@ -9,7 +9,6 @@
 **适用版本**：PyInstaller 6.0+
 
 ### 概要
-
 在 Linux 环境下为 Windows 打包 Python 程序的踩坑记录，包含 bat 脚本生成、资源文件打包、路径兼容等关键问题。
 
 ### 内容
@@ -135,7 +134,6 @@ save_path = Path.cwd() / "saves" / "game.sav"
 - [sys._MEIPASS 说明](https://pyinstaller.org/en/stable/runtime-information.html)
 
 ### 验证记录
-
 - [2026-03-05] 初次记录，来源：璃的故事游戏打包实践
 - [2026-03-05] KT 确认 EXE 可正常运行
 

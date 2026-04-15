@@ -3,12 +3,11 @@
 **标签**：#vitepress #bug #experience #web
 **来源**：实践总结
 **收录日期**：2026-02-13
-**状态**：✅已验证
+**状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐⭐
 **适用版本**：VitePress 1.x
 
 ### 概要
-
 在 VitePress 构建过程中（`npm run docs:build`），如果文档包含自定义 ID 语法（如 `{#id}`）且该语法被意外写入 Frontmatter（如 title 字段），会导致 `markdown-it-attrs` 插件抛出 `Error in pattern 'end of block'` 错误，造成构建失败。
 
 ### 内容
@@ -51,3 +50,7 @@ frontmatter.title = cleanHeading(contentTitle);
 
 ### 相关记录
 无
+
+
+### 验证记录
+- [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。

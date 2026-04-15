@@ -9,7 +9,6 @@
 **适用版本**：claude-mem 10.5.5 (Windows)
 
 ### 概要
-
 ClaudeMem 插件的 MCP 工具在 Windows 上存在两类问题：Smart 工具解析失败和 Memory 工具参数传递失败。
 
 ### 内容
@@ -143,7 +142,6 @@ ls "$LOCALAPPDATA/tree-sitter/lib/"
 - **MCP 服务器重启**：修改 `mcp-server.cjs` 后需要重启 MCP 服务器才能生效
 
 ### 验证记录
-
 - [2026-03-12] 初次记录 Smart 工具修复，方案错误（`.node` 文件不能被 CLI 加载）
 - [2026-03-12] 确认 Smart 工具原始 `-p` 参数方案正确，tree-sitter 使用 DLL 缓存
 - [2026-03-12] 发现 Memory 工具 `search`/`timeline` 的 inputSchema.properties 为空导致参数无法传递

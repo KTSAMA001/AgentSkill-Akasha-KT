@@ -5,12 +5,11 @@
 **收录日期**：2026-03-16
 **来源日期**：2026-03-16（最新推送）
 **更新日期**：—
-**状态**：⚠️待验证
+**状态**：⚠️ 待验证
 **可信度**：⭐⭐⭐⭐（GitHub 7100★ 活跃开发，ACM 引用）
 **适用版本**：Unity 2021.3 LTS+
 
 ### 概要
-
 让 LLM（Claude、Cursor、VS Code Copilot 等）通过 MCP 协议直接操控 Unity Editor，实现自然语言创建 GameObject、编辑材质、管理场景、编写脚本等操作。
 
 ### 架构
@@ -110,7 +109,6 @@ Claude Desktop、Claude Code、Cursor、VS Code Copilot、Windsurf、Cline、Gem
 - [ACM 论文](https://doi.org/10.1145/3757376.3771417) — SA Technical Communications '25
 
 ### 验证记录
-
 - [2026-03-16] 初次记录，来源：GitHub 调研，标注 ⚠️待验证
 
 ---

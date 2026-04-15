@@ -7,7 +7,6 @@
 **可信度**：⭐⭐⭐⭐
 
 ### 概要
-
 基于 Python 的 Markdown 转 Word (.docx) 文档转换器，支持代码语法高亮、Mermaid/PlantUML 图表渲染、表格转换、图片嵌入等功能。核心使用 `python-docx` + `markdown` + `Pygments` + `BeautifulSoup4` 技术栈。
 
 ### 技术架构
@@ -250,6 +249,5 @@ converter = MarkdownToWordConverter(options={
 - [PlantUML API](https://plantuml.com/zh/)
 
 ### 验证记录
-
 - [2026-03-13] 初次记录，基于项目源码分析
 - [2026-03-13] 实际转换测试成功，输出 99KB docx 文件

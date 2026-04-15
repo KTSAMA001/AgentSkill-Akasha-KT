@@ -1,5 +1,9 @@
 # 色带（Color Banding）与抖动（Dithering）知识
 
+### 概要
+色带（Color Banding）与抖动（Dithering）知识
+
+
 本文档记录 Color Banding（色带/色阶）这一常见图形伪影的成因，以及在 Unity URP 高亮特效中常见的处理方式。
 
 ---
@@ -111,4 +115,6 @@
 - Dither（抖动的定义、与量化误差的关系）：https://en.wikipedia.org/wiki/Dither
 - LUT 基础（LUT 的工程背景与常见尺寸观念）：https://blog.frost.kiwi/WebGL-LUTS-made-simple/
 
----
+
+### 验证记录
+- [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。

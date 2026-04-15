@@ -1,5 +1,9 @@
 # Agent Skills 规范
 
+### 概要
+Agent Skills 规范
+
+
 本文档记录 Agent Skills 开放标准的核心知识。
 
 ---
@@ -85,4 +89,6 @@ allowed-tools: Bash(git:*) # 可选，实验性
 - [Anthropic Skills 示例](https://github.com/anthropics/skills)
 - [GitHub Awesome Copilot](https://github.com/github/awesome-copilot)
 
----
+
+### 验证记录
+- [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。

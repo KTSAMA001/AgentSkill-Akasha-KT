@@ -8,7 +8,6 @@
 **适用版本**：通用（GLSL / HLSL / Unity Shader）
 
 ### 概要
-
 法线（Normal）是方向向量（co-vector），不能直接用模型矩阵变换，必须使用**逆转置矩阵**（inverse transpose）。位置和方向向量则直接使用模型矩阵或其逆矩阵。
 
 ### 内容
@@ -122,5 +121,4 @@ Multiply.Out ──→ 对象空间切线
 - [Amplify Shader Editor 架构解析](./amplify-shader-editor-architecture.md) - ASE 节点系统详解
 
 ### 验证记录
-
 - [2026-03-25] 初次记录，来源：图形学通用原理 + ASE 实践验证

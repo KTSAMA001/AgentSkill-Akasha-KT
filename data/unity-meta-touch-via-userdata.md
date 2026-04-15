@@ -9,7 +9,6 @@
 **适用版本**：Unity 2022.3+
 
 ### 概要
-
 如果目标只是让 Unity 资源对应的 `.meta` 文件稳定产生变化，优先使用 `AssetImporter.userData` 写入自定义标记，而不是依赖 `timeCreated` 这类未明确公开承诺的内部字段。
 
 ### 内容
@@ -76,7 +75,6 @@ AssetDatabase.WriteImportSettingsIfDirty(assetPath);
 - [Unity 编辑器资源导入工具架构](./unity-asset-import-tool-architecture.md) - 配置驱动 + AssetPostprocessor 自动化导入框架，与本记录互补：导入工具控制资源导入规则，本记录解决批量触碰 `.meta` 的具体手段
 
 ### 验证记录
-
 - [2026-04-07] 初次记录，来源：Unity 项目内批量 meta 触碰工具实践
 - [2026-04-07] 确认 `userData` 适合作为稳定触发 `.meta` 变化的官方路径；批量处理应采用 `StartAssetEditing + WriteImportSettingsIfDirty + Refresh`
 

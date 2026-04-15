@@ -5,13 +5,12 @@
 **收录日期**: 2026-02-16
 **来源日期**: 2026-02-16
 **更新日期**: 2026-02-16
-**状态**: ✅ 已解决
+**状态**：✅ 已验证
 **可信度**: ⭐⭐⭐⭐⭐ (实践验证)
 **适用版本**: AstrBot v4.17.x+
 **解决日期**: 2026-02-16
 
 ### 概要
-
 在 AstrBot 中使用某些 LLM 模型时，触发 `All chat models failed: BadRequestError: Error code: 400`，错误信息显示在 `messages[11]` 位置遇到 `image_url` 字段，但 API 期望的是 `text` 字段。
 
 ### 问题现象
@@ -106,11 +105,11 @@ All chat models failed: BadRequestError: Error code: 400 - {'error': {'message':
 - [AstrBot 集成 MCP 服务经验](./astrbot-mcp-service-config.md) - 其他 AstrBot 相关经验
 
 ### 验证记录
-
 - [2026-02-16] 初步记录错误现象和可能原因
 - [2026-02-16] 查阅 AstrBot GitHub 仓库，确认官方已在 v4.11.4 通过 PR #4367 和 #4411 修复此问题
 - [2026-02-16] **确认根本原因**：已废弃的"通晓前文"插件导致，禁用后问题解决
 
+- [2026-04-15] 原状态“已解决”已按固定枚举归一到“已验证”。
 ### 相关 GitHub Issues / PRs
 
 - [Issue #2894](https://github.com/AstrBotDevs/AstrBot/issues/2894) - 最早报告此问题

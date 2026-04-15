@@ -7,6 +7,10 @@
 **可信度**：⭐⭐⭐⭐ (实践验证)
 **适用版本**：BehaviorDesigner 1.7.x
 
+
+### 概要
+BD 节点 Tooltip 命名空间冲突解决 {#bd-tooltip-namespace-conflict}
+
 ### 问题/场景
 
 在 BehaviorDesigner 节点中使用 `[Tooltip]` 属性时，编译报错：
@@ -43,7 +47,6 @@ public enum DirectionType
 ```
 
 ### 验证记录
-
 | 日期 | 验证者 | 结果 |
 |------|--------|------|
 | 2026-02-03 | KT | ✅ 方案1在项目中验证通过 |

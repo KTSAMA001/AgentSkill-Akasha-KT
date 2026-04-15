@@ -4,12 +4,11 @@
 **来源**：实践总结
 **收录日期**：2026-03-04
 **来源日期**：2026-03-04
-**状态**：⚠️ 待验证（MCP部分未完成）
+**状态**：⚠️ 待验证
 **可信度**：⭐⭐⭐（个人实践验证）
 **适用版本**：Python 3.12+ / Playwright 1.58+
 
 ### 概要
-
 开发浏览器自动化搜索工具，目标是替代智谱MCP的搜索功能。实现了基于 Playwright 的搜索功能，可打开浏览器、执行搜索并获取结果。MCP封装部分因Python版本问题暂停。
 
 ### 内容
@@ -109,5 +108,6 @@ async def search_bing(query: str, max_results: int = 8):
 - [web-archive-mcp-blueprint.md](./web-archive-mcp-blueprint.md) - Web Archive MCP实现蓝图
 
 ### 验证记录
-
 - [2026-03-04] 初次记录，Bing搜索功能已验证可用，MCP封装待完成
+
+- [2026-04-15] 原状态备注“MCP部分未完成”已移入验证记录。

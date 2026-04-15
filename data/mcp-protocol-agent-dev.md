@@ -10,6 +10,10 @@
 
 **问题/场景**：
 
+
+### 概要
+MCP 协议与 Agent 服务开发经验
+
 AI Agent 生态（如 AstrBot、Claude、Cursor）需要统一的工具协议，支持多种传输模式（stdio、SSE），并能在 Docker 容器内高效部署。
 
 **解决方案/结论**：
@@ -33,7 +37,7 @@ FastMCP.run(tools=[...], transport="stdio")
 - [FastMCP 文档](https://fastmcp.wiki/) - 官方文档
 - [Playwright Python 文档](https://playwright.dev/python/docs/intro) - 自动化浏览器
 
-**验证记录**：
+### 验证记录
 - [2026-01-30] MCP 服务本地开发，SSE 受限于 Docker 网络
 - [2026-02-01] AstrBot 容器内 stdio 部署，工具正常加载
 - [2026-02-01] ⚠️ **搜索引擎多选择器兜底方案失效**：所有搜索引擎（百度、Bing、DuckDuckGo、Brave）均检测到自动化并重定向到验证/保护页面。尝试了自定义 User-Agent、playwright-stealth 库、反检测脚本等多种方案均无效。

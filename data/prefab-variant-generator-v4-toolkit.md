@@ -1,6 +1,6 @@
 # PrefabVariantGeneratorV4 工具本体说明
 
-**标签**：#unity #tools #architecture #custom-editor #reference
+**标签**：#unity #tools #architecture #custom-editor
 **来源**：项目内工具文档与代码实现（实践归纳）
 **收录日期**：2026-03-12
 **更新日期**：2026-03-12
@@ -9,7 +9,6 @@
 **适用版本**：Unity Editor 2022.3+（PrefabVariantGeneratorV4）
 
 ### 概要
-
 `PrefabVariantGeneratorV4` 是 Unity Editor 下的 DAG 节点式 Prefab 批处理工具。它以 `PipelineGraphData` 作为配置资产，按拓扑顺序执行各 Stage，支持分支派生、路径注入与多终端批量产物生成。
 
 ### 内容
@@ -98,6 +97,5 @@ var conn = graphData.GetConnectionToPort(guid, prefabInPort.Id);
 - [effect-system-code-review.md](./effect-system-code-review.md) - 代码审查时的架构边界表述参考
 
 ### 验证记录
-
 - [2026-03-12] 初次记录，来源：工具文档《PrefabVariantGeneratorV4-使用手册》《PrefabVariantGeneratorV4-架构详解》与当前代码实现交叉核对。
 - [2026-03-12] 验证：执行模型、端口机制、路径注入、Partner 双路径端口与图迁移逻辑均在代码中存在对应实现。

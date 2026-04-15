@@ -22,6 +22,7 @@
 | #architecture | 架构设计 | code | type | 架构设计类记录 |
 | #arknights | 明日方舟 | monitor | specialty | 明日方舟游戏相关 |
 | #astrbot | AstrBot | chip | specialty | AstrBot 机器人框架 |
+| #astc | ASTC | shader | specialty | ASTC 纹理压缩格式 |
 | #audio | 音频 | unity | specialty | 音频系统 |
 | #behavior-designer | 行为树 | unity | specialty | Behavior Designer 插件 |
 | #bilibili | B站 | network | specialty | B站相关开发 |
@@ -38,6 +39,7 @@
 | #cook-torrance | Cook-Torrance | shader | specialty | Cook-Torrance BRDF 模型 |
 | #copilot | Copilot | wrench | specialty | GitHub Copilot |
 | #credential | 凭证管理 | wrench | specialty | 凭证/密钥管理 |
+| #cross-platform | 跨平台 | code | specialty | 跨平台兼容与构建 |
 | #csharp | C# | code | domain | C# 编程语言 |
 | #culling | 剔除 | unity | specialty | 视锥/遮挡剔除 |
 | #custom-editor | 自定义编辑器 | unity | specialty | Unity 编辑器扩展 |
@@ -47,12 +49,16 @@
 | #dither | 抖动 | shader | specialty | 抖动算法 |
 | #docker | Docker | network | domain | Docker 容器技术 |
 | #dotnet | .NET | code | domain | .NET 平台 |
+| #docx | Word 文档 | doc | specialty | Word / DOCX 文档处理 |
 | #draw-call | Draw Call | shader | specialty | Draw Call 优化 |
 | #ecs | ECS | unity | specialty | Entity Component System |
 | #editor | 编辑器 | unity | specialty | Unity 编辑器 |
 | #effect-system | 效果系统 | unity | specialty | 特效系统 |
 | #effects | 特效 | shader | specialty | 视觉特效 |
 | #experience | 经验 | book | type | 实践经验类记录 |
+| #excel | Excel | doc | specialty | Excel 表格与生成 |
+| #fbx | FBX | unity | specialty | FBX 资产与导入流程 |
+| #font | 字体 | doc | specialty | 字体、字形与排版相关 |
 | #gamma | Gamma | shader | specialty | Gamma 校正 |
 | #git | Git | code | domain | Git 版本控制 |
 | #hook | Hook | wrench | specialty | Claude Code Hooks 机制 |
@@ -67,13 +73,16 @@
 | #knowledge | 知识 | book | type | 知识学习类记录 |
 | #ktsama | KTSAMA | doc | specialty | KTSAMA 个人相关 |
 | #linear | 线性空间 | shader | specialty | 线性颜色空间 |
+| #markdown | Markdown | doc | specialty | Markdown 文档与转换 |
 | #material | 材质 | unity | specialty | Unity 材质系统 |
 | #math | 数学 | code | specialty | 数学相关 |
 | #mcp | MCP 协议 | chip | domain | Model Context Protocol |
+| #memory | 内存 | code | specialty | 内存占用与内存管理 |
 | #meilisearch | Meilisearch | wrench | specialty | Meilisearch 搜索引擎 |
 | #mvvm | MVVM 架构 | code | specialty | MVVM 设计模式 |
 | #nav-mesh | NavMesh | unity | specialty | Unity 导航网格 |
 | #npr | NPR 渲染 | shader | specialty | 非真实感渲染 |
+| #openclaw | OpenClaw | monitor | specialty | OpenClaw 项目相关 |
 | #pat | PAT 令牌 | code | specialty | Personal Access Token |
 | #pbr | PBR 渲染 | shader | specialty | 基于物理的渲染 |
 | #performance | 性能优化 | spark | specialty | 性能优化 |
@@ -84,6 +93,7 @@
 | #raycast | 射线检测 | unity | specialty | 射线检测 |
 | #react | React | network | domain | React 框架 |
 | #reference | 参考 | book | type | 参考资料/文档 |
+| #renderdoc | RenderDoc | shader | specialty | RenderDoc 抓帧与分析 |
 | #renderer-feature | Renderer Feature | shader | specialty | URP Renderer Feature |
 | #rendering | 渲染 | shader | specialty | 渲染技术 |
 | #rendering-pipeline | 渲染管线 | shader | specialty | 渲染管线 |
@@ -93,8 +103,10 @@
 | #sdf | SDF 距离场 | shader | specialty | 有符号距离场 |
 | #search-api | 搜索 API | wrench | specialty | 搜索 API 接口 |
 | #search-engine | 搜索引擎 | wrench | specialty | 搜索引擎开发 |
+| #scene | 场景 | unity | specialty | 场景加载与场景组织 |
 | #searxng | SearXNG | wrench | specialty | SearXNG 元搜索引擎 |
 | #selenium | Selenium | network | specialty | Selenium 自动化 |
+| #serialization | 序列化 | code | specialty | 序列化机制与数据持久化 |
 | #serp | SERP | wrench | specialty | 搜索结果页 |
 | #shader | 着色器 | shader | domain | 着色器编程 |
 | #shader-variants | Shader 变体 | shader | specialty | Shader 变体管理 |
@@ -102,15 +114,21 @@
 | #social | 社交 | network | specialty | 社交平台相关 |
 | #srp | SRP | shader | specialty | Scriptable Render Pipeline |
 | #srp-batcher | SRP Batcher | shader | specialty | SRP Batcher 优化 |
+| #skybox | 天空盒 | shader | specialty | Skybox 与天空渲染 |
+| #texture | 纹理 | shader | specialty | 纹理格式、压缩与采样 |
 | #tools | 工具 | wrench | domain | 开发工具 |
 | #troubleshooting | 故障排查 | wrench | specialty | 问题排查 |
 | #ui | UI | monitor | specialty | 用户界面 |
+| #unicode | Unicode | code | specialty | Unicode 字符与编码 |
 | #unity | Unity 引擎 | unity | domain | Unity 游戏引擎 |
 | #urp | URP | shader | specialty | Universal Render Pipeline |
 | #vera | 薇拉 | doc | specialty | 薇拉项目 |
 | #vitepress | VitePress | network | domain | VitePress 静态站点 |
+| #vr | VR | unity | specialty | VR / XR 相关问题与方案 |
 | #vscode | VS Code | monitor | specialty | VS Code 编辑器 |
 | #web | Web 开发 | network | domain | Web 前端开发 |
 | #macos | macOS | monitor | domain | macOS 系统与工具链 |
+| #windows | Windows | monitor | domain | Windows 系统与工具链 |
 | #yaml | YAML | network | specialty | YAML 配置格式 |
 | #zhihu | 知乎 | network | specialty | 知乎平台内容 |
+| #3dsmax | 3ds Max | monitor | specialty | 3ds Max 建模与导出流程 |

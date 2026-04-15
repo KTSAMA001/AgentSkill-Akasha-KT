@@ -1,4 +1,8 @@
 # URP / SRP 知识
+
+### 概要
+URP / SRP 知识
+
 本文档记录 Unity SRP/URP 的核心概念与常用扩展点，偏"原理 + 工程要点"。
 
 ---
@@ -275,3 +279,7 @@ public override void Setup(ScriptableRenderContext context, ref RenderingData re
 - 渲染管线基础：./rendering-pipeline-overview.md
 - 色彩空间：./color-space-gamma-linear.md
 - 色带与抖动（Color Banding / Dithering）：./color-banding-dither.md
+
+
+### 验证记录
+- [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。

@@ -1,4 +1,8 @@
 # Unity 物理系统知识
+
+### 概要
+Unity 物理系统知识
+
 本文档记录 Unity 物理系统的核心概念与原理，偏"知识 + 原理"。
 
 ---
@@ -198,4 +202,6 @@ int ignorePlayer = ~LayerMask.GetMask("Player");
 - [Optimize raycasts and other physics queries](https://docs.unity3d.com/2022.3/Documentation/Manual/physics-optimization-raycasts-queries.html) - 官方优化指南
 - [RaycastCommand](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/RaycastCommand.html) - 批量射线检测
 
----
+
+### 验证记录
+- [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。

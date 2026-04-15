@@ -4,10 +4,17 @@
 
 ## ⛔ 执行约束（强制）
 
-- 仅允许修改 `data/*.md` 记录内容，禁止在技能目录外操作。
+- 允许修改 `data/*.md`、配套 `assets/<record-name>/*`、[INDEX.md](../INDEX.md) 与 [tag-registry.md](../tag-registry.md)；禁止在技能目录外操作。
 - 必须先执行 `git pull origin main`，再进行验证与修正。
 - 若标签或状态变化，必须同步更新 tag-registry.md（如新标签）。
+- 验证流程仅处理正式记录及其索引同步，不负责修改模板、workflow、字段 schema 或其他系统层规则；此类变更必须转入 [governance.md](./governance.md)。
 - 完成修正后必须执行 `git commit && git push`，或明确说明未推送原因。
+
+## 强制脚本
+
+- 全库巡检**必须**运行 [validate_records.py](../scripts/validate_records.py)，集中检查标签、状态、元数据、路径和索引一致性。
+- 若记录内容已修正完成，**必须**运行 [regenerate_index.py](../scripts/regenerate_index.py) 同步文件清单，并再次执行校验确认无误。
+- 脚本使用说明**必须**遵循 [scripts/README.md](../scripts/README.md)。
 
 ---
 
@@ -20,6 +27,7 @@
 | **来源性** | 来源是否权威、是否有更新 |
 | **完整性** | 标签是否齐全、格式是否规范 |
 | **资源完整性** | 引用的图片/资源文件是否存在、路径是否正确 |
+| **结构一致性** | 元数据字段、状态枚举、相对路径格式是否仍符合正式结构契约 |
 
 ---
 
@@ -106,8 +114,10 @@
 - [ ] 标注了适用版本/环境？
 - [ ] 引用了官方/权威来源？
 - [ ] 状态标记准确？
+- [ ] 状态字段是否仍使用固定枚举，而非夹带说明性自由文本？
 - [ ] 文件名自解释？
 - [ ] 已更新 INDEX.md？
+- [ ] 若新增标签，已更新 tag-registry.md？
 - [ ] 图片资源完整？（引用的文件均存在于 `assets/<record-name>/`）
 - [ ] 路径均为相对路径？（无绝对路径泄露）
 - [ ] 图片命名规范？（`序号-描述.扩展名`）
@@ -122,16 +132,28 @@
    - 更新"更新日期"字段
    - 修改状态标记
    - 在"验证记录"添加说明
-4. **更新索引** → 如标签或状态变化，同步更新 INDEX.md
+4. **更新索引** → 如标签或状态变化，同步更新 INDEX.md；如涉及新标签，同步更新 tag-registry.md
 5. **推送更改**：`git add . && git commit -m "fix: update [文件名]" && git push`
 6. **反馈用户** → 说明更新了什么
+
+### 强制验证命令
+
+```bash
+python references/scripts/validate_records.py
+python references/scripts/regenerate_index.py
+python references/scripts/validate_records.py
+```
+
+- 未完成上述命令链路，不得声称“验证流程已完成”。
+- 若脚本报错或返回非零退出码，必须先解释原因并继续修正，禁止跳过失败结果直接汇报成功。
 
 ---
 
 ## ✅ 完成门控（回复用户前逐项确认）
 
-- [ ] 已明确本次验证类型（正确性/时效性/来源性/完整性/资源完整性）？
+- [ ] 已明确本次验证类型（正确性/时效性/来源性/完整性/资源完整性/结构一致性）？
 - [ ] 已执行 `git pull origin main`？
 - [ ] 已更新记录中的状态、更新日期与验证记录？
+- [ ] 已确认未借验证流程擅自修改系统层规则？
 - [ ] 若标签或状态变化，已同步更新 tag-registry.md（如新标签）？
 - [ ] 已完成提交推送，或明确说明未推送原因？

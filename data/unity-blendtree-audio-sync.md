@@ -1,11 +1,15 @@
 # Unity BlendTree 下动画驱动音效同步（脚步声等）常见方案汇总
-**标签**：#unity #knowledge #experience #animation #blend-tree #audio
+**标签**：#unity #experience #animation #blend-tree #audio
 **来源**：多来源（Unity Manual / Unity Forum & Discussions / 第三方博客 / YouTube 教程；详见“来源链接”）
 **来源日期**：2021-04-12（CodeAndWeb）/ 2024-05-19（YouTube）/ 其他未标注
 **收录日期**：2026-02-04
 **更新日期**：2026-02-28
 **可信度**：⭐⭐⭐⭐（多来源交叉验证，Animation Curves 方案有官方 API 支撑 + 社区广泛实践 + 项目实测）
 **状态**：✅ 已验证
+
+
+### 概要
+Unity BlendTree 下动画驱动音效同步（脚步声等）常见方案汇总
 
 ### 定义/概念
 
@@ -208,3 +212,7 @@ namespace Proj_dlxb_vr.Monster
 - 结论：仅靠 `GetCurrentAnimatorClipInfo` 权重无法稳定反映真实落脚相位；社区与实践一致推荐转向 Animation Curves 驱动。
 - 2026-02-27（补充）：在独立测试脚本 `CurveTriggerLogTester` 与正式脚本改造验证中，采用 **过零触发 + 零值死区（0.0001）** 能稳定输出触发日志，适配当前项目曲线数据形态。
 - 2026-02-28（补充）：正式脚本确认采用“**死区内不更新 last 值**”规则（`current==0` 直接跳过），修复了“曲线经 0 时过零点被吞掉”问题；
+
+
+### 验证记录
+- [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。

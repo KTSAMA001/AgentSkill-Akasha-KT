@@ -7,6 +7,10 @@
 **可信度**：⭐⭐⭐⭐ (实践验证)
 **适用版本**：BehaviorDesigner 1.7.x
 
+
+### 概要
+BD 节点条件显示的替代方案 {#bd-showif-workaround}
+
 ### 问题/场景
 
 希望在 BehaviorDesigner 节点中实现类似 Odin 的 `[ShowIf]` 功能，让某些参数只在特定条件下显示。
@@ -61,7 +65,6 @@ public class MyAction : ProfilingAction
 | 重写 Task Inspector | 工作量大，需修改 BD 源码或大量反射 |
 
 ### 验证记录
-
 | 日期 | 验证者 | 结果 |
 |------|--------|------|
 | 2026-02-03 | KT | ✅ Header 分组在 BD Inspector 中正常显示 |

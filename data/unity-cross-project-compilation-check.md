@@ -8,7 +8,6 @@
 **适用版本**：Unity 2021+
 
 ### 概要
-
 在进行 Unity 跨项目功能迁移（特别是涉及 Editor 工具和运行时逻辑混合的迁移）时，可以直接在当前项目的终端中使用 `dotnet build` 命令编译目标项目的 `.csproj` 文件来验证迁移代码的正确性。**关键点在于必须同时编译运行时程序集和 Editor 程序集**，否则容易遗漏 Editor 目录下的编译错误。
 
 ### 内容
@@ -62,5 +61,4 @@ dotnet build "$targetProject\Assembly-CSharp-Editor.csproj" | Select-String -Pat
 - [unity-editor-api.md](./unity-editor-api.md) - Unity Editor 开发知识
 
 ### 验证记录
-
 - [2026-02-25] 初次记录，来源：跨项目迁移 GM 工具时实际踩坑总结

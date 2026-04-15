@@ -10,6 +10,10 @@
 
 **问题/场景**：
 
+
+### 概要
+EffectSystem 效果系统 - 代码审查与架构分析
+
 对项目中 `CommonFunctionModule/General/RenderFeatures/EffectSystem` 效果系统进行全面代码审查，梳理其架构设计、用法、优点和待优化点。该系统用于统一管理游戏中的材质特效（溶解、燃烧、冰冻、闪烁等）和 Transform 动画效果。
 
 ---
@@ -181,6 +185,5 @@ bool running = EffectManager.Instance.IsEffectRunning(gameObject, "Dissolve");
 - 没有效果事件系统（如在效果50%进度时触发某个事件）
 - 没有效果预览功能（编辑模式下无法预览效果，只能在播放模式调试）
 
-**验证记录**：
-
+### 验证记录
 - [2026-02-06] 初次记录，来源：代码审查全部源码文件（~3000行）

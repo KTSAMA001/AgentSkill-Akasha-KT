@@ -3,10 +3,15 @@
 **收录日期**：2026-01-31
 **更新日期**：2026-03-10
 **标签**：#ai #tools #reference #claude-code
+**来源**：Claude Code 官方文档 / 发布说明 / 实践验证
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐ (实践验证)
 
 **问题/场景**：
+
+
+### 概要
+Claude Code 作为 Agent 框架接入多种模型 (LLM Gateway)
 
 想了解 Claude Code 是否可以作为"中转层"，连接 IDE 后使用 GLM 或其他非 Anthropic 模型，以及具体支持哪些模型提供商。
 
@@ -76,6 +81,5 @@
 - [Claude Code on Amazon Bedrock](https://code.claude.com/docs/en/amazon-bedrock) - AWS Bedrock 配置
 - [智谱 GLM Coding Plan](https://docs.bigmodel.cn/cn/guide/develop/claude) - 智谱 AI Claude 兼容 API
 
-**验证记录**：
-
+### 验证记录
 - [2026-01-31] 初次记录，来源：官方文档 + 实践验证。已成功通过智谱 API 使用 GLM-4.7 模型。

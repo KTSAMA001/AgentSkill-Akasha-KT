@@ -1,5 +1,9 @@
 # 具体特效实现相关经验
 
+### 概要
+具体特效实现相关经验
+
+
 > 具体特效实现相关经验
 > 
 > 包含：溶解、描边、扭曲、流光、全息、水面、火焰、遮挡透视等
@@ -46,8 +50,7 @@
 
 - [Unity_URP_Learning/OcclusionVision](https://github.com/KTSAMA001/Unity_URP_Learning/tree/main/Assets/Products/OcclusionVision) - 完整源码（含设计文档 .docx）
 
-**验证记录**：
-
+### 验证记录
 - [2026-02-07] 从 Unity_URP_Learning 仓库整合，附带设计方案文档
 
 ---

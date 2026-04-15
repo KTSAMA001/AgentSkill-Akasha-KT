@@ -1,5 +1,9 @@
 # Unity Shader / HLSL 基础知识
 
+### 概要
+Unity Shader / HLSL 基础知识
+
+
 本文档聚焦 Unity Shader 里最常用的 HLSL 概念与工程习惯。
 
 ---
@@ -76,3 +80,7 @@
 ## 关联知识
 
 - 渲染管线基础：./rendering-pipeline-overview.md
+
+
+### 验证记录
+- [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。

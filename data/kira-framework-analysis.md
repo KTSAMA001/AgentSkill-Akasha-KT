@@ -1,6 +1,6 @@
 # KiraFramework Unity 游戏开发框架分析
 
-**标签**：#unity #csharp #architecture #ui #mvvm #knowledge
+**标签**：#unity #csharp #architecture #ui #mvvm
 **来源**：[项目代码分析 - 实践总结]
 **收录日期**：2026-02-16
 **来源日期**：2026-02-16
@@ -10,7 +10,6 @@
 **适用版本**：Unity 2022.3.62f2c1+
 
 ### 概要
-
 KiraFramework 是一个以 UI 管理为核心的 Unity 游戏开发框架，采用配置驱动的代码生成系统，提供类型安全的事件通信和层级化 UI 管理。适合中小型 RPG/卡牌/策略类游戏，但 MVVM View 层尚未完成。
 
 > **比喻**：KiraFramework 就像是一个"毛坯房"——框架结构已经搭建好，水电管道（事件系统、UI管理）已经铺设完毕，但还需要你自己装修（游戏逻辑）才能入住。
@@ -476,7 +475,6 @@ Scripts/Generated/             // 自动生成代码目录
 - [effect-system-code-review.md](./effect-system-code-review.md) - EffectSystem 效果系统 - 代码审查与架构分析
 
 ### 验证记录
-
 - [2026-02-16] 初次记录，来源：KiraFramework 项目代码深度分析
 - [2026-02-16] 补充完整内容：添加生动例子、场景示例、Mermaid流程图
 - [2026-02-16] 修复 Mermaid 语法：将中文 ID 改为英文，中文作为显示标签

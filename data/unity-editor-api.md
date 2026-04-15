@@ -1,5 +1,9 @@
 # Unity Editor 开发知识
 
+### 概要
+Unity Editor 开发知识
+
+
 ## [CustomEditor] 对子类的继承支持
 
 **标签**：#unity #knowledge #editor #custom-editor
@@ -55,3 +59,7 @@ public class LogicMatAnimMarkerController : LogicMatAnimController
 
 - [Editor类](https://docs.unity3d.com/ScriptReference/Editor.html)
 - [CustomEditor属性](https://docs.unity3d.com/ScriptReference/CustomEditor.html)
+
+
+### 验证记录
+- [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。

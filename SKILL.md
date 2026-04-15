@@ -28,10 +28,11 @@ license: MIT
 
 > **重要**：所有路径均为 **相对于 SKILL.md 所在目录** 的相对路径，与用户工作区无关。
 
-### 系统层与数据层边界（必须区分）
+### 三层边界模型（必须区分）
 
-- **数据层（用户知识）**：`data/*.md`，这是查找/引用/展示给用户的唯一知识来源。
-- **系统层（操作规范）**：`SKILL.md` 与 `references/*`，仅用于指导 AI 如何执行流程，不可作为用户知识查询结果直接返回。
+- **数据层（用户知识）**：`data/*.md` 与配套 `assets/<record-name>/*`，用于正式记录与资源承载；这是查找/引用/展示给用户的唯一知识来源。
+- **索引层（运行依赖）**：`references/INDEX.md`、`references/tag-registry.md`，用于索引、标签注册和 Web 侧派生数据同步；不作为用户知识查询结果直接返回。
+- **系统层（操作规范）**：`SKILL.md` 与 `references/workflows/*`、`references/templates/*`、`references/scripts/*`，仅用于指导 AI 如何执行流程，不可作为用户知识查询结果直接返回。
 
 ## ⛔ 不可违反的执行规则
 
@@ -39,12 +40,14 @@ license: MIT
    - **查询（自动执行）**：当用户提及过去的问题、经验、方案等，自动激活本技能进行检索，无需用户显式要求。
    - **记录（必须询问）**：当认为当前对话内容值得记录时，必须先向用户展示拟记录内容的摘要并征求确认，用户同意后方可执行记录流程。禁止未经确认自行记录。
 1. **必须先读流程再执行**：收到用户请求后，必须先识别意图并读取对应 workflow 文件，禁止凭记忆直接执行。
-2. **查找禁止直接凭记忆回答**：必须先在 `data/` 目录下执行本地检索（使用 AI 可用的文件搜索/文本搜索工具），未命中后再进行网络搜索。
+2. **查找禁止直接凭记忆回答**：必须先在 `data/` 目录下执行本地检索（使用 AI 可用的文件搜索/文本搜索工具）；若本地未命中，必须先明确告知“阿卡西本地未命中”，只有在用户明确要求继续调研或意图本身包含外部调研时才进入网络搜索。
 3. **记录/更新必须走完整闭环**：`git pull`（执行前）→ 验证检查 → 写入 `data/` → 更新 `INDEX.md` → `git commit && git push`（执行后）。
 4. **索引维护是完成条件**：新增或修改记录后，未更新 `references/INDEX.md` 视为任务未完成。
 5. **写入前必须验证**：新记录写入或旧记录更新前，必须执行重复检测与正确性检查。
 6. **查找结果来源必须是数据层**：用户发起知识查询时，只能返回 `data/*.md` 中的记录内容；禁止把 `SKILL.md`、`references/workflows/*`、`references/templates/*`、`references/scripts/*` 的内容当作查询结果返回。
 7. **查找采用白名单**：可搜索并可返回的路径只有 `data/*.md`。对其他路径即使命中，也必须按“本地未命中”处理，不得直接返回。
+8. **正式记录禁止临时态**：阿卡西正式库不允许草稿态、半结构态、临时占位态或任何会破坏既有 Web 契约的快捷落库方案；写入 `data/` 的内容必须是符合模板的正式记录。
+9. **系统规则变更必须走治理流程**：凡涉及模板、workflow、索引规则、标签注册规则、字段 schema 或其他 Web 契约的调整，必须走 [workflows/governance.md](references/workflows/governance.md)，不得混入普通记录或验证流程处理。
 
 ## 核心规则
 
@@ -61,9 +64,9 @@ license: MIT
 |------|------|------|
 | `data/*.md` | 读/写/新建，删除需确认 | 用户知识记录，可作为查询结果返回 |
 | `assets/<record-name>/*` | 读/写/新建（存放记录关联的图片等资源） | 数据层资源文件，与记录配套使用 |
-| `references/INDEX.md` | 读/写（索引需实时更新） | 索引维护（记录新增/修改时更新），不用于搜索 |
+| `references/INDEX.md`、`references/tag-registry.md` | 读/写（索引需实时更新） | 索引层维护（记录新增/修改时更新），不用于搜索 |
 | `references/scripts/*.py` | 只读/可执行 | 维护脚本（如索引生成），不作为查找流程依赖 |
-| `SKILL.md`、`references/` 其他文件 | 只读 | 系统操作规范，不可直接作为查询结果返回 |
+| `SKILL.md`、`references/workflows/*`、`references/templates/*` | 只读；仅治理流程可修改 | 系统操作规范，不可直接作为查询结果返回 |
 | 其他位置 | 禁止 | 非技能范围，禁止操作 |
 
 **索引维护**：新增或修改记录时，同步更新 `references/INDEX.md` 的文件清单（如有新标签则同步更新标签概览）
@@ -74,9 +77,11 @@ license: MIT
 
 - ❌ 用户说“记一下”后直接写文件，跳过 `git pull`、验证检查、索引更新与提交推送。
 - ❌ 用户问“之前有没有做过”时直接基于记忆回答，不执行本地检索流程。
+- ❌ 本地未命中后直接把外部调研结果包装成“阿卡西里已有结论”。
 - ❌ 使用旧目录结构（如 `data/experiences/`）或在 `data/` 外写记录。
 - ❌ 修改记录后未同步 `references/INDEX.md`，却对用户宣称“已完成”。
 - ❌ 将 `references/` 中的系统操作规范（流程、模板、脚本说明）当作用户知识查询结果返回。
+- ❌ 为了快捷记录在 `data/` 中写入临时文件、待整理片段或非正式结构内容。
 
 ## 意图识别与路由
 
@@ -87,11 +92,14 @@ license: MIT
 | **求助/提问** | 询问历史经验、查找解决方案、"帮我找下"、"记得...吗"、"之前好像遇到过"（在 `data/` 中检索） | [workflows/search.md](references/workflows/search.md) |
 | **记录/归档** | 请求保存当前结论、整理知识点、"记一下"、"把这个存下来"、"作为经验归档" | [workflows/record.md](references/workflows/record.md) |
 | **修正/反馈** | 指出内容错误、要求更新过时信息、"验证下"、"这个不对"、"信息过期了" | [workflows/validate.md](references/workflows/validate.md) |
+| **系统治理** | 调整模板、修改 workflow、优化索引规则、变更字段 schema、补治理机制 | [workflows/governance.md](references/workflows/governance.md) |
 
 **辅助资源**：
 - 需检索 `data/*.md` 记录：使用 AI 可用的文件搜索/文本搜索工具，并将范围限定在 `data/`
 - 禁止将 `references/INDEX.md` 全文作为检索上下文直接发送给大模型
 - 需获取记录模板：[templates/record-template.md](references/templates/record-template.md)
+- 涉及系统层规则变更：先读取 [workflows/governance.md](references/workflows/governance.md)
+- 涉及结构校验或索引同步：必须遵循 [scripts/README.md](references/scripts/README.md) 并使用对应脚本；禁止退回到人工逐条比对作为主流程。
 
 ## 记录格式
 

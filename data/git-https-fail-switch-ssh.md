@@ -1,14 +1,17 @@
 # Git HTTPS 拉取失败，改用 SSH 协议解决
 
-**来源**：KTSAMA 实践经验
-**状态**：✅ 已验证  
-**可信度**：⭐⭐⭐⭐ (实践验证)01-30  
 **标签**：#git #experience #pat #docker #credential
-**状态**：✅ 已验证  
+**来源**：KTSAMA 实践经验
+**收录日期**：2026-01-30
+**来源日期**：2026-01-30
+**状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (实践验证)
 **适用版本**：Git 2.x+
 
-**问题/场景**：
+### 概要
+已存在仓库通过 HTTPS 拉取持续失败，但改为 SSH 远程地址后可立即恢复。该类问题通常与网络链路、代理干扰或认证通道稳定性有关，而不是仓库内容本身损坏。
 
+**问题/场景**：
 在已存在的 Git 仓库执行 `git pull` 或 `git fetch` 时报错：
 - `fatal: unable to access 'https://xxx.git/': Recv failure: Connection was aborted`
 - `fatal: unable to access 'https://xxx.git/': Recv failure: Connection was reset`
@@ -52,7 +55,6 @@ git pull
 git stash pop
 ```
 
-**验证记录**：
-
+### 验证记录
 - [2026-01-30] 初次记录，来源：实践总结。在公司内网 GitLab 仓库遇到此问题，HTTPS 持续失败，改 SSH 后立即解决。
 - [2026-01-30] 再次验证：如果不处理本地修改直接 Pull 可能会失败，建议配合 Stash 使用。

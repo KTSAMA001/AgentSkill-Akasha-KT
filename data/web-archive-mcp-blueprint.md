@@ -9,7 +9,6 @@
 **适用版本**：Python 3.10+ / MCP SDK 1.22.0 / Playwright latest
 
 ### 概要
-
 基于 FastMCP + Playwright (Edge) 的网页归档 MCP 服务，提供 4 个工具：`save_as_markdown`、`archive_web_page`（兼容别名）、`save_as_mhtml`、`save_as_zip`。支持反爬（stealth 模式）、站点弹窗处理、CDP 协议抓取 MHTML，输出 HTML 源码 / Markdown / MHTML / 全页截图 / ZIP 打包。
 
 ### 内容
@@ -298,7 +297,6 @@ playwright install msedge
 - [Chrome DevTools Protocol - Page.captureSnapshot](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-captureSnapshot) - MHTML 抓取
 
 ### 验证记录
-
 - [2025-02-12] 初次记录，从 `d:\AI\MCPs\web_archive_mcp` 源码完整分析归档
 
 ---

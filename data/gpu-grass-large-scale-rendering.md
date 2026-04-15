@@ -1,5 +1,9 @@
 # 大规模渲染 (Large-Scale Rendering) 相关经验
 
+### 概要
+大规模渲染 (Large-Scale Rendering) 相关经验
+
+
 > 大规模渲染 (Large-Scale Rendering) 相关经验
 >
 > 包含：GPU Instancing、ComputeShader 渲染、视锥剔除、大规模植被等
@@ -99,8 +103,7 @@ Graphics.DrawMeshInstancedProcedural(
 
 - [Unity_URP_Learning/ComputeShaderGrass](https://github.com/KTSAMA001/Unity_URP_Learning/tree/main/Assets/Products/ComputeShader/ComputeShaderGrass) - 完整源码
 
-**验证记录**：
-
+### 验证记录
 - [2026-02-07] 从 Unity_URP_Learning 仓库整合，包含多个迭代版本
 
 **理论基础**：

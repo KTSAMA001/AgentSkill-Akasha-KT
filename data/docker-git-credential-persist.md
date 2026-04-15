@@ -10,6 +10,10 @@
 
 **问题/场景**：
 
+
+### 概要
+Docker 容器内 Git PAT 凭据持久化配置 {#docker-git-credential}
+
 在 Docker 容器中使用 Git over HTTPS 时，需要实现：
 - 远程地址不含明文 token（安全）
 - 容器重启后凭据仍然有效（持久化）
@@ -51,8 +55,7 @@ git push origin main
 - 凭据文件权限建议 `600`
 - 已暴露的 PAT 应立即撤销，重新生成
 
-**验证记录**：
-
+### 验证记录
 - [2026-02-05] Docker 容器内实践验证成功
 
 **相关经验**：

@@ -8,7 +8,6 @@
 **适用版本**：Unity 2021+
 
 ### 概要
-
 基于 ScriptableObject 配置驱动 + AssetPostprocessor 自动执行的资源批量导入管理框架，分为模型处理和纹理处理两大平行子系统。支持文件夹级别的规则配置、单资源豁免机制、资源移动自动重新导入、模块化后处理扩展，以及 Project 窗口/Inspector 的可视化增强。
 
 ### 内容
@@ -182,7 +181,6 @@ public interface IPostprocessModule
 - [Odin Inspector - SerializedScriptableObject](https://odininspector.com/documentation/sirenix.odinInspector.editor/serializedscriptableobject)
 
 ### 验证记录
-
 - [2026-03-31] 初次记录，来源：完整阅读项目 AssetsTool 全部 13 个源文件的实地代码分析
 
 ---

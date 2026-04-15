@@ -4,12 +4,11 @@
 **来源**：实践总结 + Unity 官方文档验证
 **收录日期**：2026-02-10
 **更新日期**：2026-02-10
-**状态**：⚠️待验证
+**状态**：⚠️ 待验证
 **可信度**：⭐⭐⭐⭐
 **适用版本**：Unity 2020.3+
 
 ### 概要
-
 针对 Unity Generic（非人形）动画导入时常见的滑步（Foot Sliding）、Inspector UI 选项消失（Bake Into Pose 等不显示）、以及双重位移问题的完整四步修复流程。核心记忆口诀：**Rig → Motion(None) → Bake → Mask(Uncheck Root)**。
 
 ### 内容
@@ -88,5 +87,4 @@
 - [Unity BlendTree 下动画驱动音效同步](./unity-blendtree-audio-sync.md) - BlendTree 动画音效同步方案
 
 ### 验证记录
-
 - [2026-02-10] 初次记录。来源：用户实践经验总结。经网络调查与 Unity 官方文档交叉验证，四步流程中的各项设置（Rig/Generic、Root Motion Node/None、Bake Into Pose、Mask/Transform）均与官方文档吻合。整体流程为实践总结的最佳实践组合，非单一官方出处，标记为待验证（待实际项目验证完整流程的连贯有效性）。

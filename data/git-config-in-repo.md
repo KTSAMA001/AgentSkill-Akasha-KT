@@ -1,10 +1,16 @@
 # Git 配置跟随仓库持久化
 
-> 创建时间：2026-03-09
-> 标签：#git #docker #配置管理 #持久化
+**标签**：#git #docker #experience #credential
+**来源**：OpenClaw 容器环境实践
+**收录日期**：2026-03-09
+**来源日期**：2026-03-09
+**状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (实践验证)
+
+### 概要
+Docker 容器重建后，如果 Git 配置只写在 `~/.gitconfig`，会随容器销毁丢失。将配置写入仓库内 `.git/config` 可以让配置和挂载卷一起持久化。
 
 ## 问题场景
-
 Docker 容器重建后，`~/.gitconfig` 丢失，需要重新配置 `credential.helper` 等设置。
 
 ## 解决方案
@@ -57,3 +63,7 @@ git config credential.helper "store --file /path/to/credentials/.git-credentials
 ---
 
 _来源：2026-03-09 OpenClaw 容器环境实践_
+
+
+### 验证记录
+- [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。

@@ -8,7 +8,6 @@
 **适用版本**：python-docx 0.8.11+
 
 ### 概要
-
 解决 python-docx 生成的 Word 文档中 emoji 显示为方框或方框带问号的问题。根因是 `run.font.name` 只设置 Word XML 的 `w:ascii` 属性，而 emoji 字符（Unicode 补充平面，code point > 0xFFFF）需要通过 `w:hAnsi` 属性指定字体才能正确渲染。
 
 ### 问题描述
@@ -145,6 +144,5 @@ def _set_style_font_for_emoji(self, style):
 - [Microsoft Typography - Segoe UI Emoji](https://learn.microsoft.com/en-us/typography/font-list/segoe-ui-emoji)
 
 ### 验证记录
-
 - [2026-03-13] 初次记录，基于 md-to-word skill 开发过程中的踩坑总结
 - [2026-03-13] 实际测试验证：emoji（😀❤️👍✅🔥等）在 Word 2019+ 正常显示为彩色表情

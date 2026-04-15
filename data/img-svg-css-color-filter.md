@@ -4,8 +4,13 @@
 **标签**：#tools #web #experience #vitepress
 **来源**：KTSAMA 实践经验
 **状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (实践验证)
 
 **问题/场景**：
+
+
+### 概要
+img 标签的 SVG 无法继承 CSS color，需用 filter 着色 {#img-svg-color-filter}
 
 SVG 内部使用 `stroke="currentColor"` 期望继承父元素的 CSS `color` 属性。但当 SVG 通过 img 标签加载时，`currentColor` 解析为默认黑色（`#000`），因为 img 标签创建了独立的文档上下文，**不继承**外部 CSS 属性。
 
@@ -31,6 +36,5 @@ filter: invert(48%) sepia(89%) saturate(1600%) hue-rotate(3deg) brightness(101%)
 3. `saturate` + `hue-rotate` 调整到目标色相
 4. `brightness` + `contrast` 微调明度
 
-**验证记录**：
-
+### 验证记录
 - 2026-02-07 Dashboard、CategoryGrid、VPFeature 三处图标均正常显示橙色

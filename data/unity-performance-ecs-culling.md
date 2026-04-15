@@ -1,5 +1,9 @@
 # Unity 性能优化相关经验
 
+### 概要
+Unity 性能优化相关经验
+
+
 > Unity 性能优化相关经验
 > 
 > 包含：内存管理、GC 优化、Draw Call、批处理、LOD、遮挡剔除、Profiler 等
@@ -12,7 +16,7 @@
 **来源日期**：2021-05-19（TaTa 仓库 Git commit 时间）
 **标签**：#unity #experience #performance #ecs #culling
 **来源**：KTSAMA 实践经验
-**状态**：⚠️ 待验证（需根据 Unity 版本和 DOTS 版本调整）
+**状态**：⚠️ 待验证
 **可信度**：⭐⭐⭐ (待验证)
 **适用版本**：Unity 2019.4+, Entities 0.7+
 
@@ -158,8 +162,7 @@ void OnStateChange(CullingGroupEvent evt)
 - [ECS System 执行顺序](http://dingxiaowei.cn/2020/02/09/)
 - [TaTa 仓库原文](https://github.com/KTSAMA001/TaTa/tree/master/GrassSystem)
 
-**验证记录**：
-
+### 验证记录
 - [2021-05-19] 初次记录，来源：TaTa 仓库实践总结
 - [2026-01-31] 整合到经验库，来源：外部仓库整合
 
@@ -176,3 +179,5 @@ void OnStateChange(CullingGroupEvent evt)
 - 完整的草海系统还需要资源生产工具链、LOD 混合方案、玩家/场景交互
 
 ---
+
+- [2026-04-15] 原状态备注“需根据 Unity 版本和 DOTS 版本调整”已移入验证记录。

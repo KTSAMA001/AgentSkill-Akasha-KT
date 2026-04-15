@@ -3,10 +3,16 @@
 **收录日期**：2026-02-04
 **来源日期**：2026-02-04
 **标签**：#ai #experience #mcp #astrbot
+**来源**：web_archive_mcp_v2 插件源码分析 + OneBot v11 API 文档
 **状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (源码 + 官方文档交叉验证)
 **适用版本**：AstrBot v4.13.2+, OneBot v11 (NapCat)
 
 **问题/场景**：
+
+
+### 概要
+AstrBot 插件文件上传到QQ实现
 
 在 AstrBot 插件中需要将本地文件发送到QQ群聊或私聊，需要通过 NapCat (OneBot v11) 的API接口实现。
 
@@ -66,10 +72,10 @@ except:
 ```
 
 **参考链接**：
-- [web_archive_mcp_v2 插件源码](/AstrBot/data/plugins/web_archive_mcp_v2/main.py)
+- web_archive_mcp_v2 插件源码（本地插件路径：AstrBot/data/plugins/web_archive_mcp_v2/main.py）
 - [OneBot v11 API 文档](https://11.onebot.dev/api/file.html)
 
-**验证记录**：
+### 验证记录
 - [2026-02-04] 通过 web_archive_mcp_v2 插件代码分析，确认文件上传实现方式
 
 **相关经验**：

@@ -10,6 +10,10 @@
 
 **问题/场景**：
 
+
+### 概要
+Docker 容器重建后 Git 认证持久化配置 {#docker-git-auth-persist}
+
 在 Docker 容器中运行 Git 操作时，容器重建后出现认证失败：
 - `fatal: could not read Username for 'https://github.com': No such device or address`
 - `fatal: Authentication failed`
@@ -73,8 +77,7 @@ ln -sf <挂载路径>/.gitconfig ~/.gitconfig
 - ✅ 推荐：`.gitconfig` 也放到挂载卷，用软链接指向它
 - ⚠️ 若凭证文件也不存在，需重新执行一次 `git push` 生成
 
-**验证记录**：
-
+### 验证记录
 - [2026-02-22] Docker 容器内实践验证成功
   - Pull 测试：✅ 正常
   - Push 测试：✅ 正常

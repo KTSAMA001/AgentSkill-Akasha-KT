@@ -10,7 +10,6 @@
 **适用版本**：Unity 通用（Humanoid 动画系统）
 
 ### 概要
-
 系统分析了 Animation Retargeting（动画重定向）技术的基本原理、骨骼映射方案以及在 Unity 引擎中的实际应用经验，包括遇到的问题和解决方法。作者有 Havok 引擎源码阅读和自研引擎实现经验。
 
 ### 内容
@@ -201,7 +200,6 @@ Unity 内部定义了一套骨架模板，所有 Avatar 骨骼都必须映射到
 - [Generic 动画导入配置完整流程](./unity-generic-animation-import-config.md) - Rig→Motion→Bake→Mask 配置
 
 ### 验证记录
-
 - [2026-02-11] 初次收录，抓取知乎原文（Funny David 专栏），下载全部 12 张示意图至 `assets/animation-retarget-technology-unity/`，md 内使用相对路径引用。原文发布于 2017-02-02，编辑于 2019-07-13，270+ 赞同。内容涵盖重定向原理（基于参考姿势差异计算）、骨骼映射方案（链式映射）及 Unity Humanoid 实战问题。评论区有对公式精度的深入讨论。
 
 ---

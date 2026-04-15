@@ -10,7 +10,6 @@
 **适用版本**：Akasha-KT v2.2.0+
 
 ### 概要
-
 为阿卡西记录（Akasha-KT）设计基于向量模型的语义搜索架构，提升自然语言查询体验，实现从关键词匹配到语义理解的升级。
 
 ### 背景分析
@@ -175,7 +174,6 @@ def semantic_search(
 - [self-hosted-search-engines.md](./self-hosted-search-engines.md) - 自搭建搜索引擎技术
 
 ### 验证记录
-
 - [2026-03-04] 初次记录，基于技术讨论完成架构设计
 - [ ] 待验证：选择嵌入模型并进行 POC 测试
 - [ ] 待验证：评估向量数据库选型（ChromaDB vs Qdrant）

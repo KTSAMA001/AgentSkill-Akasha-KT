@@ -9,6 +9,10 @@
 
 **问题/场景**：
 
+
+### 概要
+ASE Shader 架构与 Bakery 光照集成最佳实践
+
 在使用 Amplify Shader Editor (ASE) 开发角色、道具、场景 Shader 时，如何合理组织 Shader 架构，特别是与 Bakery 烘焙光照（SH 球谐）集成时的最佳实践。
 
 **解决方案/结论**：
@@ -75,8 +79,7 @@ float3 UnitySHAr() {
 - [Bakery GPU Lightmapper 官方文档](https://geom.io/bakery/wiki/)
 - [Amplify Shader Editor 官方文档](https://wiki.amplify.pt/index.php)
 
-**验证记录**：
-
+### 验证记录
 - [2026-01-29] KTSAMA 提交验证，变体优化后编译时间和内存显著下降
 
 **备注**：

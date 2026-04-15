@@ -1,5 +1,9 @@
 # Unity 中的 C# 脚本编程相关经验
 
+### 概要
+Unity 中的 C# 脚本编程相关经验
+
+
 > Unity 中的 C# 脚本编程相关经验
 > 
 > 包含：MonoBehaviour 生命周期、协程、事件系统、ScriptableObject、序列化等
@@ -10,7 +14,7 @@
 
 ## KT_Core 框架架构设计经验总结
 
-**标签**：#unity #csharp #experience #architecture
+**标签**：#unity #csharp #architecture
 **来源**：KTSAMA 实践经验
 **收录日期**：2026-01-28
 **来源日期**：2026-01-28
@@ -91,3 +95,6 @@
 - 使用 Odin Inspector 的 SerializeReference 实现策略模式的序列化
 - Entity 标签使用 Flags 枚举支持多选（如同时 Attackable + Boss）
 
+
+### 验证记录
+- [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。

@@ -2,10 +2,15 @@
 
 **收录日期**：2026-01-30
 **标签**：#ai #tools #reference #claude-code
+**来源**：Claude Code 官方文档
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐ (官方文档)
 
 **问题/场景**：
+
+
+### 概要
+Claude Code Fork 会话功能 (Branching Conversation)
 
 在复杂任务中想尝试不同的方案，但不希望丢失当前会话的进度，或者需要并行探索多种实现路径。
 
@@ -64,6 +69,5 @@ flowchart LR
 - [GitHub Issue: Clone/duplicate conversation](https://github.com/anthropics/claude-code/issues/12941)
 - [Changelog: Improved fork session hint](https://code.claude.com/docs/en/changelog)
 
-**验证记录**：
-
+### 验证记录
 - [2026-01-30] 来源：官方文档与 Release Note

@@ -1,16 +1,15 @@
 # Claude Code 完整指南
 
-**标签**：#claude-code #reference #tools #knowledge
+**标签**：#claude-code #tools #reference
 **来源**：官方文档 + 实践经验
 **收录日期**：2026-01-30
 **来源日期**：2026-04-02
 **更新日期**：2026-04-02
-**状态**：✅已验证
+**状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐（官方文档验证）
 **适用版本**：Claude Code v2.1.88+
 
 ### 概要
-
 Claude Code 是 Anthropic 推出的 AI 编程助手，支持终端 CLI、桌面应用、Web 浏览器、VS Code 和 JetBrains IDE 五大平台，提供 1M token 上下文窗口、多代理协调、插件系统、Hook 自动化等能力。
 
 ### 内容
@@ -304,11 +303,10 @@ OS 级文件系统和网络隔离，防止恶意操作。
 - [完整斜杠命令列表](./claude-code-slash-commands.md) — 更多命令用法
 - [接入多种模型 (GLM/Bedrock)](./claude-code-backend-models.md) — 模型配置
 - [Fork 会话功能](./claude-code-fork-session.md) — 多方案探索
-- [2.1 功能清单](./claude-code-2.1-feature-inventory.md) — 功能清单
+- [2.1 功能清单](./claude-code-2-1-feature-inventory.md) — 功能清单
 - [Skill Hook 触发](./claude-code-skill-hook-trigger-boost.md) — 触发率提升
 - [源码架构分析](./claude-code-source-architecture.md) — 内部设计原理
 
 ### 验证记录
-
 - [2026-01-30] 初次记录，来源：官方文档 + 实践经验整合
 - [2026-04-02] 重大更新：基于 code.claude.com 最新文档全面重写。新增 Agent Teams、Plugins、Hooks、Subagents、Desktop/Web/JetBrains 平台、1M 上下文、Remote Control、Channels、Agent SDK、Scheduled Tasks、Sandboxing、Output Styles、Statusline、Voice Dictation 等内容。更新模型信息（Opus 4.6/Sonnet 4.6/Haiku 4.5 GA，旧版退役）。安装方式扩展至 7 种。权限模式从 3 种更新至 5 种。

@@ -3,12 +3,11 @@
 **标签**：#shader #urp #color-space #experience #graphics #unity
 **来源**：实践总结 — Jymf_Role_01.shader 颜色遮罩调试
 **收录日期**：2026-04-13
-**状态**：✅ 已验证（二次深度修正）
+**状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐⭐（实测 + sRGB 精确公式 + 穷举数值分析 + URP 源码追踪）
 **适用版本**：Unity 2022.3+ / URP 14+（任何 Linear 渲染管线均适用）
 
 ### 概要
-
 在 Shader 中用 `return alpha` 调试纹理 A 通道时，屏幕取色器读到的值与纹理预览值不一致。这是因为 A 值被灌入了 RGB 通道输出，而 RGB 会被 sRGB Back Buffer 的硬件编码"提亮"。用 `pow(a, 2.2)` 预补偿在暗部会失效，因为 sRGB 编码函数在低值区使用的是线性段而非幂函数。此外，**DXT5/ASTC 纹理压缩**会改变实际 alpha 值，进一步加剧暗部数值偏差。
 
 ### 内容
@@ -103,6 +102,7 @@ baseRGB = baseRGB * clampedAreaColor * step(0.001, mask);
 - [色彩空间知识](./color-space-gamma-linear.md) - Gamma/Linear 基础原理与 Unity 设置
 
 ### 验证记录
-
 - [2026-04-13] 首次记录：在 Jymf_Role_01.shader 颜色遮罩（ColorMask）功能调试中发现并验证。纹理 A 通道值 12 直接输出显示为 60，pow(2.2) 后显示为 ~2。
 - [2026-04-13] 二次修正：用户指出初版计算结果与实际观测值不完全吻合（pow 后理论 4 实际 2），触发深度调查。追踪 URP 源码确认渲染链路（HDR=Off → R8G8B8A8_SRGB RT → GPU 硬件 sRGB 编码 → FinalBlit → backbuffer）。Python 穷举 alpha 7.0~14.9 证实：没有单一 alpha 值能同时满足 screen1=60 与 screen2=2，偏差来源为 DXT5 纹理压缩改变实际采样值 + sRGB 暗部线性段的 8-bit 量化敏感性极高。
+
+- [2026-04-15] 原状态附注“二次深度修正”已移入验证记录。

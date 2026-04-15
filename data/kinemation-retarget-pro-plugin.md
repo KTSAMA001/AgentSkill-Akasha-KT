@@ -9,7 +9,6 @@
 **适用版本**：Retarget Pro 4.2.1 / Unity 2021.3.24f1+
 
 ### 概要
-
 KINEMATION Retarget Pro 是 Unity 高级动画重定向插件，可将一个角色（Source）的动画无缝迁移到另一个角色（Target），质量高于 Unity 内置 Humanoid 系统。支持编辑器离线烘焙和运行时实时重定向两种模式。仅支持将 Humanoid/Generic 动画重定向到 **Generic** 角色，暂不支持烘焙 Humanoid 格式输出。
 
 ### 内容
@@ -245,5 +244,4 @@ effector = effector * scale + targetRoot.TransformPoint(targetPose);
 - [Unity 动画与脚本开发核心知识](./unity-animation-scripting-notes.md) - Animation 系统基础
 
 ### 验证记录
-
 - [2026-02-10] 初次记录。通过完整源码阅读（17 个 C# 文件）+ 官方文档交叉验证。版本号 4.2.1 由用户确认。

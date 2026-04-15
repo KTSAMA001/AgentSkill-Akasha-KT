@@ -1,5 +1,9 @@
 # Unity 中 Shader 相关经验
 
+### 概要
+Unity 中 Shader 相关经验
+
+
 > Unity 中 Shader 相关经验
 >
 > 包含：ShaderLab、Shader Graph、材质属性、渲染队列、多 Pass 等
@@ -40,3 +44,7 @@
 
 **详细文档**：
 - [VR变体收集器完整架构文档](./vr-variant-collector-architecture.md)
+
+
+### 验证记录
+- [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。

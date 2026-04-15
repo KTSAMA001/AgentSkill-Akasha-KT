@@ -1,14 +1,17 @@
 # Git 对象损坏（loose object corrupt）修复 {#git-object-corrupt}
 
+**标签**：#git #docker #experience #troubleshooting #credential
 **来源**：KTSAMA 实践经验
-**状态**：⚠️ 解决方案已验证，根因待查
-**可信度**：⭐⭐⭐ (解决方案有效)
-**标签**：#git #experience #pat #docker #credential
-**状态**：⚠️ 解决方案已验证，根因待查
+**收录日期**：2026-02-05
+**来源日期**：2026-02-05
+**状态**：🔄 待更新
+**可信度**：⭐⭐⭐ (修复方案已验证，根因未确认)
 **适用版本**：Git 2.x+
 
-**问题/场景**：
+### 概要
+当 Git loose object 损坏时，可以从正常仓库重新写回缺失对象完成修复；但本案例的真实触发根因尚未确认，因此该记录仍需继续更新。
 
+**问题/场景**：
 Git 操作时报错：
 ```
 error: inflate: data stream error (incorrect header check)
@@ -102,8 +105,7 @@ git clone <仓库地址> repo
 | `hash-object -w` | 正确方式：读取文件 → 加头 → 压缩 → 写入对象库 |
 | 同内容同哈希 | 相同内容的文件在任何位置执行 `hash-object` 结果一致 |
 
-**验证记录**：
-
+### 验证记录
 - [2026-02-05] 同事仓库损坏，通过 `git hash-object -w` 从正常仓库导出文件重建对象，成功修复
 
 **相关经验**：

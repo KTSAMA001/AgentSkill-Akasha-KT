@@ -1,5 +1,9 @@
 # 基于物理的渲染（Physically Based Rendering）相关原理与概念
 
+### 概要
+基于物理的渲染（Physically Based Rendering）相关原理与概念
+
+
 > 基于物理的渲染（Physically Based Rendering）相关原理与概念
 
 ---
@@ -244,4 +248,6 @@ float3 ACESToneMapping(float3 x)
 - [色带与抖动](./color-banding-dither.md)
 - [色彩空间](./color-space-gamma-linear.md)
 
----
+
+### 验证记录
+- [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。

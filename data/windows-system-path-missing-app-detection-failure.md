@@ -10,7 +10,6 @@
 **适用版本**：Windows 10/11 + VS Code 扩展生态（依赖系统命令探测场景）
 
 ### 概要
-
 当应用或扩展通过进程调用系统命令（如 `where.exe`）探测依赖时，若系统 `PATH` 缺失 `C:\Windows\System32` 等关键目录，会出现“明明已安装依赖却被判定缺失”的假故障。本记录沉淀一套可复用的定位与修复流程。
 
 ### 内容
@@ -77,7 +76,6 @@
 - [claude-code-comprehensive-guide](./claude-code-comprehensive-guide.md) - Claude Code 功能与使用总览
 
 ### 验证记录
-
 - [2026-03-02] 初次记录，来源：本地 Windows 环境实战排障。
 - [2026-03-02] 已在目标环境验证：补齐系统 PATH 后，应用内依赖探测恢复正常。
 

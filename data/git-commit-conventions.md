@@ -1,5 +1,9 @@
 # Git 团队协作工作流相关经验
 
+### 概要
+Git 团队协作工作流相关经验
+
+
 > Git 团队协作工作流相关经验
 >
 > 包含：分支策略、PR 流程、代码审查、发布流程等
@@ -131,8 +135,7 @@ conventional-changelog -p angular -i CHANGELOG.md -s
 - [Conventional Commits 官方规范](https://www.conventionalcommits.org/)
 - [Angular 提交规范](https://github.com/angular/angular/blob/main/CONTRIBUTING.md#commit)
 
-**验证记录**：
-
+### 验证记录
 - [2026-01-30] 初次记录，来源：[Conventional Commits 官方文档](https://www.conventionalcommits.org/)
 
 **备注**：

@@ -1,16 +1,15 @@
 # 双璃通信架构演进（v3.2 轮询 → v4.0 纯 API）
 
-**标签**：#openclaw #astrbot #docker #architecture #experience
+**标签**：#docker #architecture #astrbot #openclaw
 **来源**：实践总结
 **收录日期**：2026-03-26
 **来源日期**：2026-03-22 ~ 2026-03-26
 **更新日期**：2026-03-26
-**状态**：✅已验证
+**状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐
 **适用版本**：OpenClaw 2026.3.13+, AstrBot openclaw_bridge v4.0
 
 ### 概要
-
 OpenClaw（璃）与 AstrBot（星璃）之间的双璃通信经过三次架构迭代：v3.2 高频轮询 → v3.3 事件驱动 → v4.0 纯 API 直连。最终方案零文件队列、零 cron 轮询、零 watchdog，双向通过 HTTP API 实时投递。
 
 ### 内容
@@ -121,7 +120,6 @@ with urllib.request.urlopen(req, timeout=60) as resp:
 - 无
 
 ### 验证记录
-
 - [2026-03-22] 初次记录：v3.2 轮询模式建立
 - [2026-03-26] 更新 v3.3：事件驱动优化，launchd WatchPaths + watchdog mtime
 - [2026-03-26] 重大更新 v4.0：纯 API 直连，移除全部文件队列机制。双向端到端测试通过（Docker 内 → 宿主机 OpenClaw /v1/responses 返回 200，宿主机 → AstrBot /api/v1/chat SSE 流正常）

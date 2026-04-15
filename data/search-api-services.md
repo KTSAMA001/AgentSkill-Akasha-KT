@@ -10,6 +10,10 @@
 
 **概述**：
 
+
+### 概要
+搜索 API 服务对比
+
 当自动化抓取搜索引擎受阻时，官方或第三方搜索 API 是最可靠的替代方案。以下是主流服务的对比分析。
 
 ### 服务对比表
@@ -120,7 +124,7 @@
 - [SerpAPI](https://serpapi.com/)
 - [Google Custom Search JSON API](https://developers.google.com/custom-search/v1/overview)
 
-**验证记录**：
+### 验证记录
 - [2026-02-01] 调研官方文档，确认定价和功能
 - [2026-02-01] 确认 Brave Search API 为 Claude MCP 官方推荐
 

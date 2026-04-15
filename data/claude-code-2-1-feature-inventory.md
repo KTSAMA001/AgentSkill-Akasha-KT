@@ -9,7 +9,6 @@
 **适用版本**：Claude Code 2.1.81 (2026-03-20)
 
 ### 概要
-
 Claude Code 2.1.81 完整功能清单，涵盖 15 大能力域：交互模式、内置工具、多代理、会话管理、非交互/SDK 模式、Git 集成、MCP、Hooks、Plugin、Skill、IDE 集成、Memory、Chrome 集成、结构化输出、CLI 标志与环境变量。
 
 ---
@@ -486,5 +485,4 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 - [Claude Code 后端模型接入](./claude-code-backend-models.md) - 多模型 LLM Gateway
 
 ### 验证记录
-
 - [2026-03-25] 初次记录，来源：`claude --version` 确认 2.1.81，`claude --help` 提取完整 CLI 标志，官方文档交叉校验

@@ -10,6 +10,10 @@
 
 **问题/场景**：
 
+
+### 概要
+URP 中 GrabPass 替代方案 (GrabColor RenderFeature) {#grab-color-renderfeature}
+
 URP 不支持内置管线的 `GrabPass`，需要在后续 Shader 中读取当前帧的屏幕颜色（如折射、扭曲、描边等效果），需要找到替代方案。
 
 **解决方案/结论**：
@@ -74,8 +78,7 @@ half4 frag(Varyings i) : SV_Target
 
 - [Unity_URP_Learning/RenderFeature](https://github.com/KTSAMA001/Unity_URP_Learning/tree/main/Assets/Products/RenderFeature) - 完整源码
 
-**验证记录**：
-
+### 验证记录
 - [2026-02-07] 从 Unity_URP_Learning 仓库整合
 
 **相关经验**：

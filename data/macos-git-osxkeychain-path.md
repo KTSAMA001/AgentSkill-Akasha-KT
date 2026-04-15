@@ -1,14 +1,17 @@
 # macOS Git osxkeychain Credential Helper 路径问题 {#osxkeychain-path}
 
+**标签**：#macos #git #experience #pat #credential
 **来源**：KTSAMA 实践经验
+**收录日期**：2026-02-05
+**来源日期**：2026-02-05
 **状态**：✅ 已验证
-**可信度**：⭐⭐⭐⭐ (实践验证)6-02-05
-**标签**：#git #experience #pat #docker #credential
-**状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐ (实践验证)
 **适用版本**：Git 2.x+ (Homebrew)
 
-**问题/场景**：
+### 概要
+Homebrew 安装的 Git 在 macOS 上可能找不到 `git-credential-osxkeychain`，原因不是功能缺失，而是 helper 不在 PATH。将 `credential.helper` 配置为完整可执行路径即可恢复认证。
 
+**问题/场景**：
 在 macOS 上使用 Homebrew 安装的 Git，配置 `credential.helper osxkeychain` 后执行 git 操作报错：
 - `git: 'credential-osxkeychain' is not a git command`
 - `fatal: Authentication failed`
@@ -53,8 +56,7 @@ git push origin main
 - PAT 需要 `repo` 权限才能 push
 - GitHub 已禁用密码认证（2021年起），必须使用 PAT
 
-**验证记录**：
-
+### 验证记录
 - [2026-02-05] 通过完整路径配置解决了多仓库认证问题
 
 **相关经验**：

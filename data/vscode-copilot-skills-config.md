@@ -1,5 +1,9 @@
 # GitHub Copilot 使用相关经验
 
+### 概要
+GitHub Copilot 使用相关经验
+
+
 > GitHub Copilot 使用相关经验
 >
 > 包含：Chat、Agent、Custom Instructions、Skills 等
@@ -88,8 +92,7 @@
 - [Claude Code Skills 官方文档](https://code.claude.com/docs/en/skills) - 技能创建和配置指南
 - [Claude Code Memory 官方文档](https://code.claude.com/docs/en/memory) - CLAUDE.md 配置说明
 
-**验证记录**：
-
+### 验证记录
 - [2026-01-30] 初次记录，来源：实践总结。配置完成后两边均可正常使用共享的经验记录技能。
 - [2026-02-01] 更新：仓库结构调整，每个技能独立成仓库，data 目录移入技能目录内。
 

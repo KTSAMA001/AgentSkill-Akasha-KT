@@ -78,6 +78,13 @@
 4. **新标签创建**：允许创建细粒度标签，但需**节制**。仅当该概念具有复用价值时才创建，避免标签爆炸。
 5. **索引同步**：使用新标签后**必须**同步更新 [INDEX.md](../INDEX.md) 的标签索引，保持闭环。
 
+## 结构约束
+
+- 本模板用于**正式记录**；写入 `data/` 的内容必须完整符合模板要求，不允许用草稿、占位字段或临时段落替代。
+- 元数据字段名必须保持稳定，禁止临时改名、插入未注册字段，或为了单条记录例外而改变结构。
+- `**状态**` 字段必须严格使用下方“状态定义”中的固定枚举值；补充说明应写入“概要”或“验证记录”，不得写进状态字段本身。
+- 若需要修改字段 schema、状态体系、模板章节或其他 Web 解析契约，必须先走 [治理流程](../workflows/governance.md)。
+
 ## 状态标记速查
 
 | 标记 | 含义 | 典型场景 |
@@ -155,3 +162,4 @@
 - 记录流程：[workflows/record.md](../workflows/record.md)
 - 查找流程：[workflows/search.md](../workflows/search.md)
 - 验证流程：[workflows/validate.md](../workflows/validate.md)
+- 治理流程：[workflows/governance.md](../workflows/governance.md)

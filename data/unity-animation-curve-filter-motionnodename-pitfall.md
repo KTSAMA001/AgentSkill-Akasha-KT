@@ -8,7 +8,6 @@
 **适用版本**：Unity 2021+
 
 ### 概要
-
 在 `AssetPostprocessor.OnPostprocessAnimation` 中实现动画曲线过滤时，**不能把** `ModelImporter.motionNodeName` **当成** Inspector `Rig` 页签里 Generic 动画的 `Root node`。`motionNodeName` 对应的是 `Animation` 页签 `Motion` 区域的 `Root Motion Node`，不是同一个设置。当前已验证可用的做法，是通过 `SerializedObject` 读取内部属性 `m_HumanDescription.m_RootMotionBoneName`，再按 `EditorCurveBinding.path` 的 Transform 路径字符串做匹配。
 
 ### 内容
@@ -122,7 +121,6 @@ private static bool IsRootNodeBinding(string bindingPath, string rootPath)
 - [Unity Generic 动画导入配置完整流程](./unity-generic-animation-import-config.md) - Rig/Root node 的手动配置流程
 
 ### 验证记录
-
 - [2026-04-08] 初次记录。将 `motionNodeName` 误判为读取 Rig Root node 的公开 API，后续需继续核验其语义边界。
 - [2026-04-09] 修正：结合 Unity `Rig` / `Motion` 官方文档与项目代码复核，确认 `motionNodeName` 对应的是 `Root Motion Node`，不是 `Rig Root node`。当前已验证的正确方向是使用 `SerializedObject` 读取 `m_HumanDescription.m_RootMotionBoneName`，并按 `EditorCurveBinding.path` 做字符串匹配过滤。移除了“三级回退链 / transformPaths 映射”为已验证结论的表述。
 

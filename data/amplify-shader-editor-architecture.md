@@ -1,6 +1,6 @@
 # Amplify Shader Editor 架构与实现机制解析
 
-**标签**：#unity #shader #graphics #knowledge #architecture #urp
+**标签**：#unity #shader #graphics #architecture #urp
 **来源**：[项目源码分析 + Amplify 官方文档 + 官方论坛/公开资料交叉验证]
 **收录日期**：2026-03-24
 **来源日期**：2026-03-24
@@ -10,7 +10,6 @@
 **适用版本**：Amplify Shader Editor 1.9.8.1；Unity URP 项目
 
 ### 概要
-
 Amplify Shader Editor 的核心不是单纯的节点编辑器，而是一套 `图模型 + 文本模板 + 代码片段收集器 + Shader 内嵌序列化协议`。它把节点图直接嵌入 `.shader` 文件尾部的 `/*ASEBEGIN ... ASEEND*/` 区块中，使 Shader 文件同时成为运行产物和可编辑源；生成阶段则由主节点发起，沿输入端口反向递归收集代码片段，再通过模板标签系统组装为完整 Shader。
 
 ### 内容
@@ -198,7 +197,6 @@ ASEEND*/
 - [HLSL 着色器语言相关经验](./shader-variants-compile.md) - 涉及 ASE 中 Static Switch/变体使用
 
 ### 验证记录
-
 - [2026-03-24] 初次记录。基于项目内 ASE 插件源码、项目样本 Shader、官方文档搜索结果和官方论坛公开说明交叉验证整理。
 - [2026-03-24] 本地源码验证重点包括：`AmplifyShaderEditorWindow`、`ParentGraph`、`ParentNode`、`InputPort`、`MasterNodeDataCollector`、`TemplatesManager`、`TemplateIdManager`、`TemplateMultiPassMasterNode`。
 - [2026-03-24] 项目样本验证包括 `boli_3.shader`、`UVTitleSplit_ASE.shader`，均确认存在 `ASEBEGIN` 图数据与多 Pass 主节点信息。

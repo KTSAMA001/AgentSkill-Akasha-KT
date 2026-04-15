@@ -1,6 +1,6 @@
 # 阿卡西记录 Web 项目架构深度解析
 
-**标签**：#web #vitepress #architecture #reference
+**标签**：#web #vitepress #architecture
 **来源**：[AkashaRecord-Web 项目](https://github.com/KTSAMA001/AkashaRecord-Web) - 架构分析与文档
 **收录日期**：2026-02-16
 **状态**：📘 有效
@@ -10,7 +10,6 @@
 ---
 
 ### 概要
-
 AkashaRecord-Web 是阿卡西记录知识库的 Web 前端展示平台，采用 VitePress 构建静态站点，辅以 Express Webhook 服务实现自动构建。本文档提供了完整的技术架构、核心流程、组件系统、数据流与部署方案解析。
 
 ---
@@ -397,5 +396,4 @@ const filteredRecords = computed(() => {
 ---
 
 ### 验证记录
-
 - 2026-02-16 初次记录，来源：[架构分析文档]
