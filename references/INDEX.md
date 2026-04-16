@@ -51,6 +51,7 @@
 | [cicd-vitepress-deploy.md](../data/cicd-vitepress-deploy.md) | #tools #experience #cicd #vitepress #github-actions | ✅ 已验证 | 持续集成/持续部署相关经验 |
 | [claude-code-2-1-feature-inventory.md](../data/claude-code-2-1-feature-inventory.md) | #claude-code #reference #tools #ai | ✅ 已验证 | Claude Code 2.1.81 完整功能清单，涵盖 15 大能力域：交互模式、内置工具、多代理、会话管理、非交互/SDK 模式、Git 集成、MCP、Hooks、Plugin、Skill、IDE 集成、Memory、Chrome 集成、结构化输出、CLI 标志与环境变量。 |
 | [claude-code-backend-models.md](../data/claude-code-backend-models.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 作为 Agent 框架接入多种模型 (LLM Gateway) |
+| [claude-code-bypass-permissions.md](../data/claude-code-bypass-permissions.md) | #claude-code #配置管理 #experience | ✅ 已验证 | Claude Code 默认跳过权限配置（全局 settings.json） |
 | [claude-code-comprehensive-guide.md](../data/claude-code-comprehensive-guide.md) | #claude-code #tools #reference | ✅ 已验证 | Claude Code 是 Anthropic 推出的 AI 编程助手，支持终端 CLI、桌面应用、Web 浏览器、VS Code 和 JetBrains IDE 五大平台，提供 1M token 上下文窗口、多代理协调、插件系统、Hook 自动化等能力。 |
 | [claude-code-config-dialog-settings.md](../data/claude-code-config-dialog-settings.md) | #claude-code #reference #tools | ✅ 已验证 | `/config` 命令打开的设置界面（存储于 `~/.claude.json`，**非** `settings.json`）中各配置项的作用说明。与 `settings.json`（权限、hooks、环境变量等）是两套独立的配置系统。 |
 | [claude-code-fork-session.md](../data/claude-code-fork-session.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code Fork 会话功能 (Branching Conversation) |
