@@ -4,7 +4,7 @@
 **来源**：官方文档 + 实践经验
 **收录日期**：2026-01-30
 **来源日期**：2026-04-02
-**更新日期**：2026-04-02
+**更新日期**：2026-04-17
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐（官方文档验证）
 **适用版本**：Claude Code v2.1.88+
@@ -85,9 +85,34 @@ Fast Mode（`/fast`）：同一 Opus 4.6 模型加速输出，不切换到其他
 | **Auto** | - | AI 分类器评估每个工具调用 |
 | **DontAsk** | - | 自动拒绝权限提示 |
 | **AcceptEdits** | - | 自动接受文件编辑 |
-| **Bypass** | - | 跳过所有权限提示（仅 CLI/headless） |
+| **Bypass** | `--dangerously-skip-permissions` | 跳过所有权限提示（仅 CLI/headless） |
 
 可通过 `/permissions` 配置信任路径和工具规则。
+
+### 全局默认 Bypass 配置
+
+在 `~/.claude/settings.json` 中添加：
+
+```json
+{
+  "skipDangerousModePermissionPrompt": true,
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  }
+}
+```
+
+- `skipDangerousModePermissionPrompt`：跳过进入危险模式的确认提示（仅跳过确认，不跳过权限）
+- `permissions.defaultMode`：设置默认权限模式
+
+> **已知 Bug**：全局 `dangerouslySkipPermissions` 或 `defaultMode: "bypassPermissions"` 在部分场景下不完全生效（GitHub Issue #32047, #41526），某些 Bash 命令仍会弹出权限提示。
+
+**备选方案**：如遇到全局配置不完全生效，可用 shell 别名兜底：
+
+```bash
+# ~/.zshrc
+alias clauded="claude --dangerously-skip-permissions"
+```
 
 ## 六、核心功能
 
@@ -310,3 +335,4 @@ OS 级文件系统和网络隔离，防止恶意操作。
 ### 验证记录
 - [2026-01-30] 初次记录，来源：官方文档 + 实践经验整合
 - [2026-04-02] 重大更新：基于 code.claude.com 最新文档全面重写。新增 Agent Teams、Plugins、Hooks、Subagents、Desktop/Web/JetBrains 平台、1M 上下文、Remote Control、Channels、Agent SDK、Scheduled Tasks、Sandboxing、Output Styles、Statusline、Voice Dictation 等内容。更新模型信息（Opus 4.6/Sonnet 4.6/Haiku 4.5 GA，旧版退役）。安装方式扩展至 7 种。权限模式从 3 种更新至 5 种。
+- [2026-04-17] 合并 claude-code-bypass-permissions.md 独有内容（全局默认 Bypass 配置、已知 Bug #32047/#41526、shell 别名兜底方案）到权限模式章节。删除独立 bypass-permissions 记录，统一维护入口。
