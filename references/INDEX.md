@@ -51,7 +51,7 @@
 | [cicd-vitepress-deploy.md](../data/cicd-vitepress-deploy.md) | #tools #experience #cicd #vitepress #github-actions | ✅ 已验证 | 持续集成/持续部署相关经验 |
 | [claude-code-2-1-feature-inventory.md](../data/claude-code-2-1-feature-inventory.md) | #claude-code #reference #tools #ai | ✅ 已验证 | Claude Code 2.1.81 完整功能清单，涵盖 15 大能力域：交互模式、内置工具、多代理、会话管理、非交互/SDK 模式、Git 集成、MCP、Hooks、Plugin、Skill、IDE 集成、Memory、Chrome 集成、结构化输出、CLI 标志与环境变量。 |
 | [claude-code-backend-models.md](../data/claude-code-backend-models.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 作为 Agent 框架接入多种模型 (LLM Gateway) |
-| [claude-code-bypass-permissions.md](../data/claude-code-bypass-permissions.md) | #claude-code #配置管理 #experience | ✅ 已验证 | Claude Code 默认跳过权限配置（全局 settings.json） |
+| [claude-code-bypass-permissions.md](../data/claude-code-bypass-permissions.md) | #claude-code #配置管理 #experience | ✅ 已验证 | 通过全局 `settings.json` 配置 `permissions.defaultMode` 为 `bypassPermissions`，使 Claude Code 每次启动默认跳过所有权限检查，无需每次加 `--dangerously-skip-permissions` 参数。 |
 | [claude-code-comprehensive-guide.md](../data/claude-code-comprehensive-guide.md) | #claude-code #tools #reference | ✅ 已验证 | Claude Code 是 Anthropic 推出的 AI 编程助手，支持终端 CLI、桌面应用、Web 浏览器、VS Code 和 JetBrains IDE 五大平台，提供 1M token 上下文窗口、多代理协调、插件系统、Hook 自动化等能力。 |
 | [claude-code-config-dialog-settings.md](../data/claude-code-config-dialog-settings.md) | #claude-code #reference #tools | ✅ 已验证 | `/config` 命令打开的设置界面（存储于 `~/.claude.json`，**非** `settings.json`）中各配置项的作用说明。与 `settings.json`（权限、hooks、环境变量等）是两套独立的配置系统。 |
 | [claude-code-fork-session.md](../data/claude-code-fork-session.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code Fork 会话功能 (Branching Conversation) |
@@ -59,7 +59,7 @@
 | [claude-code-skill-hook-trigger-boost.md](../data/claude-code-skill-hook-trigger-boost.md) | #claude-code #agent-skills #hook #experience | ✅ 已验证 | Claude Code Skill 的主动式/被动式触发模式由 frontmatter 控制，但主动式 skill 自动触发率仅 ~20%。通过 `UserPromptSubmit` hook 注入 forced eval 指令可提升至 ~84%。操作级别的行为区分（如查询自动/记录询问）需通过 SKILL.md 内部规则实现，frontmatter 无法做到。 |
 | [claude-code-slash-commands.md](../data/claude-code-slash-commands.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 完整斜杠命令列表 (Slash Commands) |
 | [claude-code-source-architecture.md](../data/claude-code-source-architecture.md) | #claude-code #mcp #architecture #agent-skills | ✅ 已验证 | 对 Claude Code 官方 CLI 工具的完整源码进行逆向分析，揭示其系统提示词设计、Agent 子系统、Tool 工具框架、查询循环与上下文管理、权限管线等核心架构。 |
-| [claude-mem-smart-tools-windows-fix.md](../data/claude-mem-smart-tools-windows-fix.md) | #tools #windows #mcp #experience #bug | ✅ 已验证 | ClaudeMem 插件的 MCP 工具在 Windows 上存在两类问题：Smart 工具解析失败和 Memory 工具参数传递失败。 |
+| [claude-mem-smart-tools-windows-fix.md](../data/claude-mem-smart-tools-windows-fix.md) | #tools #windows #mcp #experience #bug #cross-platform | ✅ 已验证 | ClaudeMem 插件 v12.1.5 的 MCP server 在 Windows 上存在两个 Bug：语法错误导致整个 MCP server 无法启动，以及 Smart 工具的 tree-sitter 调用方式与 CLI 0.26.7 不兼容。两者均需手动修复，且 `claude plugins update` 后会被覆盖。 |
 | [color-banding-dither.md](../data/color-banding-dither.md) | #graphics #knowledge #color-banding #dither #hdr | 📘 有效 | 色带（Color Banding）与抖动（Dithering）知识 |
 | [color-space-gamma-linear.md](../data/color-space-gamma-linear.md) | #graphics #knowledge #color-space #gamma #linear | 📘 有效 | 色彩空间知识 |
 | [compute-shader-gpu-parallel.md](../data/compute-shader-gpu-parallel.md) | #graphics #shader #knowledge #compute-shader #gpgpu | 📘 有效 | GPU 通用计算 (GPGPU) 相关原理与概念 |

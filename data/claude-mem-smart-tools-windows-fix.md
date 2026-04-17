@@ -1,149 +1,152 @@
-# ClaudeMem MCP 工具修复记录
+# ClaudeMem Windows 修复记录 (v10.5.5 → v12.1.5)
 
-**标签**：#tools #windows #mcp #experience #bug
+**标签**：#tools #windows #mcp #experience #bug #cross-platform
 **来源**：实践总结 + 源码分析
 **收录日期**：2026-03-12
-**更新日期**：2026-03-12
+**来源日期**：2026-04-17
+**更新日期**：2026-04-17
 **状态**：✅ 已验证
-**可信度**：⭐⭐⭐⭐⭐ (重新验证 + 源码分析)
-**适用版本**：claude-mem 10.5.5 (Windows)
+**可信度**：⭐⭐⭐⭐⭐ (多版本源码分析 + 实际修复验证)
+**适用版本**：claude-mem 12.1.5 (Windows, tree-sitter 0.26.7)
 
 ### 概要
-ClaudeMem 插件的 MCP 工具在 Windows 上存在两类问题：Smart 工具解析失败和 Memory 工具参数传递失败。
+
+ClaudeMem 插件 v12.1.5 的 MCP server 在 Windows 上存在两个 Bug：语法错误导致整个 MCP server 无法启动，以及 Smart 工具的 tree-sitter 调用方式与 CLI 0.26.7 不兼容。两者均需手动修复，且 `claude plugins update` 后会被覆盖。
 
 ### 内容
 
 ---
 
-## 问题一：Memory 工具参数传递失败
+## Bug 1：MCP server 语法错误（整个插件不可用）
 
 ### 问题描述
 
-调用 `search` 和 `timeline` 工具时，报错：
-```
-Error: Either query or filters required
-```
-
-即使正确传递了参数，工具仍报告参数缺失。
+MCP server 启动时报 `SyntaxError: Unexpected token '}'`，导致所有 6 个工具（smart_outline/smart_search/smart_unfold/search/timeline/get_observations）全部不可用。
 
 ### 根本原因
 
-MCP 工具的 `inputSchema.properties` 为空 `{}`：
+`mcp-server.cjs` 中 `JO()` 函数（minified 的 `getTreeSitterBin`）将 `if` 语句与三元运算符混用，缺少关闭括号和语句体：
+
 ```javascript
-// 原始代码（有问题）
-inputSchema: { type: "object", properties: {}, additionalProperties: !0 }
-```
-
-虽然设置了 `additionalProperties: true`，但 **Claude Code 的 MCP 客户端不识别这种模式**，导致参数无法传递给工具。
-
-### ✅ 修复方案
-
-在 `mcp-server.cjs` 中为 `search` 和 `timeline` 工具添加正确的 `properties` 定义。
-
-**修复位置**：`mcp-server.cjs` 第 137 行附近
-
-**search 工具 properties**：
-```javascript
-properties: {
-  query: { type: "string", description: "Search query string" },
-  limit: { type: "number", description: "Maximum number of results" },
-  project: { type: "string", description: "Project name to search in" },
-  type: { type: "string", description: "Filter by observation type" },
-  obs_type: { type: "string", description: "Filter by observation subtype" },
-  dateStart: { type: "string", description: "Start date filter" },
-  dateEnd: { type: "string", description: "End date filter" },
-  offset: { type: "number", description: "Pagination offset" },
-  orderBy: { type: "string", description: "Sort order" }
+// 代码结构（简化）
+function JO(){
+  if(Di) return Di;
+  try{
+    let t = path.join(dirname(pkgJson), "tree-sitter");
+    if(existsSync(t) || existsSync(t+".exe") ? (existsSync(t+".exe") && (t=t+".exe"), Di=t, t) : 0
+    //                                                            ↑ if 缺少 ) 和 {body}
+  }catch{}
+  return Di="tree-sitter", Di;
 }
 ```
 
-**timeline 工具 properties**：
+### 修复方案
+
+将三目运算符改为正确的 `if...{...}` 结构：
+
 ```javascript
-properties: {
-  anchor: { type: "number", description: "Observation ID to center timeline around" },
-  query: { type: "string", description: "Query to find anchor automatically" },
-  depth_before: { type: "number", description: "Number of results before anchor" },
-  depth_after: { type: "number", description: "Number of results after anchor" },
-  project: { type: "string", description: "Project name" }
+// 修复后
+if(existsSync(t) || existsSync(t+".exe")){
+  if(existsSync(t+".exe")) t = t+".exe";
+  return Di=t;
 }
-```
-
-### 验证结果
-
-```bash
-# search 工具测试
-mcp__plugin_claude-mem_mcp-search__search(query="tree-sitter", limit=5)
-# ✅ 返回: Found 8 result(s) matching "tree-sitter"
-
-# timeline 工具测试
-mcp__plugin_claude-mem_mcp-search__timeline(query="MCP server", depth_before=2, depth_after=2)
-# ✅ 返回: Timeline for query: "MCP server"
 ```
 
 ---
 
-## 问题二：Smart 工具解析失败
+## Bug 2：Smart 工具 tree-sitter 调用不兼容
 
 ### 问题描述
 
-调用 smart_outline 等 Smart 工具时，返回：
+`smart_outline` 返回 "Could not parse xxx. File may use an unsupported language or be empty."。
+
+### 根本原因
+
+`ab()` 函数使用 `tree-sitter query -p <grammar-dir>` 调用 tree-sitter CLI。但在 **tree-sitter 0.26.7** 中，`-p`（`--grammar-path`）意味着 `--rebuild`，会尝试从 C 源码编译 grammar。Windows 上无 C 编译器时必然失败。
+
+```javascript
+// 原始代码
+o = ["query", "-p", grammarDir, queryFile, sourceFile]
 ```
-Could not parse xxx. File may use an unsupported language or be empty.
+
+### 修复方案
+
+添加两个辅助函数，改用 `--lib-path` 指向预编译 `.node` 文件 + `--lang-name` 指定语言：
+
+```javascript
+// MP(): 从 grammar 目录向上查找预编译 .node 文件
+function MP(grammarDir){
+  for(let dir of [grammarDir, dirname(grammarDir)]){
+    let prebuildsPath = join(dir, "prebuilds", platform+"-"+arch);
+    try{
+      let nodeFile = readdirSync(prebuildsPath).find(f => f.endsWith(".node"));
+      if(nodeFile) return join(prebuildsPath, nodeFile);
+    }catch{}
+  }
+  return null;
+}
+
+// ML(): 从路径提取语言名称
+// 子目录包 (tree-sitter-typescript/typescript) → basename = "typescript"
+// 根目录包 (tree-sitter-python) → 去掉 "tree-sitter-" 前缀 = "python"
+function ML(grammarDir){
+  let base = basename(grammarDir);
+  return base.startsWith("tree-sitter-") ? base.slice(11) : base;
+}
+
+// 修改后的调用
+let libPath = MP(grammarDir), langName = ML(grammarDir);
+o = libPath
+  ? ["query", "--lib-path", libPath, "--lang-name", langName, queryFile, ...sourceFiles]
+  : ["query", "-p", grammarDir, queryFile, ...sourceFiles]; // fallback
 ```
 
-#### ❌ 错误的修复方案（不要使用）
+### 兼容性说明
 
-之前的记录建议用 `-l` 参数加载 `.node` 文件，这是**错误的**：
-- `.node` 文件是 Node.js native addon（使用 N-API）
-- tree-sitter CLI 的 `-l` 参数需要的是原生动态库（.dll/.so）
-- 两者格式不兼容，CLI 无法加载 `.node` 文件
+| 平台 | 是否需要此修复 | 原因 |
+|------|---------------|------|
+| Windows | 需要 | 通常无 C 编译器，`-p --rebuild` 必然失败 |
+| macOS | 通常不需要 | Xcode Command Line Tools 提供 clang |
+| Linux | 通常不需要 | gcc/build-essential 常见 |
 
-#### ✅ 正确的分析
+v12.1.5 捆绑 tree-sitter CLI 0.26.7 + 24 种语言的 grammar 包，其中 23 种有 `win32-x64` 预编译 `.node` 文件。仅 `@derekstride/tree-sitter-sql` 缺失（只有 `src/` C 源码）。
 
-1. **原始代码使用 `-p` 参数是正确的**
-   ```javascript
-   o=["query","-p",r,e,...t]
-   ```
+---
 
-2. **tree-sitter CLI 的缓存机制**
-   - tree-sitter CLI 会在首次使用时编译 grammar
-   - 编译后的 DLL 缓存在 `%LOCALAPPDATA%\tree-sitter\lib\` 目录
-   - 后续调用会自动使用缓存的 DLL，无需重复编译
+## 历史版本：v10.5.5 的问题
 
-3. **如果 Smart 工具不工作，检查以下几点**：
-   - tree-sitter CLI 是否正确安装（检查 `node_modules/tree-sitter-cli/tree-sitter.exe`）
-   - 缓存目录是否存在 DLL 文件
-   - MCP 服务器是否需要重启以加载代码更改
+### Memory 工具 inputSchema 为空（已在 v12.1.5 修复）
+
+v10.5.5 中 `search`/`timeline` 的 `inputSchema.properties` 为空 `{}`，Claude Code 的 MCP 客户端无法传递参数。v12.1.5 已内置正确的 properties 定义，无需手动修复。
+
+### v10.5.5 Smart 工具记录修正
+
+之前记录称"原始代码使用 `-p` 参数是正确的"、"tree-sitter 使用 DLL 缓存"。此结论基于较旧版本的 tree-sitter CLI 行为。在 v12.1.5 捆绑的 tree-sitter 0.26.7 中，`-p` 实际触发 `--rebuild`，缓存机制不适用于此场景。
 
 ### 关键文件位置
 
 | 文件 | 路径 |
 |------|------|
-| MCP 服务器 | `C:\Users\admin\.claude\plugins\cache\thedotmack\claude-mem\10.5.5\scripts\mcp-server.cjs` |
-| tree-sitter CLI | `node_modules/tree-sitter-cli/tree-sitter.exe` |
-| **DLL 缓存** | `%LOCALAPPDATA%\tree-sitter\lib\*.dll` |
-
-### 验证命令
-
-```bash
-# 检查 tree-sitter CLI 是否可用
-"C:\Users\admin\.claude\plugins\cache\thedotmack\claude-mem\10.5.5\node_modules\tree-sitter-cli\tree-sitter.exe" --version
-
-# 检查 DLL 缓存
-ls "$LOCALAPPDATA/tree-sitter/lib/"
-
-# 测试解析
-"C:\...\tree-sitter.exe" parse -p "C:\...\node_modules\tree-sitter-javascript" "test.js"
-```
+| MCP 服务器 (v12.1.5) | `~/.claude/plugins/cache/thedotmack/claude-mem/12.1.5/scripts/mcp-server.cjs` |
+| tree-sitter CLI | 同上 `node_modules/tree-sitter-cli/tree-sitter.exe` (v0.26.7) |
+| TS parser 预编译 | 同上 `node_modules/tree-sitter-typescript/prebuilds/win32-x64/tree-sitter-typescript.node` |
+| Worker | 同上 `scripts/worker-service.cjs` (port 37777) |
+| tree-sitter config | `%APPDATA%/tree-sitter/config.json` |
 
 ### 注意事项
 
-- **文件加密软件干扰**：如果系统有 E-SafeNet 等加密软件，新创建的文件可能被加密，导致解析失败。测试时请使用 `%TEMP%` 目录
-- **MCP 服务器重启**：修改 `mcp-server.cjs` 后需要重启 MCP 服务器才能生效
+- `claude plugins update` 会覆盖修复，需重新应用
+- 文件加密软件（如 E-SafeNet）会阻止 Smart 工具解析文件，测试时使用 `%TEMP%` 目录
+- 修改 `mcp-server.cjs` 后需重启 Claude Code 才能生效
+
+### 参考链接
+
+- [GitHub Issue #1247](https://github.com/nichochar/claude-mem/issues/1247) - Windows smart tools bugs
+
+### 相关记录
 
 ### 验证记录
-- [2026-03-12] 初次记录 Smart 工具修复，方案错误（`.node` 文件不能被 CLI 加载）
-- [2026-03-12] 确认 Smart 工具原始 `-p` 参数方案正确，tree-sitter 使用 DLL 缓存
-- [2026-03-12] 发现 Memory 工具 `search`/`timeline` 的 inputSchema.properties 为空导致参数无法传递
-- [2026-03-12] 修复 `search`/`timeline` 工具的 properties 定义，验证通过
-- [2026-03-12] **全部 8 个 MCP 工具验证通过**：search, timeline, smart_outline, smart_search, smart_unfold, get_observations, __IMPORTANT
+- [2026-03-12] 初次记录，v10.5.5 Memory 工具 inputSchema 修复
+- [2026-03-12] v10.5.5 Smart 工具分析（部分结论已被 v12.1.5 修正）
+- [2026-04-16] 升级至 v12.1.5，发现 MCP server 语法错误和 tree-sitter 不兼容
+- [2026-04-17] 修复两个 Bug，全部 6 个工具通过 MCP server 直接测试验证通过
