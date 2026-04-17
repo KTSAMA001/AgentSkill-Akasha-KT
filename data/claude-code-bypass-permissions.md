@@ -1,10 +1,10 @@
 # Claude Code 默认跳过权限配置
 
-**标签**：#claude-code #配置管理 #experience
+**标签**：#claude-code #tools #experience
 **来源**：实践总结 + GitHub Issues (#32047, #41526)
 **收录日期**：2026-04-16
 **来源日期**：2026-04-16
-**状态**：✅已验证
+**状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐
 **适用版本**：Claude Code 2.1+
 
