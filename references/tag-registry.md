@@ -81,6 +81,7 @@
 | #meilisearch | Meilisearch | wrench | specialty | Meilisearch 搜索引擎 |
 | #mvvm | MVVM 架构 | code | specialty | MVVM 设计模式 |
 | #nav-mesh | NavMesh | unity | specialty | Unity 导航网格 |
+| #network | 网络 | network | domain | 网络、连通性、代理、DNS 等问题 |
 | #npr | NPR 渲染 | shader | specialty | 非真实感渲染 |
 | #openclaw | OpenClaw | monitor | specialty | OpenClaw 项目相关 |
 | #pat | PAT 令牌 | code | specialty | Personal Access Token |
@@ -89,6 +90,7 @@
 | #physics | 物理系统 | unity | specialty | Unity 物理引擎 |
 | #playwright | Playwright | network | specialty | Playwright 测试框架 |
 | #post-processing | 后处理 | shader | specialty | 后处理效果 |
+| #proxy | 代理 | network | specialty | HTTP/HTTPS/SOCKS 代理配置与故障 |
 | #python | Python | code | domain | Python 编程语言 |
 | #raycast | 射线检测 | unity | specialty | 射线检测 |
 | #react | React | network | domain | React 框架 |
