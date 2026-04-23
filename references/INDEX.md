@@ -59,6 +59,7 @@
 | [claude-code-slash-commands.md](../data/claude-code-slash-commands.md) | #ai #tools #reference #claude-code | ✅ 已验证 | Claude Code 完整斜杠命令列表 (Slash Commands) |
 | [claude-code-source-architecture.md](../data/claude-code-source-architecture.md) | #claude-code #mcp #architecture #agent-skills | ✅ 已验证 | 对 Claude Code 官方 CLI 工具的完整源码进行逆向分析，揭示其系统提示词设计、Agent 子系统、Tool 工具框架、查询循环与上下文管理、权限管线等核心架构。 |
 | [claude-mem-smart-tools-windows-fix.md](../data/claude-mem-smart-tools-windows-fix.md) | #tools #windows #mcp #experience #bug #cross-platform | ✅ 已验证 | ClaudeMem 插件 v12.1.5 的 MCP server 在 Windows 上存在两个 Bug：语法错误导致整个 MCP server 无法启动，以及 Smart 工具的 tree-sitter 调用方式与 CLI 0.26.7 不兼容。两者均需手动修复，且 `claude plugins update` 后会被覆盖。 |
+| [codex-windows-offline-install.md](../data/codex-windows-offline-install.md) | #windows #tools #ai #experience #troubleshooting | ✅ 已验证 | OpenAI 的 Codex Windows 桌面版公开入口虽然挂在 Microsoft 分发链路下，但可以在不打开 Microsoft Store 图形界面的前提下完成安装。对本机已验证的稳定路径是：解析 Product ID `9PLM9XGG6VKS` 获取官方 `.msix` 主包，再用 `powershell.exe` 的 `Add-AppxPackage` 本地安装。 |
 | [color-banding-dither.md](../data/color-banding-dither.md) | #graphics #knowledge #color-banding #dither #hdr | 📘 有效 | 色带（Color Banding）与抖动（Dithering）知识 |
 | [color-space-gamma-linear.md](../data/color-space-gamma-linear.md) | #graphics #knowledge #color-space #gamma #linear | 📘 有效 | 色彩空间知识 |
 | [compute-shader-gpu-parallel.md](../data/compute-shader-gpu-parallel.md) | #graphics #shader #knowledge #compute-shader #gpgpu | 📘 有效 | GPU 通用计算 (GPGPU) 相关原理与概念 |
