@@ -4,6 +4,7 @@
 **来源**：KTSAMA 实践经验
 **收录日期**：2026-02-05
 **来源日期**：2026-02-05
+**更新日期**：2026-05-09
 **状态**：🔄 待更新
 **可信度**：⭐⭐⭐ (修复方案已验证，根因未确认)
 **适用版本**：Git 2.x+
@@ -107,6 +108,7 @@ git clone <仓库地址> repo
 
 ### 验证记录
 - [2026-02-05] 同事仓库损坏，通过 `git hash-object -w` 从正常仓库导出文件重建对象，成功修复
+- [2026-05-09] Codex 在隔离 Git 仓库中人为破坏 loose blob object，复现 `inflate: data stream error`、`unable to unpack ... header`、`loose object ... is corrupt` 同类报错，并验证本地 bat 工具的 `find`/`write` 流程可将对象写回，修复后 `git show <objectId>` 与 `git fsck --full` 均通过。该验证仅覆盖隔离测试环境，尚未代表真实项目仓库或用户现场已验证。
 
 **相关经验**：
 
