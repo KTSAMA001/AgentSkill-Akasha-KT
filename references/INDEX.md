@@ -63,6 +63,7 @@
 | [color-banding-dither.md](../data/color-banding-dither.md) | #graphics #knowledge #color-banding #dither #hdr | 📘 有效 | 色带（Color Banding）与抖动（Dithering）知识 |
 | [color-space-gamma-linear.md](../data/color-space-gamma-linear.md) | #graphics #knowledge #color-space #gamma #linear | 📘 有效 | 色彩空间知识 |
 | [compute-shader-gpu-parallel.md](../data/compute-shader-gpu-parallel.md) | #graphics #shader #knowledge #compute-shader #gpgpu | 📘 有效 | GPU 通用计算 (GPGPU) 相关原理与概念 |
+| [config-id-enum-generator.md](../data/config-id-enum-generator.md) | #unity #tools #excel #experience | ✅ 已验证 | 将导表后生成的 JSON/bytes 配置中的稳定 ID 生成 C# 枚举，供 Unity 编辑器工具通过枚举或 Odin 下拉选择，避免在 GM、音频测试等工具中手动输入裸 ID。 |
 | [copilot-claude-code-mcp-setup.md](../data/copilot-claude-code-mcp-setup.md) | #copilot #claude-code #mcp #vscode #ai #experience | ⚠️ 待验证 | 通过 `@steipete/claude-code-mcp` 将 Claude Code CLI 包装为 MCP server，注册到 VS Code 用户级 `mcp.json`，使 GitHub Copilot（Agent 模式）在执行任务时可直接调用 `claude_code` 工具，将复杂子任务委派给 Claude Code 完成。 |
 | [docker-container-git-auth-persist.md](../data/docker-container-git-auth-persist.md) | #git #experience #docker #credential #troubleshooting | ✅ 已验证 | Docker 容器重建后 Git 认证持久化配置 {#docker-git-auth-persist} |
 | [docker-git-credential-persist.md](../data/docker-git-credential-persist.md) | #git #experience #pat #docker #credential | ✅ 已验证 | Docker 容器内 Git PAT 凭据持久化配置 {#docker-git-credential} |
@@ -70,7 +71,6 @@
 | [dotnet-cross-platform-compile-verify.md](../data/dotnet-cross-platform-compile-verify.md) | #csharp #dotnet #tools #experience | ✅ 已验证 | 验证在 Linux arm64 容器中部署的 .NET SDK 能否成功编译 macOS arm64 跨平台应用。 |
 | [effect-system-code-review.md](../data/effect-system-code-review.md) | #unity #architecture #scriptable-object #effect-system | ✅ 已验证 | EffectSystem 效果系统 - 代码审查与架构分析 |
 | [endfield-rendering-study.md](../data/endfield-rendering-study.md) | #rendering #shader #pbr #knowledge #zhihu | 📘 有效 | 系统分析了《终末地》项目的角色渲染流程，以脸部渲染为核心深入解读 shader 效果实现，涵盖渲染管线整体梳理、角色渲染细节、特殊效果说明等。附有大量渲染对比图和 AI 绘制的流程图，原图在 GitHub 上可查。 |
-| [excel-id-enum-generator.md](../data/excel-id-enum-generator.md) | #unity #tools #excel #experience | ✅ 已验证 | 将 Excel 表格中的数据 ID 一键导出为 C# 枚举，避免在预制体上手动填写 ID 导致的资源冗余和查找困难。 |
 | [git-commit-conventions.md](../data/git-commit-conventions.md) | #git #reference #conventional-commits | ✅ 已验证 | Git 团队协作工作流相关经验 |
 | [git-config-in-repo.md](../data/git-config-in-repo.md) | #git #docker #experience #credential | ✅ 已验证 | Docker 容器重建后，如果 Git 配置只写在 `~/.gitconfig`，会随容器销毁丢失。将配置写入仓库内 `.git/config` 可以让配置和挂载卷一起持久化。 |
 | [git-filter-repo-rewrite-history.md](../data/git-filter-repo-rewrite-history.md) | #git #experience #pat #docker #credential | ✅ 已验证 | 使用 git-filter-repo 重写提交历史（清除敏感信息） |
