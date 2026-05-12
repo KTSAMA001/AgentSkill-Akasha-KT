@@ -168,7 +168,7 @@ ASE 最关键的设计不是“节点可视化”，而是以下四点：
   - 补齐函数依赖回刷
   - 避免单图过大
 
-### 关键代码（如有）
+### 关键代码
 
 ```text
 /*ASEBEGIN
@@ -181,7 +181,7 @@ ASEEND*/
 
 上面的结构来自项目内实际 ASE Shader 样本，证明 ASE 使用“尾部嵌入图数据”的资产协议。
 
-### 参考链接（如有）
+### 参考链接
 
 - [Amplify Shader Editor Manual](https://wiki.amplify.pt/index.php?title=Unity_Products%3AAmplify_Shader_Editor%2FManual) - 官方手册总入口
 - [Amplify Shader Editor Templates](https://wiki.amplify.pt/index.php?title=Unity_Products%3AAmplify_Shader_Editor%2FTemplates) - 官方模板系统说明
@@ -191,7 +191,7 @@ ASEEND*/
 - [Amplify Shader Editor Template Multi-Pass Switch](https://wiki.amplify.pt/index.php?title=Unity_Products%3AAmplify_Shader_Editor%2FTemplate_Multi-Pass_Switch) - 官方多 Pass 路由节点说明
 - [Amplify Forum - Multi-Pass Questions](https://forum.amplify.pt/viewtopic.php?t=586) - 社区对多 Pass 能力的讨论
 
-### 相关记录（如有）
+### 相关记录
 
 - [ASE Shader 架构与 Bakery 光照集成最佳实践](./ase-shader-bakery-integration.md) - 项目内 ASE 实践经验，偏工程使用层
 - [HLSL 着色器语言相关经验](./shader-variants-compile.md) - 涉及 ASE 中 Static Switch/变体使用

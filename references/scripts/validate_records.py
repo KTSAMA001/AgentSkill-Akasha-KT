@@ -39,6 +39,7 @@ DOMAIN_DIMENSION = "domain"
 FILENAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*\.md$")
 TITLE_PATTERN = re.compile(r"^#\s+.+$", re.MULTILINE)
 HEADING_TEMPLATE = r"^###\s+{heading}\s*$"
+PLACEHOLDER_HEADING_PATTERN = re.compile(r"^(#{1,6}\s+.+[（(]如有[^）)]*[）)].*)$", re.MULTILINE)
 TAG_PATTERN = re.compile(r"#[^\s#]+")
 MARKDOWN_LINK_PATTERN = re.compile(r"(!?)\[[^\]]*\]\(([^)]+)\)")
 SEPARATOR_ROW_PATTERN = re.compile(r"^\|(?:\s*:?-+:?\s*\|)+$")
@@ -125,6 +126,12 @@ def check_required_headings(content, filename, issues):
         pattern = re.compile(HEADING_TEMPLATE.format(heading=re.escape(heading)), re.MULTILINE)
         if not pattern.search(content):
             add_issue(issues, "error", filename, f"缺少必填章节：### {heading}")
+
+
+def check_no_placeholder_headings(content, filename, issues):
+    # Optionality belongs in body text; placeholder suffixes leak into published TOCs.
+    for match in PLACEHOLDER_HEADING_PATTERN.finditer(content):
+        add_issue(issues, "error", filename, f"章节标题包含模板占位说明：{match.group(1)}")
 
 
 def validate_tags(record, tag_registry, issues):
@@ -224,6 +231,7 @@ def validate_records(tag_registry):
 
         check_required_metadata(record.content, record.filename, issues)
         check_required_headings(record.content, record.filename, issues)
+        check_no_placeholder_headings(record.content, record.filename, issues)
         validate_tags(record, tag_registry, issues)
         validate_status(record, issues)
         validate_markdown_targets(record, issues)

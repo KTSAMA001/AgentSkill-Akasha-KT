@@ -56,7 +56,7 @@
 - 根因：系统 `PATH` 缺失 `C:\Windows\System32`，导致扩展内部探测链路调用 `where.exe` 失败。
 - 结果：补齐系统 PATH 关键目录并完整重启 VS Code 后恢复正常。
 
-### 关键代码（如有）
+### 关键代码
 
 ```powershell
 # 查看系统级 PATH
@@ -66,12 +66,12 @@
 [Environment]::GetEnvironmentVariable('Path', 'User')
 ```
 
-### 参考链接（如有）
+### 参考链接
 
 - [Windows where 命令文档](https://learn.microsoft.com/windows-server/administration/windows-commands/where) - 依赖探测常见基础命令
 - [Node.js child_process.spawnSync](https://nodejs.org/api/child_process.html#child_processspawnsynccommand-args-options) - 扩展/工具常用的子进程调用机制
 
-### 相关记录（如有）
+### 相关记录
 
 - [claude-code-comprehensive-guide](./claude-code-comprehensive-guide.md) - Claude Code 功能与使用总览
 

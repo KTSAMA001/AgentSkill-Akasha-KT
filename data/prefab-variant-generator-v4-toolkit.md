@@ -75,7 +75,7 @@
   - 在 `PortTypes` 增加类型常量、映射类型与颜色
   - 保持 `PipelineGraphData.IsConnectionValid()` 的类型匹配约束
 
-### 关键代码（如有）
+### 关键代码
 
 ```csharp
 public virtual List<PortDefinition> GetPortDefinitions()
@@ -91,7 +91,7 @@ public virtual List<PortDefinition> GetPortDefinitions()
 var conn = graphData.GetConnectionToPort(guid, prefabInPort.Id);
 ```
 
-### 相关记录（如有）
+### 相关记录
 
 - [unity-editor-api.md](./unity-editor-api.md) - Unity Editor 扩展 API 背景知识
 - [effect-system-code-review.md](./effect-system-code-review.md) - 代码审查时的架构边界表述参考

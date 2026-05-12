@@ -163,7 +163,7 @@ m_LightmapFlags: 2
 - 参与烘焙的 Renderer/物体启用 `Contribute GI` 或等价静态 GI 设置。
 - 若使用 Bakery，尤其要确认材质 flag 精确为 `BakedEmissive`，因为部分 Bakery 流程会把非 `2` 的 emissive 材质按黑色处理。
 
-### 关键代码（如有）
+### 关键代码
 
 ```shader
 // Meta Pass 是烘焙入口，不参与运行时主相机渲染
@@ -191,12 +191,12 @@ m_LightmapFlags: 2
 m_LightmapFlags: 6
 ```
 
-### 参考链接（如有）
+### 参考链接
 
 - [Unity Scripting API - MaterialGlobalIlluminationFlags](https://docs.unity3d.com/ScriptReference/MaterialGlobalIlluminationFlags.html) - 材质 GI flag 枚举说明
 - [Unity Manual - Meta Pass](https://docs.unity.cn/Manual/MetaPass.html) - Meta Pass 用于 lightmap/GI 烘焙输入
 
-### 相关记录（如有）
+### 相关记录
 
 - [ASE Shader 架构与 Bakery 光照集成最佳实践](./ase-shader-bakery-integration.md) - ASE 与 Bakery 项目集成经验
 - [Amplify Shader Editor 架构与实现机制解析](./amplify-shader-editor-architecture.md) - ASE 模板、图数据和代码生成机制
