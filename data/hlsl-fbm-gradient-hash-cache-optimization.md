@@ -141,7 +141,10 @@ float3 rockFBMGradient(float3 p, int octaves, float e, float freq, float lacunar
 
 ### 参考链接
 
-- 暂无外部链接；本记录来自项目实践与本地数值模拟。
+- [Microsoft Learn - smoothstep (HLSL)](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-smoothstep) - HLSL `smoothstep` 是 0 到 1 的 smooth Hermite interpolation，用于确认 shader 语义层面的插值基础。
+- [Khronos OpenGL Reference - smoothstep](https://registry.khronos.org/OpenGL-Refpages/gl4/html_test/smoothstep.html) - 给出 `t * t * (3.0 - 2.0 * t)` 的等价公式；本记录的 `df = 6t(1-t)` 即由该三次多项式求导而来。
+- [Catlike Coding - Perlin Derivatives](https://catlikecoding.com/unity/tutorials/pseudorandom-surfaces/perlin-derivatives/) - Unity 语境下对 value noise、线性/双线性/三线性插值解析导数的推导参考，用于佐证“直接求解析梯度”而不是用有限差分近似。
+- 本地验证依据：同一套 hash/value-noise 公式下，对旧前向差分梯度与新解析梯度做随机抽样对比，并结合目标渲染场景确认白边/硬切割伪影消失。
 
 ### 验证记录
 
@@ -149,3 +152,4 @@ float3 rockFBMGradient(float3 p, int octaves, float e, float freq, float lacunar
 - [2026-05-15] 更新验证：解析梯度版在保留 3D Value Noise 类型的前提下，将 4 octave 梯度 hash 量从约 128 降到约 32；本地数值抽样显示梯度相对差异中位数约 0.65%、P95 约 2.3%，最终法线差异在常见强度下约为 0.026° 平均值；渲染观察确认旧白边/切割伪影已消失。
 - [2026-05-15] 脱敏检查：记录正文改用泛化项目描述，移除了本机路径、具体项目名和仓库结构细节。
 - [2026-05-15] 修正：补充白边处理要点，明确白边来自前向差分跨 cell 的边界敏感性；移除与本记录主题无直接关联的 Git 操作相关记录。
+- [2026-05-15] 修正：补充 smoothstep、插值解析导数和本地验证依据的参考链接，避免记录只给结论而缺少来源链路。
