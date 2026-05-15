@@ -1,15 +1,28 @@
-# Claude Code 2.1 功能全览
+# Claude Code 2.1 功能全览 (2.1.142)
 
 **标签**：#claude-code #reference #tools #ai
 **来源**：官方文档 + CLI `--help` 输出 + Changelog + 社区实践
 **收录日期**：2026-03-25
-**来源日期**：2026-03-20（v2.1.81 发布日）
+**来源日期**：2026-05-14（v2.1.142 发布日）
+**更新日期**：2026-05-15
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐⭐ (官方文档 + CLI 实测)
-**适用版本**：Claude Code 2.1.81 (2026-03-20)
+**适用版本**：官方 latest 2.1.142；本机验证 2.1.133
 
 ### 概要
-Claude Code 2.1.81 完整功能清单，涵盖 15 大能力域：交互模式、内置工具、多代理、会话管理、非交互/SDK 模式、Git 集成、MCP、Hooks、Plugin、Skill、IDE 集成、Memory、Chrome 集成、结构化输出、CLI 标志与环境变量。
+Claude Code 2.1.x 完整功能清单，更新到官方 2.1.142。涵盖 15 大能力域：交互模式、内置工具、多代理、会话管理、非交互/SDK 模式、Git 集成、MCP、Hooks、Plugin、Skill、IDE 集成、Memory、Chrome 集成、结构化输出、CLI 标志与环境变量。
+
+### 2.1.81 -> 2.1.142 版本差异摘要
+
+| 领域 | 主要新增/变化 |
+|------|---------------|
+| 会话/代理 | `claude agents` Agent View、`/background`、后台 session 参数分发、远程会话和 mobile push 增强 |
+| 计划与自动化 | `/goal` 目标模式、`/schedule`/`/routines` 云端例行任务、`/loop` 本地循环任务 |
+| 审查 | `/ultrareview` 与 `claude ultrareview` 云端多代理审查 |
+| Windows | 不再强依赖 Git Bash；Bash 缺失时使用 PowerShell，自动检测 PowerShell 7 |
+| 插件 | `--plugin-dir` 支持目录或 `.zip`，`--plugin-url` 支持 URL zip，根级 `SKILL.md` 插件可作为 skill |
+| 设置 | `/config` 变更可持久化到 `~/.claude/settings.json`，设置优先级更清晰 |
+| 模型 | Opus 4.7 支持 `xhigh` effort；2.1.142 起 Fast Mode 默认 Opus 4.7 |
 
 ---
 
@@ -62,6 +75,7 @@ Claude Code 2.1.81 完整功能清单，涵盖 15 大能力域：交互模式、
 | CronCreate | 创建定时任务 | cron 语法，支持一次性/周期性 |
 | CronDelete | 取消定时任务 | — |
 | CronList | 列出所有定时任务 | — |
+| Goal | 目标驱动继续执行 | 配合 `/goal`，适合长任务完成条件 |
 
 #### 交互
 
@@ -79,6 +93,7 @@ Claude Code 2.1.81 完整功能清单，涵盖 15 大能力域：交互模式、
 | ExitWorktree | 退出 worktree | 可选择 keep / remove |
 | Skill | 调用技能 | — |
 | WebSearch | 内置网络搜索 | — |
+| AgentView | 管理后台代理 | 对应 `claude agents` / Agent View |
 
 ---
 
@@ -88,10 +103,11 @@ Claude Code 2.1.81 完整功能清单，涵盖 15 大能力域：交互模式、
 
 | 特性 | 说明 |
 |------|------|
-| 可用类型 | general-purpose / Explore / Plan / claude-code-guide / glm-plan-* |
-| 模型覆盖 | 可指定 sonnet / opus / haiku |
+| 可用类型 | general-purpose / Explore / Plan / claude-code-guide / 自定义 agents |
+| 模型覆盖 | 可指定 sonnet / opus / haiku；Opus 4.7 可用 `xhigh` effort |
 | 后台运行 | `run_in_background: true`，完成后自动通知 |
 | Worktree 隔离 | `isolation: "worktree"` 在独立 git 分支工作 |
+| Agent View | `claude agents` 查看、进入、停止或继续后台会话 |
 | 通信 | SendMessage 向已停止代理发消息（自动恢复） |
 | 限制 | 嵌套深度有限（建议不超过 2 层），启动有上下文开销 |
 
@@ -111,6 +127,7 @@ Claude Code 2.1.81 完整功能清单，涵盖 15 大能力域：交互模式、
 | 配置项 | description / prompt / model / tools / effort / hooks / memory |
 | CLI 启动 | `--agent <name>` 或 `--agents '<json>'` |
 | 列出代理 | `claude agents` 命令 |
+| 后台参数传递 | 2.1.142 起 `--model`、`--effort`、`--permission-mode`、`--settings`、`--mcp-config`、`--plugin-dir` 等可分发给后台会话 |
 
 ---
 
@@ -128,6 +145,8 @@ Claude Code 2.1.81 完整功能清单，涵盖 15 大能力域：交互模式、
 | 远程控制 | `/remote-control` | 桥接到 claude.ai/code |
 | 会话 ID | `--session-id <uuid>` | 使用指定会话 ID |
 | 无持久化 | `--no-session-persistence` | 会话不保存（仅 -p 模式） |
+| 后台会话 | `/background` / `/bg` | 将当前会话转入后台代理 |
+| 目标模式 | `/goal` | 设定完成条件并跨多轮推进 |
 
 ---
 
@@ -182,6 +201,8 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 | PR 管理 | 通过 gh CLI 创建/查看/管理 PR、添加评论 |
 | 自动 commit/push | 内置 git 工作流指导 |
 | from-pr | `--from-pr` 恢复关联 PR 的会话 |
+| Ultrareview | `/ultrareview` / `claude ultrareview` 云端多代理审查 PR 或分支 |
+| Project purge | `claude project purge` 清理项目级 transcript、任务、历史和配置入口 |
 
 ---
 
@@ -272,7 +293,9 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 | 验证 | `claude plugin validate` |
 | 持久数据 | `${CLAUDE_PLUGIN_DATA}` 跨版本保存 |
 | 作用域 | 项目级 / 用户级 / 本地级 |
-| 临时加载 | `--plugin-dir <path>` 临时加载插件目录 |
+| 临时加载 | `--plugin-dir <path>` 临时加载插件目录或 `.zip` |
+| URL 加载 | `--plugin-url <url>` 临时从 URL 加载插件 zip |
+| 根级 Skill | 仅含 `SKILL.md` 的插件也可暴露为 skill |
 
 ---
 
@@ -289,6 +312,7 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 | 工具控制 | `allowed-tools` / `disallowed-tools` |
 | 触发控制 | `disable-model-invocation` / `user-invocable` |
 | 无需重启 | 修改后即时生效 |
+| 插件承载 | 插件根级 `SKILL.md` 可作为单 skill 插件分发 |
 
 ---
 
@@ -323,6 +347,7 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 | 控制台 | 浏览器 console 日志 |
 | Google Docs | 直接编辑 Google Docs |
 | 本地测试 | 测试本地 web 应用 |
+| Viewport | 支持环境变量覆盖 Chrome 默认 viewport |
 
 ---
 
@@ -334,6 +359,7 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 | Rules | `.claude/rules/*.md` | 路径条件规则 |
 | Auto Memory | `.claude/projects/*/memory/` | 自动记忆，跨会话持久化 |
 | `/memory` 命令 | — | 查看/编辑/导入/导出记忆 |
+| Project purge | `claude project purge` | 清理指定项目的本地历史与状态 |
 
 ---
 
@@ -351,6 +377,9 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 | `--worktree [name]` / `-w` | git worktree 隔离 |
 | `--tmux` | tmux 多面板（需配合 --worktree） |
 | `--add-dir <dirs>` | 添加额外工作目录 |
+| `--bg` | 后台启动/运行会话 |
+| `--plugin-dir <path>` | 临时加载插件目录或 zip |
+| `--plugin-url <url>` | 临时加载 URL 插件 zip |
 
 #### 会话
 
@@ -362,13 +391,14 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 | `--from-pr [value]` | 恢复 PR 关联会话 |
 | `--name <name>` / `-n` | 会话名称 |
 | `--session-id <uuid>` | 指定会话 ID |
+| `--remote` / `--remote-control` | 远程控制/远程会话入口 |
 
 #### 模型与输出
 
 | 标志 | 说明 |
 |------|------|
 | `--model <model>` | 指定模型 |
-| `--effort <level>` | 思考深度 (low/medium/high/max) |
+| `--effort <level>` | 思考深度 (low/medium/high/max/xhigh，取决于模型) |
 | `--fallback-model <model>` | 过载降级模型 |
 | `--print` / `-p` | 非交互模式 |
 | `--output-format <fmt>` | text / json / stream-json |
@@ -395,6 +425,7 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 | `--debug [filter]` / `-d` | 调试模式，支持分类过滤 |
 | `--debug-file <path>` | 调试日志写入文件 |
 | `--verbose` / `-v` | 详细输出 |
+| `--replay-user-messages` | 流式输入场景回放用户消息 |
 
 #### 其他
 
@@ -403,7 +434,7 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 | `--betas <betas>` | API 请求附加 beta 头 |
 | `--file <specs>` | 启动时下载文件资源 |
 | `--ide` | 自动连接 IDE |
-| `--disable-slash-commands` | 禁用所有 skill |
+| `--disable-slash-commands` | 禁用 slash commands/skills |
 | `--strict-mcp-config` | 仅使用指定 MCP 配置 |
 
 ---
@@ -437,6 +468,8 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 | `CLAUDE_CODE_DISABLE_CRON` | 禁用 cron 定时任务 |
 | `CLAUDE_CODE_SIMPLE` | 简化模式（同 --bare） |
 | `CLAUDE_CODE_DISABLE_TERMINAL_TITLE` | 禁止更新终端标题 |
+| `CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN` | 禁用 alternate screen/TUI 行为 |
+| `CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE` | npm/pnpm 场景控制包管理器自动更新 |
 
 #### 插件
 
@@ -445,6 +478,7 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 | `CLAUDE_CODE_PLUGIN_SEED_DIR` | 插件种子目录 |
 | `CLAUDE_CODE_PLUGIN_CACHE_DIR` | 插件缓存目录 |
 | `CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS` | 插件 git 超时 |
+| `CLAUDE_CODE_PLUGIN_PREFER_HTTPS` | 插件 GitHub URL 优先使用 HTTPS |
 
 #### 其他
 
@@ -453,6 +487,8 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 | `CLAUDE_CODE_TMPDIR` | 覆盖临时目录 |
 | `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` | SessionEnd hooks 超时 |
 | `CLAUDE_CODE_EXIT_AFTER_STOP_DELAY` | SDK 模式自动退出延迟 |
+| `CLAUDE_CODE_SESSION_ID` | 当前会话 ID（hook/脚本可读） |
+| `ANTHROPIC_WORKSPACE_ID` | 指定 Anthropic Console workspace |
 
 ---
 
@@ -472,13 +508,17 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 | Computer Use | 桌面 GUI 自动化 |
 | 授权管理 | `claude auth login` / `claude setup-token` |
 | 更新检查 | `claude update` / `claude doctor` |
+| Agent View | `claude agents` 查看和接管后台代理 |
+| Goal 模式 | `/goal` 设定长任务完成条件 |
+| Routines | `/schedule` / `/routines` 云端计划任务 |
+| 项目清理 | `claude project purge` |
 
 ---
 
 ### 相关记录
 
 - [Claude Code 完整指南](./claude-code-comprehensive-guide.md) - 概述性介绍（无版本标注）
-- [Claude Code 最新功能 (2026-03)](./claude-code-latest-features-2026.md) - v2.0.x 更新记录
+- [Claude Code 最新功能 (2026-05)](./claude-code-latest-features-2026.md) - 2.1.142 更新记录
 - [Claude Code 完整斜杠命令列表](./claude-code-slash-commands.md) - 斜杠命令详单
 - [Claude Code Fork 会话功能](./claude-code-fork-session.md) - 分叉会话深挖
 - [Claude Code Skill 触发模式与 Hook 提升](./claude-code-skill-hook-trigger-boost.md) - Skill 自动触发优化
@@ -486,3 +526,4 @@ claude -p "..." --file file_abc:doc.txt file_def:img.png
 
 ### 验证记录
 - [2026-03-25] 初次记录，来源：`claude --version` 确认 2.1.81，`claude --help` 提取完整 CLI 标志，官方文档交叉校验
+- [2026-05-15] 时效性更新：官方 changelog 确认 latest 2.1.142（2026-05-14），本机 `claude --version` 为 2.1.133。补充 Agent View、`/goal`、Routines、Windows PowerShell、插件 zip/url、`claude project purge`、Opus 4.7 `xhigh` effort、Fast Mode、环境变量和 CLI flags 新变化。

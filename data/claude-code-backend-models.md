@@ -1,11 +1,13 @@
 # Claude Code 作为 Agent 框架接入多种模型 (LLM Gateway)
 
 **收录日期**：2026-01-31
-**更新日期**：2026-03-10
+**来源日期**：2026-05-14
+**更新日期**：2026-05-15
 **标签**：#ai #tools #reference #claude-code
 **来源**：Claude Code 官方文档 / 发布说明 / 实践验证
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐ (实践验证)
+**适用版本**：Claude Code 2.1.142 官方模型配置；本机 Claude Code 2.1.133
 
 **问题/场景**：
 
@@ -19,11 +21,12 @@ Claude Code 作为 Agent 框架接入多种模型 (LLM Gateway)
 
 **Claude Code 本质上是一个 Agent 框架**，不绑定特定模型，通过配置 `ANTHROPIC_BASE_URL` 等环境变量可接入不同的后端 API。
 
-### 最新 Claude 模型系列 (2026-03)
+### 最新 Claude 模型系列 (2026-05)
 
 | 模型 | API ID | 定价 (input/output per MTok) | 上下文 | 最大输出 | 特性 |
 |------|--------|------------------------------|--------|----------|------|
-| **Opus 4.6** | `claude-opus-4-6` | $5 / $25 | 200K / 1M (beta) | 128K | 自适应思考、旗舰模型 |
+| **Opus 4.7** | `claude-opus-4-7` | 以官方 pricing 为准 | 200K / 1M（按账号/平台可用性） | 以官方模型页为准 | 当前最强 Opus，复杂推理、agentic coding、`xhigh` effort |
+| **Opus 4.6** | `claude-opus-4-6` | $5 / $25（历史参考） | 200K / 1M | 128K | 前代旗舰；2.1.142 起 Fast Mode 默认切到 Opus 4.7 |
 | **Sonnet 4.6** | `claude-sonnet-4-6` | $3 / $15 | 200K / 1M (beta) | 64K | 自适应思考、速度智能平衡 |
 | **Haiku 4.5** | `claude-haiku-4-5-20251001` | $1 / $5 | 200K | 64K | 最快速度、成本最优 |
 
@@ -73,13 +76,17 @@ Claude Code 作为 Agent 框架接入多种模型 (LLM Gateway)
 - Claude Code **界面显示的仍是 Anthropic 模型名**，但实际调用的是配置的后端模型
 - 后端 API 需**兼容 Anthropic Messages 格式**（或通过网关转换）
 - 使用 `/model` 命令可查看/切换可用模型
+- 2.1.x 会在发送给非 Anthropic provider 前清理模型 ID 后缀；如果需要固定模型，优先使用完整 ID（如 `claude-opus-4-7`）或 `ANTHROPIC_DEFAULT_*_MODEL`
 
 **参考链接**：
 
 - [Claude Code Model Configuration](https://code.claude.com/docs/en/model-config) - 模型配置官方文档
 - [Claude Code LLM Gateway](https://code.claude.com/docs/en/llm-gateway) - LiteLLM 等网关配置
 - [Claude Code on Amazon Bedrock](https://code.claude.com/docs/en/amazon-bedrock) - AWS Bedrock 配置
+- [Claude Opus 4.7 API Docs](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-7) - Opus 4.7 模型 ID 与迁移说明
+- [Claude Code Changelog](https://code.claude.com/docs/en/changelog) - Fast Mode、模型和 CLI 版本变化
 - [智谱 GLM Coding Plan](https://docs.bigmodel.cn/cn/guide/develop/claude) - 智谱 AI Claude 兼容 API
 
 ### 验证记录
 - [2026-01-31] 初次记录，来源：官方文档 + 实践验证。已成功通过智谱 API 使用 GLM-4.7 模型。
+- [2026-05-15] 时效性更新：官方文档确认 Opus 4.7 模型 ID 为 `claude-opus-4-7`，Claude Code changelog 确认 2.1.142 起 Fast Mode 默认使用 Opus 4.7；本机 `claude --version` 为 2.1.133。
