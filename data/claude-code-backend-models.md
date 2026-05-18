@@ -2,7 +2,7 @@
 
 **收录日期**：2026-01-31
 **来源日期**：2026-05-14
-**更新日期**：2026-05-15
+**更新日期**：2026-05-18
 **标签**：#ai #tools #reference #claude-code
 **来源**：Claude Code 官方文档 / 发布说明 / 实践验证
 **状态**：✅ 已验证
@@ -55,6 +55,27 @@ Claude Code 作为 Agent 框架接入多种模型 (LLM Gateway)
 | **Moonshot (Kimi)** | 月之暗面 |
 | **本地模型** | Ollama、vLLM、LocalAI 等 |
 
+### 认证优先级与网页登录关系
+
+Claude Code CLI 支持多种认证方式。若配置了网关/代理凭证，通常不需要依赖 Claude.ai 浏览器登录。
+
+官方认证优先级（节选）：
+
+1. 云厂商凭证：`CLAUDE_CODE_USE_BEDROCK` / `CLAUDE_CODE_USE_VERTEX` / `CLAUDE_CODE_USE_FOUNDRY`
+2. `ANTHROPIC_AUTH_TOKEN`：作为 `Authorization: Bearer` 发送，适合 LLM Gateway / Router / 代理
+3. `ANTHROPIC_API_KEY`：作为 `X-Api-Key` 发送，适合 Claude Console API Key
+4. `apiKeyHelper` 脚本输出
+5. `CLAUDE_CODE_OAUTH_TOKEN`
+6. `/login` 得到的订阅 OAuth 凭证
+
+因此，“关闭网页登录验证”通常不是改 `settings.json` 中某个 disable 字段，而是：
+
+- CLI/终端：在 `~/.claude/settings.json` 的 `env` 中配置 `ANTHROPIC_BASE_URL` + `ANTHROPIC_AUTH_TOKEN`/`ANTHROPIC_API_KEY`；或在 shell 环境变量中设置。
+- VS Code 插件：在 VS Code `settings.json` 的 `claudeCode.environmentVariables` 中配置同类变量。
+- 首次引导完成状态：属于 `~/.claude.json` 顶层字段，例如 `hasCompletedOnboarding: true`，不是 `~/.claude/settings.json`。
+
+> 限制：`apiKeyHelper`、`ANTHROPIC_API_KEY`、`ANTHROPIC_AUTH_TOKEN` 仅适用于终端 CLI 会话；Claude Desktop 和 remote sessions 使用 OAuth。
+
 ### 智谱 GLM 配置示例
 
 智谱提供了 **Anthropic 兼容 API 端点**，在 `~/.claude/settings.json` 中配置：
@@ -82,6 +103,7 @@ Claude Code 作为 Agent 框架接入多种模型 (LLM Gateway)
 
 - [Claude Code Model Configuration](https://code.claude.com/docs/en/model-config) - 模型配置官方文档
 - [Claude Code LLM Gateway](https://code.claude.com/docs/en/llm-gateway) - LiteLLM 等网关配置
+- [Claude Code Authentication](https://docs.anthropic.com/en/docs/claude-code/authentication) - 认证方式与优先级
 - [Claude Code on Amazon Bedrock](https://code.claude.com/docs/en/amazon-bedrock) - AWS Bedrock 配置
 - [Claude Opus 4.7 API Docs](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-7) - Opus 4.7 模型 ID 与迁移说明
 - [Claude Code Changelog](https://code.claude.com/docs/en/changelog) - Fast Mode、模型和 CLI 版本变化
@@ -90,3 +112,5 @@ Claude Code 作为 Agent 框架接入多种模型 (LLM Gateway)
 ### 验证记录
 - [2026-01-31] 初次记录，来源：官方文档 + 实践验证。已成功通过智谱 API 使用 GLM-4.7 模型。
 - [2026-05-15] 时效性更新：官方文档确认 Opus 4.7 模型 ID 为 `claude-opus-4-7`，Claude Code changelog 确认 2.1.142 起 Fast Mode 默认使用 Opus 4.7；本机 `claude --version` 为 2.1.133。
+- [2026-05-18] 基于 Claude Code 官方认证文档补充认证优先级：网关/代理优先使用 `ANTHROPIC_AUTH_TOKEN` 或 `ANTHROPIC_API_KEY`，无需把“关闭网页登录”理解为 `settings.json` 中的某个 disable 字段；`hasCompletedOnboarding` 位于 `~/.claude.json`。
+- [2026-05-18] 合并校验：保留 2026-05-15 模型/Fast Mode 更新与 2026-05-18 认证优先级补充；本记录聚焦模型后端与网关接入，`/config` 文件边界详见 `claude-code-config-dialog-settings.md`。
