@@ -4,7 +4,7 @@
 **来源**：官方文档 + 实践经验
 **收录日期**：2026-01-30
 **来源日期**：2026-04-02
-**更新日期**：2026-04-17
+**更新日期**：2026-05-18
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐（官方文档验证）
 **适用版本**：Claude Code v2.1.88+
@@ -63,7 +63,38 @@ winget install Anthropic.ClaudeCode
 # VS Code / JetBrains / Cursor → 各自扩展市场搜索 "Claude Code"
 ```
 
-## 四、支持模型
+## 四、认证与配置文件分层
+
+Claude Code 认证与配置分散在两类文件中，排查“网页登录验证/首次引导/API 网关接入”时不要混淆：
+
+| 文件/位置 | 主要内容 | 典型用途 |
+|-----------|----------|----------|
+| `~/.claude.json` | OAuth session、MCP 用户/本地配置、项目信任状态、缓存、`/config` 偏好 | `/config` 设置、首次引导状态、登录/信任状态 |
+| `~/.claude/settings.json` | `env`、permissions、hooks、模型/工具相关设置 | CLI 全局环境变量、权限规则、Hook 自动化 |
+| VS Code `settings.json` | `claudeCode.environmentVariables` | 给 VS Code Claude Code 插件注入环境变量 |
+
+如果只是处理首次引导完成状态，字段在 `~/.claude.json` 顶层：
+
+```json
+{
+  "hasCompletedOnboarding": true
+}
+```
+
+如果目标是不用 Claude.ai 浏览器网页登录，改走本地 Router、LLM Gateway 或 Anthropic-compatible endpoint，应配置凭证环境变量，而不是寻找 `settings.json` 中的“关闭验证”开关：
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:3456",
+    "ANTHROPIC_AUTH_TOKEN": "***"
+  }
+}
+```
+
+认证优先级上，`ANTHROPIC_AUTH_TOKEN` 作为 `Authorization: Bearer` 发送，适合网关/代理；`ANTHROPIC_API_KEY` 作为 `X-Api-Key` 发送，适合 Claude Console API Key。上述 API Key / Auth Token / apiKeyHelper 仅适用于终端 CLI 会话；Claude Desktop 和 remote sessions 仍使用 OAuth。
+
+## 五、支持模型
 
 | 模型 | 状态 | 特点 |
 |------|------|------|
@@ -76,7 +107,7 @@ winget install Anthropic.ClaudeCode
 
 Fast Mode（`/fast`）：同一 Opus 4.6 模型加速输出，不切换到其他模型。
 
-## 五、权限模式
+## 六、权限模式
 
 | 模式 | 切换 | 适用 |
 |------|------|------|
@@ -114,21 +145,21 @@ Fast Mode（`/fast`）：同一 Opus 4.6 模型加速输出，不切换到其他
 alias clauded="claude --dangerously-skip-permissions"
 ```
 
-## 六、核心功能
+## 七、核心功能
 
-### 6.1 代码生成与编辑
+### 7.1 代码生成与编辑
 自然语言转代码，支持 React/Vue/Svelte/Unity/Python 等 40+ 语言。
 
-### 6.2 调试修复
+### 7.2 调试修复
 粘贴错误日志或截图（Windows: `Alt+V`），自动定位并修复。
 
-### 6.3 代码库导航
+### 7.3 代码库导航
 `@文件路径` 引用文件，扫描整个项目理解架构。
 
-### 6.4 自动化任务
+### 7.4 自动化任务
 重构、lint 修复、Git 冲突处理、文档生成、测试编写。
 
-### 6.5 Subagents（子代理）
+### 7.5 Subagents（子代理）
 独立的 AI 实例执行特定任务：
 
 | 能力 | 说明 |
@@ -142,7 +173,7 @@ alias clauded="claude --dangerously-skip-permissions"
 
 内置代理类型：`general-purpose`（全工具）、`Explore`（只读搜索）、`Plan`（架构规划）、`verification`（对抗验证）。
 
-### 6.6 Agent Teams（多代理协调，实验性）
+### 7.6 Agent Teams（多代理协调，实验性）
 多个 Claude Code 实例作为团队协作：
 
 ```bash
@@ -154,7 +185,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 - 同伴间可直接通信（mailbox 系统）
 - 通过 Hook 实现质量门控
 
-### 6.7 Hooks（自动化钩子）
+### 7.7 Hooks（自动化钩子）
 20+ 事件，3 种类型：
 
 | 类型 | 说明 |
@@ -168,7 +199,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
 Hook 可返回 `additionalContext` 注入上下文，支持 `if` 字段按工具名+参数过滤。
 
-### 6.8 Plugins（插件系统）
+### 7.8 Plugins（插件系统）
 50+ 官方插件，可捆绑 skills + agents + hooks + MCP：
 
 ```
@@ -182,7 +213,7 @@ code-review        — 多代理并行 PR 审查
 
 安装：`claude plugins add <name>`，管理：`/plugins`。
 
-### 6.9 Skills（技能系统）
+### 7.9 Skills（技能系统）
 自定义提示词模板，frontmatter 控制触发模式：
 
 | 配置 | 效果 |
@@ -191,21 +222,21 @@ code-review        — 多代理并行 PR 审查
 | `disable-model-invocation: true` | 仅手动触发 |
 | `user-invocable: false` | 仅 Claude 自动触发 |
 
-### 6.10 Scheduled Tasks（定时任务）
+### 7.10 Scheduled Tasks（定时任务）
 - CLI：`/loop 5m /review` 或 CronCreate 工具
 - Desktop：本地定时（需应用打开）
 - Web/Cloud：云端定时（Anthropic 基础设施）
 
-### 6.11 Remote Control（远程控制）
+### 7.11 Remote Control（远程控制）
 本地会话可通过 `claude.ai/code` 或 Claude 移动端继续，支持跨设备。
 
-### 6.12 Channels（外部集成，预览）
+### 7.12 Channels（外部集成，预览）
 从 Telegram、Discord、iMessage 或自定义 webhook 接收事件推送到会话。
 
-### 6.13 Sandboxing（沙箱隔离）
+### 7.13 Sandboxing（沙箱隔离）
 OS 级文件系统和网络隔离，防止恶意操作。
 
-## 七、交互技巧
+## 八、交互技巧
 
 | 技巧 | 用法 |
 |------|------|
@@ -221,7 +252,7 @@ OS 级文件系统和网络隔离，防止恶意操作。
 | 插件管理 | `/plugins` |
 | 查看成本 | `/cost` |
 
-## 八、CLAUDE.md 与记忆
+## 九、CLAUDE.md 与记忆
 
 ### CLAUDE.md 层级
 
@@ -238,7 +269,7 @@ OS 级文件系统和网络隔离，防止恶意操作。
 - 使用 Sonnet 作为廉价选择器，最多选 5 条相关记忆
 - MEMORY.md 是索引，单条不超过 150 字符
 
-## 九、MCP 扩展
+## 十、MCP 扩展
 
 | 传输方式 | 用途 |
 |----------|------|
@@ -250,7 +281,7 @@ OS 级文件系统和网络隔离，防止恶意操作。
 
 支持将 Claude Code **本身作为 MCP 服务器**暴露给其他工具。
 
-## 十、第三方部署
+## 十一、第三方部署
 
 | 平台 | 文档 |
 |------|------|
@@ -259,13 +290,13 @@ OS 级文件系统和网络隔离，防止恶意操作。
 | **Microsoft Foundry** | Azure 预配，RBAC |
 | **LLM Gateway** | LiteLLM 等网关配置 |
 
-## 十一、Agent SDK
+## 十二、Agent SDK
 程序化使用 Claude Code，适用于 CI/CD 自动化：
 
 - GitHub Actions / GitLab CI/CD 自动 PR 审查和 issue 分类
 - 构建自定义工作流代理
 
-## 十二、与 VS Code Copilot 对比
+## 十三、与 VS Code Copilot 对比
 
 | 特性 | VS Code Copilot | Claude Code |
 |------|----------------|-------------|
@@ -276,7 +307,7 @@ OS 级文件系统和网络隔离，防止恶意操作。
 
 两者是**互补关系**，建议同时使用。
 
-## 十三、新增/不常用功能速查
+## 十四、新增/不常用功能速查
 
 | 功能 | 说明 |
 |------|------|
@@ -289,7 +320,7 @@ OS 级文件系统和网络隔离，防止恶意操作。
 | Headless Mode | 非交互模式，结构化输出（CI/CD） |
 | Managed Settings | 组织级统一配置下发 |
 
-## 十四、最佳实践
+## 十五、最佳实践
 
 1. **善用 CLAUDE.md**：记录项目规范，避免重复解释
 2. **合理使用权限模式**：信任场景用 Auto/Bypass，复杂任务用 Plan
@@ -301,7 +332,7 @@ OS 级文件系统和网络隔离，防止恶意操作。
 8. **Agent Teams**：大型重构用多实例并行
 9. **结合 Copilot**：实时补全 + 项目级规划 = 最佳组合
 
-## 十五、常见问题
+## 十六、常见问题
 
 | 问题 | 解决方案 |
 |------|---------|
@@ -333,6 +364,7 @@ OS 级文件系统和网络隔离，防止恶意操作。
 - [源码架构分析](./claude-code-source-architecture.md) — 内部设计原理
 
 ### 验证记录
+- [2026-05-18] 补充 Claude Code v2.1.25 认证与配置分层：`~/.claude.json` 负责 OAuth/首次引导/信任状态，`~/.claude/settings.json` 负责 CLI env/permissions/hooks；改走 Router/Gateway 应配置 `ANTHROPIC_BASE_URL` + `ANTHROPIC_AUTH_TOKEN`/`ANTHROPIC_API_KEY`，不是寻找“关闭网页登录验证”的 settings 开关。
 - [2026-01-30] 初次记录，来源：官方文档 + 实践经验整合
 - [2026-04-02] 重大更新：基于 code.claude.com 最新文档全面重写。新增 Agent Teams、Plugins、Hooks、Subagents、Desktop/Web/JetBrains 平台、1M 上下文、Remote Control、Channels、Agent SDK、Scheduled Tasks、Sandboxing、Output Styles、Statusline、Voice Dictation 等内容。更新模型信息（Opus 4.6/Sonnet 4.6/Haiku 4.5 GA，旧版退役）。安装方式扩展至 7 种。权限模式从 3 种更新至 5 种。
 - [2026-04-17] 合并 claude-code-bypass-permissions.md 独有内容（全局默认 Bypass 配置、已知 Bug #32047/#41526、shell 别名兜底方案）到权限模式章节。删除独立 bypass-permissions 记录，统一维护入口。

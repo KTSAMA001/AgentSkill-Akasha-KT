@@ -4,9 +4,10 @@
 **来源**：实际使用环境截图 + 官方文档
 **收录日期**：2026-03-28
 **来源日期**：2026-03-28
+**更新日期**：2026-05-18
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐
-**适用版本**：Claude Code v2.1.x
+**适用版本**：Claude Code v2.1.25+
 
 ### 概要
 `/config` 命令打开的设置界面（存储于 `~/.claude.json`，**非** `settings.json`）中各配置项的作用说明。与 `settings.json`（权限、hooks、环境变量等）是两套独立的配置系统。
@@ -14,6 +15,24 @@
 ### 内容
 
 > ⚠️ 这些设置存储在 `~/.claude.json` 中，通过 `/config` 命令或 `claude config set` 修改，**不要**写入 `settings.json`（会触发 schema 验证错误）。
+
+#### 登录 / 首次引导状态
+
+Claude Code 的 OAuth 会话、MCP 用户/本地配置、项目信任状态、缓存，以及部分 `/config` 偏好存储在：
+
+```bash
+~/.claude.json
+```
+
+如果目标是处理“已完成网页登录/首次引导”的状态，不要去 `~/.claude/settings.json` 找。对应字段在 `~/.claude.json` 顶层，例如：
+
+```json
+{
+  "hasCompletedOnboarding": true
+}
+```
+
+> 注意：这只表示本地首次引导状态已完成；它不是官方文档中列出的“禁用认证”开关，也不等同于持有可用 OAuth 会话。若要绕过浏览器网页登录改走网关/API，应配置环境变量或 API Key，而不是依赖该字段。
 
 #### 行为控制
 
@@ -61,13 +80,29 @@
 | 维度 | `~/.claude.json` (`/config`) | `settings.json` |
 |------|------------------------------|-----------------|
 | 修改方式 | `/config` 界面 / `claude config set` | 手动编辑 / CLI 标志 |
-| 内容 | UI 偏好、外观、行为开关 | 权限、hooks、环境变量、模型 |
+| 内容 | OAuth 会话、MCP 用户/本地配置、项目信任状态、UI 偏好、行为开关、缓存 | 权限、hooks、环境变量、模型 |
 | 作用域 | 仅用户全局 | 用户全局 + 项目 + 本地 |
 | 版本控制 | 不提交 git | 项目级可提交 git |
 
+### 不用网页登录时的官方路径
+
+如果目标是让 Claude Code CLI 不依赖 Claude.ai 浏览器登录，而是接入本地 Router、LLM Gateway 或第三方 Anthropic-compatible endpoint，应在环境变量中提供凭证：
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:3456",
+    "ANTHROPIC_AUTH_TOKEN": "***"
+  }
+}
+```
+
+官方认证优先级中，`ANTHROPIC_AUTH_TOKEN` 会作为 `Authorization: Bearer` 发送，适合网关/代理；`ANTHROPIC_API_KEY` 会作为 `X-Api-Key` 发送，适合直连 Claude Console API Key。`apiKeyHelper`、`ANTHROPIC_API_KEY`、`ANTHROPIC_AUTH_TOKEN` 仅适用于终端 CLI 会话，Claude Desktop 和 remote sessions 使用 OAuth。
+
 ### 参考链接
 
-- [Claude Code 官方设置文档](https://code.claude.com/docs/en/settings.md) — 说明两个配置文件的职责划分
+- [Claude Code 官方设置文档](https://docs.anthropic.com/en/docs/claude-code/settings) — 说明两个配置文件的职责划分
+- [Claude Code 官方认证文档](https://docs.anthropic.com/en/docs/claude-code/authentication) — 说明认证方式与优先级
 
 ### 相关记录
 
@@ -77,3 +112,4 @@
 
 ### 验证记录
 - [2026-03-28] 初次记录，来源：实际使用环境 `/config` 截图确认 + 官方文档交叉验证
+- [2026-05-18] 验证 Claude Code v2.1.25 配置分层：`~/.claude.json` 存放 OAuth session、MCP 用户/本地配置、项目状态、缓存及 `hasCompletedOnboarding`；`~/.claude/settings.json` 适合放 `env`、permissions、hooks 等。补充通过 `ANTHROPIC_BASE_URL` + `ANTHROPIC_AUTH_TOKEN`/`ANTHROPIC_API_KEY` 改走 Router/Gateway 的认证路径。
