@@ -69,6 +69,26 @@ KT 提出：VR 中是否可以用模型完全套住相机，利用半透明与 `
 - 如果目标是“处理已经渲染好的画面”，例如模糊、泛光、调色或扭曲，它仍然需要后处理、Grab/Blit、Renderer Feature 或相机颜色纹理方案。
 - 在 VR 项目中，这个思路的价值主要是：用普通透明物体/Shader 完成低风险、低管线侵入的视野特效，并减少对后处理链路的依赖。
 
+#### 联网调查结论：性能不一定绝对更好，但在移动/一体机 VR 中通常值得优先验证
+
+初步调查支持这个判断：**对于 tint、暗角、扫描线、污渍、受击提示等“纯覆盖层/每像素独立”效果，相机壳层或等价的透明覆盖几何很可能比传统后处理链路更轻；但如果效果本身覆盖全屏且 Shader 很重，仍会产生透明 overdraw，不能无条件认为更快。**
+
+依据与边界：
+
+- Unity 文档指出，未启用 on-tile post-processing 时，移动/一体机 XR 上不建议启用后处理，因为后处理会引入 intermediate textures，降低性能；on-tile 后处理的价值正是减少内存/功耗开销。
+- Android XR 的 Unity URP 性能建议明确写到：移动 XR 上 post processing 成本高，视觉收益通常不如性能代价，建议在 URP Renderer Data 中关闭 Post-Processing。
+- John Austin 对 Oculus Quest 的实践文章提到，传统二次 Pass 后处理需要把 intermediate framebuffer resolve 到主内存再读回，可能消耗 20–30% frame budget；对每像素独立的 tonemapping/color grading，他采用把逻辑移动到 forward pass 的方式规避这类带宽成本。
+- Unity URP 的 fullscreen blit 示例本质是自定义 Render Pass + full-screen mesh，并且 XR 中还要使用 XR sampler macros、避免 `cmd.Blit` 兼容问题。这说明“专门开一个后处理/Blit”并不是零成本路径。
+- 反过来，透明覆盖几何的主要成本是全屏透明 overdraw、双眼重复像素着色、排序与深度状态管理。如果只是 1 层简单 tint/clip/noise，成本通常可控；如果多层复杂噪声、全屏半透明叠很多层，可能把优势吃掉。
+
+因此推荐策略是：
+
+1. **简单覆盖型效果**：优先试相机壳层 / full-screen overlay geometry，不走后处理。
+2. **每物体或局部效果**：尽量放进物体 Shader 或局部网格，避免全屏 Pass。
+3. **需要采样场景颜色的效果**：仍走 Renderer Feature / Grab / Blit / 正规后处理，或 Unity 6+ 可评估 on-tile post-processing。
+4. **Quest/Android XR**：默认假设传统后处理昂贵，除非 profiling 证明可接受。
+5. **最终以真机 GPU profiling 为准**：比较 GPU frame time、带宽、overdraw、双眼一致性，而不是只比较 DrawCall 数。
+
 #### 实验方向
 
 1. 做一个跟随 XR Camera 的内法线球壳或四周面片。
@@ -92,7 +112,11 @@ return float4(_TintColor.rgb, alpha);
 
 ### 参考链接
 
-暂无外部参考；后续可补充 Unity XR、URP 透明队列、Stencil、Depth Texture 与后处理替代方案资料。
+- [Unity Manual - On-tile post-processing (URP)](https://docs.unity3d.com/6000.3/Documentation/Manual/xr-graphics-on-tile-post-processing.html) - Unity 说明一体机 XR 上应避免未启用 on-tile 的传统后处理，中间纹理会影响性能。
+- [Android Developers - Optimize rendering using URP Asset settings](https://developer.android.com/develop/xr/unity/performance/urp-asset-settings) - Android XR / Unity URP 性能建议，明确建议移动 XR 中关闭 HDR 与 Post Processing。
+- [John Austin - Fast Post-Processing on the Oculus Quest and Unity](https://johnaustin.io/articles/2022/fast-post-processing-on-the-oculus-quest) - Quest 实践案例，说明传统后处理 resolve/readback 的带宽成本，并提出把每像素独立后处理并入 forward pass。
+- [Unity URP - Perform a full screen blit in URP](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@15.0/manual/renderer-features/how-to-fullscreen-blit.html) - URP XR 下 full-screen blit / RenderFeature 的官方示例与 XR 注意事项。
+- [Meta Horizon OS Developers - Use VR Compositor Layers](https://developers.meta.com/horizon/documentation/unity/unity-ovroverlay/) - Meta 的 compositor layer / OVROverlay 资料，可作为某些 UI/覆盖层类效果的替代方向参考。
 
 ### 相关记录
 
@@ -104,5 +128,6 @@ return float4(_TintColor.rgb, alpha);
 ### 验证记录
 
 - [2026-05-19] 初次记录，来源：KT 关于“VR 用模型包裹相机，通过半透明与 clip 模拟非扭曲后处理效果”的灵感。当前为构想阶段，尚未在具体 VR 项目中实测。
+- [2026-05-19] 联网补充性能判断：Unity / Android XR / Quest 实践资料均支持“移动/一体机 VR 中传统后处理通常昂贵，简单覆盖型效果可优先尝试透明相机壳层或等价 overlay geometry”的方向；但透明 overdraw 与复杂 Shader 仍需真机 profiling。
 
 ---
