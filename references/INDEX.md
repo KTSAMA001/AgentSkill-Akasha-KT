@@ -71,6 +71,7 @@
 | [dotnet-cross-platform-compile-verify.md](../data/dotnet-cross-platform-compile-verify.md) | #csharp #dotnet #tools #experience | ✅ 已验证 | 验证在 Linux arm64 容器中部署的 .NET SDK 能否成功编译 macOS arm64 跨平台应用。 |
 | [effect-system-code-review.md](../data/effect-system-code-review.md) | #unity #architecture #scriptable-object #effect-system | ✅ 已验证 | EffectSystem 效果系统 - 代码审查与架构分析 |
 | [endfield-rendering-study.md](../data/endfield-rendering-study.md) | #rendering #shader #pbr #knowledge #zhihu | 📘 有效 | 系统分析了《终末地》项目的角色渲染流程，以脸部渲染为核心深入解读 shader 效果实现，涵盖渲染管线整体梳理、角色渲染细节、特殊效果说明等。附有大量渲染对比图和 AI 绘制的流程图，原图在 GitHub 上可查。 |
+| [fractalminer-endfield-texture-channel-analysis.md](../data/fractalminer-endfield-texture-channel-analysis.md) | #unity #shader #graphics #texture #npr #rendering #knowledge | 📘 有效 | FractalMiner 当前可读的终末地 CharacterNPR Fix shader 中，纹理通道用途可以通过 shader 属性声明、采样点和通道赋值关系直接分析出来。但这些结论描述的是“shader 期望如何使用纹理”，不是“某个角色实际贴图每个通道画了什么”，后者仍需实际贴图或 RenderDoc 帧捕获验证。 |
 | [git-commit-conventions.md](../data/git-commit-conventions.md) | #git #reference #conventional-commits | ✅ 已验证 | Git 团队协作工作流相关经验 |
 | [git-config-in-repo.md](../data/git-config-in-repo.md) | #git #docker #experience #credential | ✅ 已验证 | Docker 容器重建后，如果 Git 配置只写在 `~/.gitconfig`，会随容器销毁丢失。将配置写入仓库内 `.git/config` 可以让配置和挂载卷一起持久化。 |
 | [git-filter-repo-rewrite-history.md](../data/git-filter-repo-rewrite-history.md) | #git #experience #pat #docker #credential | ✅ 已验证 | 使用 git-filter-repo 重写提交历史（清除敏感信息） |
