@@ -188,6 +188,7 @@ Hook 调用入口的核心形态：
 
 ### 相关记录
 
+- [开发工具术语速查：Qt、冒烟测试、CI/CD](./developer-terms-qt-smoke-test-cicd.md) - 解释本记录中出现的 Qt/PySide6、Qt offscreen 冒烟测试与 CI/CD 术语。
 - [PyInstaller 打包 Python 为 Windows EXE 完整指南](./pyinstaller-windows-exe-packaging.md) - 单 exe 打包、资源路径与持久目录问题的相邻经验。
 - [Markdown to Word 转换器实现详解](./md-to-word-converter-implementation.md) - Python GUI 工具实现与桌面工具交付经验。
 - [Claude Code Skill 触发模式与 Hook 提升自动触发率](./claude-code-skill-hook-trigger-boost.md) - Hook 机制与自动化边界的相邻经验。
@@ -198,5 +199,6 @@ Hook 调用入口的核心形态：
 - [2026-05-25] 本地查重：阿卡西 data 中未发现“Git commit-msg Hook + AI 日志优化 GUI 工具”的直接记录；已有 PyInstaller、GUI 工具和 Hook 相关相邻记录，已在“相关记录”中引用。
 - [2026-05-25] 外部核对：Git 官方 githooks 文档确认 `commit-msg` 的输入和语义；Qt for Python 文档确认布局系统适合解决控件排版和尺寸管理；PyInstaller 官方文档确认 onefile 与运行时路径边界；OpenAI 与 Anthropic 官方文档确认两个通用请求协议的端点形态。
 - [2026-05-25] 工具验证：执行 Python 编译检查、单元测试、Qt offscreen 冒烟测试、PyInstaller 构建、桌面包验证，以及打包后 exe 的 `--version` 与 `doctor --repo <test-repo>` 诊断。
+- [2026-05-25] 补充关联：新增开发工具术语词条后，反向补充 Qt、冒烟测试、CI/CD 的术语解释引用。
 
 ---
