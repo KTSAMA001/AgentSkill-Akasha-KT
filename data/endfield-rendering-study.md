@@ -1,9 +1,10 @@
 # 终末地—渲染学习
 
-**标签**：#rendering #shader #pbr #knowledge #zhihu
+**标签**：#rendering #shader #pbr #knowledge #zhihu #arknights-endfield
 **来源**：[知乎 - 稻草人](https://zhuanlan.zhihu.com/p/2013370672647268314)
 **收录日期**：2026-03-31
 **来源日期**：编辑于 2026-03-23（福建）
+**更新日期**：2026-05-25
 **状态**：📘 有效
 **可信度**：⭐⭐⭐（社区实践，AI辅助整理，附 GitHub 原图）
 **适用版本**：通用渲染技术（终末地项目实践）
@@ -1077,3 +1078,4 @@ output     = color * tint
 
 ### 验证记录
 - [2026-03-31] 璃使用 playwright+stealth 抓取全文+图片，保存到阿卡西记录
+- [2026-05-25] 修正：补充 #arknights-endfield 标签，便于按明日方舟：终末地相关渲染拆解检索。

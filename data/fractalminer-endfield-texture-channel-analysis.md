@@ -1,10 +1,10 @@
 # FractalMiner 终末地角色 shader 纹理通道分析
 
-**标签**：#unity #shader #graphics #texture #npr #rendering #knowledge
+**标签**：#unity #shader #graphics #texture #npr #rendering #knowledge #arknights-endfield
 **来源**：FractalMiner 仓库源码分析
 **收录日期**：2026-05-20
 **来源日期**：2026-05-20
-**更新日期**：2026-05-20
+**更新日期**：2026-05-25
 **状态**：📘 有效
 **可信度**：⭐⭐⭐⭐（基于本地 shader 源码采样点和属性声明；未做实际贴图像素或 RenderDoc 帧验证）
 **适用版本**：FractalMiner 当前 HGRP CharacterNPR Fix shader；终末地逆向学习参考
@@ -293,3 +293,4 @@ float snRawY = nrmSmp.w * 2.0 - 1.0;
 
 - [2026-05-20] 初次记录，来源：对 FractalMiner 仓库当前 CharacterNPR Fix shader 的源码采样点、属性声明和本次对话结论整理。
 - [2026-05-20] 修正：将原先过短的 RGBA 表扩展为细化说明，补充 `_BumpMap`/VFX 法线贴图的 R*A 解包逻辑、normal Z 重建方式，以及各类 mask/ramp/VFX 纹理的读取条件和注意事项。
+- [2026-05-25] 修正：补充 #arknights-endfield 标签，便于按明日方舟：终末地相关 shader/纹理拆解检索。

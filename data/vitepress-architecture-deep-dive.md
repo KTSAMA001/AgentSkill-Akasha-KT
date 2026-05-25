@@ -1,8 +1,9 @@
 # 阿卡西记录 Web 项目架构深度解析
 
-**标签**：#web #vitepress #architecture
+**标签**：#web #vitepress #architecture #arknights
 **来源**：[AkashaRecord-Web 项目](https://github.com/KTSAMA001/AkashaRecord-Web) - 架构分析与文档
 **收录日期**：2026-02-16
+**更新日期**：2026-05-25
 **状态**：📘 有效
 **可信度**：⭐⭐⭐⭐⭐
 **适用版本**：VitePress v2.2.0
@@ -397,3 +398,4 @@ const filteredRecords = computed(() => {
 
 ### 验证记录
 - 2026-02-16 初次记录，来源：[架构分析文档]
+- [2026-05-25] 修正：补充 #arknights 标签，便于按明日方舟相关视觉风格检索。

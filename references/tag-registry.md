@@ -21,6 +21,7 @@
 | #anti-bot | 反爬虫 | network | specialty | 反爬虫/反机器人 |
 | #architecture | 架构设计 | code | type | 架构设计类记录 |
 | #arknights | 明日方舟 | monitor | specialty | 明日方舟游戏相关 |
+| #arknights-endfield | 明日方舟：终末地 | monitor | specialty | 明日方舟：终末地相关内容 |
 | #astrbot | AstrBot | chip | specialty | AstrBot 机器人框架 |
 | #astc | ASTC | shader | specialty | ASTC 纹理压缩格式 |
 | #audio | 音频 | unity | specialty | 音频系统 |
