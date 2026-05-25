@@ -20,7 +20,7 @@
 ### 关键点
 
 - **网站地址**：https://akasha.ktsama.top
-- **当前版本**：v2.2.0，收录 76 条记录
+- **当前版本**：v2.2.0，记录数量以 `references/INDEX.md` 与 Web 同步结果为准，避免在本记录中固化易过期数字
 - **架构设计**：基于 VitePress SSG，采用 Schema 驱动的数据架构，彻底消除硬编码业务逻辑
 - **视觉风格**：明日方舟（Arknights）工业风 UI，包含网点/网格背景、切角设计、SVG 图标系统
 - **主要功能**：
@@ -49,6 +49,7 @@
 ### 相关知识与经验
 
 - [Agent Skills 规范](./agent-skills-spec.md) - 阿卡西记录技能基于 Agent Skills 标准构建
+- [阿卡西记录写入前脱敏预览门禁](./akasha-record-redaction-preview-gate.md) - 记录入库前的敏感信息语义审查与预览说明规则
 - [Git 仓库管理经验](./git-commit-conventions.md) - 记录技能的版本控制与同步流程
 - [持续集成/持续部署相关经验](./cicd-vitepress-deploy.md) - 网站的自动化构建与部署踩坑记录
 - [明日方舟工业风 UI 分析](./arknights-ui-industrial-style.md) - 视觉设计的灵感来源与规范
@@ -57,3 +58,4 @@
 ### 验证记录
 - [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。
 - [2026-05-25] 修正：补充 #arknights 标签，便于按明日方舟相关视觉风格检索。
+- [2026-05-25] 同步：补充阿卡西记录写入前脱敏预览门禁关联，并将固定记录数量改为索引/Web 同步口径，避免数字过期。

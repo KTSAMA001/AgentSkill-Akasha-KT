@@ -30,6 +30,7 @@
 | [3dsmax-skin-normal-fbx-export.md](../data/3dsmax-skin-normal-fbx-export.md) | #unity #3dsmax #fbx #experience #troubleshooting | ⚠️ 待验证 | 美术在做模型资产时法线正常（硬边效果），但动画绑定后法线被打乱。通过网络搜索汇总了可能的原因和解决方案，**待美术验证后更新状态**。 |
 | [agent-skill-record-test.md](../data/agent-skill-record-test.md) | #agent-skills #experience #akasha | ⚠️ 待验证 | 本记录仅用于验证子 Agent 是否会按阿卡西 record 流程完成写入、索引同步与脚本校验，不可作为正式知识引用。 |
 | [agent-skills-spec.md](../data/agent-skills-spec.md) | #ai #knowledge #agent-skills | 📘 有效 | Agent Skills 规范 |
+| [akasha-record-redaction-preview-gate.md](../data/akasha-record-redaction-preview-gate.md) | #tools #knowledge #akasha #credential | ✅ 已验证 | 阿卡西记录写入前必须先做敏感信息语义审查，并在记录前预览中向用户说明是否发现敏感信息、发现的类型或位置概览、以及拟采用的脱敏方式。脚本只能作为结构校验或高置信固定模式告警，不能证明记录“不含敏感信息”。 |
 | [akasha-semantic-search-architecture.md](../data/akasha-semantic-search-architecture.md) | #architecture #ai #mcp #akasha #search-engine #python | 💡 构想中 | 为阿卡西记录（Akasha-KT）设计基于向量模型的语义搜索架构，提升自然语言查询体验，实现从关键词匹配到语义理解的升级。 |
 | [akasha-visualization-web.md](../data/akasha-visualization-web.md) | #tools #web #reference #akasha #arknights | 📘 有效 | 阿卡西记录可视化网站 |
 | [amplify-shader-editor-architecture.md](../data/amplify-shader-editor-architecture.md) | #unity #shader #graphics #architecture #urp | ✅ 已验证 | Amplify Shader Editor 的核心不是单纯的节点编辑器，而是一套 `图模型 + 文本模板 + 代码片段收集器 + Shader 内嵌序列化协议`。它把节点图直接嵌入 `.shader` 文件尾部的 `/*ASEBEGIN ... ASEEND*/` 区块中，使 Shader 文件同时成为运行产物和可编辑源；生成阶段则由主节点发起，沿输入端口反向递归收集代码片段，再通过模板标签系统组装为完整 Shader。 |
