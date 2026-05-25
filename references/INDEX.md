@@ -65,6 +65,7 @@
 | [compute-shader-gpu-parallel.md](../data/compute-shader-gpu-parallel.md) | #graphics #shader #knowledge #compute-shader #gpgpu | 📘 有效 | GPU 通用计算 (GPGPU) 相关原理与概念 |
 | [config-id-enum-generator.md](../data/config-id-enum-generator.md) | #unity #tools #excel #experience | ✅ 已验证 | 将导表后生成的 JSON/bytes 配置中的稳定 ID 生成 C# 枚举，供 Unity 编辑器工具通过枚举或 Odin 下拉选择，避免在 GM、音频测试等工具中手动输入裸 ID。 |
 | [copilot-claude-code-mcp-setup.md](../data/copilot-claude-code-mcp-setup.md) | #copilot #claude-code #mcp #vscode #ai #experience | ⚠️ 待验证 | 通过 `@steipete/claude-code-mcp` 将 Claude Code CLI 包装为 MCP server，注册到 VS Code 用户级 `mcp.json`，使 GitHub Copilot（Agent 模式）在执行任务时可直接调用 `claude_code` 工具，将复杂子任务委派给 Claude Code 完成。 |
+| [developer-terms-qt-smoke-test-cicd.md](../data/developer-terms-qt-smoke-test-cicd.md) | #tools #python #knowledge #ui #cicd | 📘 有效 | Qt、冒烟测试、CI/CD 是开发工具和交付流程里常见但容易被默认跳过解释的术语。简单说：Qt 是做桌面/跨平台界面的框架；冒烟测试是先跑一组最小核心检查，判断程序是否值得继续测；CI/CD 是把构建、测试、打包、发布或部署尽量自动化的工程流程。 |
 | [docker-container-git-auth-persist.md](../data/docker-container-git-auth-persist.md) | #git #experience #docker #credential #troubleshooting | ✅ 已验证 | Docker 容器重建后 Git 认证持久化配置 {#docker-git-auth-persist} |
 | [docker-git-credential-persist.md](../data/docker-git-credential-persist.md) | #git #experience #pat #docker #credential | ✅ 已验证 | Docker 容器内 Git PAT 凭据持久化配置 {#docker-git-credential} |
 | [docker-vs-native-deployment-file-access.md](../data/docker-vs-native-deployment-file-access.md) | #docker #deployment #tools #experience #ai | ✅ 已验证 | 针对"让 bot 操作电脑文件"这一需求，原生部署是明显更优的选择。Docker 的容器隔离在这一场景下是累赘而非优势。 |
@@ -131,6 +132,7 @@
 | [unity-framework-architecture.md](../data/unity-framework-architecture.md) | #unity #csharp #architecture | ⚠️ 待验证 | Unity 中的 C# 脚本编程相关经验 |
 | [unity-generic-animation-import-config.md](../data/unity-generic-animation-import-config.md) | #unity #animation #root-motion #experience | ⚠️ 待验证 | 针对 Unity Generic（非人形）动画导入时常见的滑步（Foot Sliding）、Inspector UI 选项消失（Bake Into Pose 等不显示）、以及双重位移问题的完整四步修复流程。核心记忆口诀：**Rig → Motion(None) → Bake → Mask(Uncheck Root)**。 |
 | [unity-layer-vs-renderlayer.md](../data/unity-layer-vs-renderlayer.md) | #unity #experience #rendering | ✅ 已验证 | Unity 中 Layer 与 Render Layer 的核心区别与使用场景 |
+| [unity-material-parameter-animation-controller.md](../data/unity-material-parameter-animation-controller.md) | #unity #shader #material #animation #srp-batcher #effect-system #experience | ✅ 已验证 | Unity 材质参数动画控制器应以“脚本驱动材质实例参数 + 曲线按秒采样 + 固定时间追赶式 CrossFade”为主线。需要持续滚动的 Vector 参数不要把速度直接乘到 shader 绝对时间上，而应由脚本把曲线值视为每秒速度源，按真实 `deltaTime` 积分后写入材质参数。 |
 | [unity-material-renderer.md](../data/unity-material-renderer.md) | #unity #knowledge #rendering #material | 📘 有效 | Unity 渲染相关知识 |
 | [unity-mcp-ai-editor-bridge.md](../data/unity-mcp-ai-editor-bridge.md) | #unity #mcp #tools #claude-code #ai #knowledge | ⚠️ 待验证 | 让 LLM（Claude、Cursor、VS Code Copilot 等）通过 MCP 协议直接操控 Unity Editor，实现自然语言创建 GameObject、编辑材质、管理场景、编写脚本等操作。 |
 | [unity-meta-touch-via-userdata.md](../data/unity-meta-touch-via-userdata.md) | #unity #editor #tools #experience #serialization | ✅ 已验证 | 如果目标只是让 Unity 资源对应的 `.meta` 文件稳定产生变化，优先使用 `AssetImporter.userData` 写入自定义标记，而不是依赖 `timeCreated` 这类未明确公开承诺的内部字段。 |
