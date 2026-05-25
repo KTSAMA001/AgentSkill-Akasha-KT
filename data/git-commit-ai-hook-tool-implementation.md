@@ -66,6 +66,53 @@ Hook 脚本应调用同一个 exe，而不是再拆一个 runner exe。这样用
 
 失败处理应可配置，但默认要保守。AI 请求失败、日志校验失败时可以弹窗提示，并根据配置选择阻止本次提交或保留原文继续。默认不应在用户无感知的情况下写入明显错误或空日志。
 
+#### 完整工作流程
+
+工具不是后台常驻服务。GUI 只负责配置、保存项目列表和安装/更新 hook；安装后可以关闭 GUI，但 hook 中记录的 `GitCommitAI.exe` 路径必须继续存在。后续每次提交时，由 Git 的 `commit-msg` hook 临时启动同一个 exe 处理提交日志。
+
+```mermaid
+flowchart TD
+    A["打开 GitCommitAI.exe GUI"] --> B["添加 Git 仓库到项目列表"]
+    B --> C["选择全局默认规则或具体项目"]
+    C --> D["配置日志规则、行为、AI 连接档案"]
+    D --> E["保存设置"]
+    E --> E1["全局: ~/.git-commit-ai/config.json"]
+    E --> E2["项目本地: .git/info/git-commit-ai.json"]
+    E --> E3["项目列表: ~/.git-commit-ai/projects.json"]
+    E --> F["点击安装/更新 commit-msg Hook"]
+    F --> G["写入 .git/hooks/commit-msg"]
+    G --> H{"是否已有非本工具 Hook?"}
+    H -- "是" --> H1["提示确认，备份为 commit-msg.pre-git-commit-ai 并串联"]
+    H -- "否" --> I["GUI 可关闭，exe 仍需保留在原路径"]
+    H1 --> I
+    I --> J["用户正常 git add / git commit"]
+    J --> K["Git 生成待提交日志文件"]
+    K --> L["Git 调用 .git/hooks/commit-msg"]
+    L --> M["Hook 启动 GitCommitAI.exe hook commit-msg <日志文件>"]
+    M --> N["加载默认、全局、项目共享、项目本地、环境变量配置"]
+    N --> O["读取原始提交日志并移除 Git 注释"]
+    O --> P{"是否跳过?"}
+    P -- "禁用、环境变量跳过、Merge/Revert/fixup/squash、已合规且有正文" --> Q["直接返回成功，Git 使用原始日志"]
+    P -- "不跳过" --> R["读取已暂存 diff"]
+    R --> S["构造提示词并调用 OpenAI/Anthropic 兼容接口或自定义命令"]
+    S --> T["解析 AI 返回的候选提交日志"]
+    T --> U{"候选日志是否通过校验?"}
+    U -- "否，配置为阻止" --> V["返回失败，Git 取消本次提交"]
+    U -- "否，配置为保留" --> Q
+    U -- "是" --> W["改写 Git 传入的提交日志文件"]
+    W --> X["按配置写入 .git/git-commit-ai/original-messages.jsonl 审计记录"]
+    X --> Y["返回成功，Git 创建最终 commit"]
+    Q --> Y
+```
+
+这条链路的关键边界：
+
+- 安装 hook 后不需要 GUI 常驻，但不能删除或移动 hook 指向的 exe；移动后需要重新安装/更新 hook。
+- 只处理 Git 传入的提交日志文件，不检查代码、不处理 push。
+- AI 只基于原始日志和已暂存 diff 工作，未暂存改动不应进入提示词。
+- 合规且已有正文的原始日志默认直接放行，避免二次改写。
+- 原始日志保留应优先写入 `.git` 下审计文件，避免污染公开提交历史。
+
 #### 跳过规则
 
 跳过规则应由用户可配置，按提交日志首行正则匹配。常见默认规则包括：
@@ -221,5 +268,6 @@ Hook 调用入口的核心形态：
 - [2026-05-25] 工具验证：执行 Python 编译检查、单元测试、Qt offscreen 冒烟测试、PyInstaller 构建、桌面包验证，以及打包后 exe 的 `--version` 与 `doctor --repo <test-repo>` 诊断。
 - [2026-05-25] 补充关联：新增开发工具术语词条后，反向补充 Qt、冒烟测试、CI/CD 的术语解释引用。
 - [2026-05-25] 修正：补充 `behavior.skip_valid_original` 实践结论。经本地单元测试与打包后临时仓库 hook 验证，原始日志首行合规且已有正文时会静默跳过 AI，不再二次改写，也不会追加“原始提交日志”区块；该结论与 Git 官方 `commit-msg` hook 可检查/改写消息文件的语义一致。
+- [2026-05-25] 补充完整工作流程 Mermaid 流程图，覆盖 GUI 配置、配置保存、hook 安装、Git 首次提交触发、跳过判断、AI 优化、校验、审计记录与最终 commit 的全链路；外部依据为 Git 官方 `commit-msg` hook 文档。
 
 ---
