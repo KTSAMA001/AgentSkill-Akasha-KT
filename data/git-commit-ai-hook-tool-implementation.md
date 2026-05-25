@@ -1,0 +1,202 @@
+# Git Commit AI：commit-msg Hook 日志优化工具设计与实现实践
+
+**标签**：#git #python #tools #ai #windows #experience #hook #ui #conventional-commits #credential
+**来源**：实践总结 - Git Commit AI 本地工具设计、实现、打包与测试
+**收录日期**：2026-05-25
+**来源日期**：2026-05-25
+**更新日期**：2026-05-25
+**状态**：✅ 已验证
+**可信度**：⭐⭐⭐⭐（本地端到端验证 + 官方资料核对）
+**适用版本**：Git commit-msg hook / Python 3.13 / PySide6 / PyInstaller 6.20 / OpenAI-compatible Chat Completions / Anthropic Messages API
+
+### 概要
+
+本记录总结一个本地 Windows GUI 工具的完整实践：长期管理多个 Git 仓库的 `commit-msg` hook，在提交时只优化 commit message，不介入代码检查、push hook 或其他 Git 自动化。关键经验是把“Hook 运行边界、AI 连接档案、项目配置继承、GUI 可读性、单 exe 打包、失败回退”拆清楚，避免工具从日志优化器偏移成泛 Git 自动化平台。
+
+### 内容
+
+#### 目标与边界
+
+该工具的唯一核心职责是管理 Git `commit-msg` hook：用户照常执行 `git commit`，Git 在提交日志确认阶段调用本工具，本工具读取原始 commit message 与已暂存 diff，按配置调用 AI 重写日志，并可在日志末尾保留原始提交内容用于回忆。
+
+明确排除的范围同样重要：
+
+- 不做 `pre-commit` 代码检查。
+- 不做 `pre-push` 检查或发布流程。
+- 不把工具设计成通用 Git 自动化平台。
+- 不要求用户手动寻找 hook 文件或配置文件。
+
+这个边界来自 Git hook 本身的语义：`commit-msg` 接收提交日志文件路径，适合检查或改写提交信息；代码扫描、格式化、测试等行为应属于其他 hook 或独立工具。
+
+#### 配置分层
+
+配置应只有一层“当前编辑目标”，避免用户同时面对全局、项目、连接档案多套保存按钮而不知道自己在保存什么。
+
+推荐分层：
+
+| 层级 | 用途 | 生命周期 |
+|------|------|----------|
+| 全局默认规则 | 未设置项目的兜底规范、AI 默认连接、跳过规则 | 用户级长期保存 |
+| 项目本地配置 | 单仓库覆盖全局规则 | 存在于仓库 `.git/info`，不进入提交 |
+| 项目列表 | GUI 左侧长期管理多个仓库路径和 hook 状态 | 用户级长期保存 |
+| 连接档案 | 同一协议下保存不同 Base URL、Key、环境变量名和模型 | 随当前配置目标保存 |
+
+实践中最容易混乱的是“请求协议”和“连接档案”看起来像同一个东西。应将二者分离：
+
+- 请求协议只决定请求格式，例如 OpenAI 兼容或 Anthropic 兼容。
+- 连接档案保存实际服务商、网关、账号或 Key，例如不同 URL、不同 API Key、不同模型。
+- 档案名称只在新建时输入；创建后只通过下拉框选择，保存按钮只更新当前档案字段。
+- 重复档案名必须提示并拒绝创建，避免“保存过但下拉框不显示、再添加又说已存在”的状态错乱。
+
+#### Hook 安装策略
+
+Hook 安装只修改仓库内的 `.git/hooks/commit-msg`。如果已有非本工具管理的 hook，不应直接覆盖；应提示用户确认后备份并串联执行，例如备份为 `commit-msg.pre-git-commit-ai`，再由新 hook 调用旧 hook。
+
+Hook 脚本应调用同一个 exe，而不是再拆一个 runner exe。这样用户桌面只需要一个程序：
+
+```sh
+"$TOOL_EXE" hook commit-msg "$1"
+```
+
+同一个入口根据参数区分 GUI 模式和 hook 模式：
+
+- 双击无参数：启动 GUI。
+- Git hook 带参数：处理日志文件并返回退出码。
+- 命令行 `doctor` / `install` / `uninstall`：用于诊断和脚本化操作。
+
+失败处理应可配置，但默认要保守。AI 请求失败、日志校验失败时可以弹窗提示，并根据配置选择阻止本次提交或保留原文继续。默认不应在用户无感知的情况下写入明显错误或空日志。
+
+#### 跳过规则
+
+跳过规则应由用户可配置，按提交日志首行正则匹配。常见默认规则包括：
+
+```regex
+^Merge
+^Revert
+^fixup!
+^squash!
+```
+
+满足跳过规则的提交应直接放行，不进入 AI 优化。这样可以避免 merge commit、revert、fixup、squash 这类 Git 默认或工作流专用日志被无意义改写。
+
+#### AI 协议设计
+
+常见模型网关数量很多，但 GUI 不应堆满服务商枚举。更稳的设计是只提供两类通用协议：
+
+| 协议 | 请求端点 | 用途 |
+|------|----------|------|
+| OpenAI 兼容接口 | `/chat/completions` | 大量兼容 OpenAI Chat Completions 的网关 |
+| Anthropic 兼容接口 | `/v1/messages` | Claude/Anthropic Messages 格式及兼容网关 |
+
+具体服务商 URL 由用户在连接档案里填写。Base URL 可以是根地址，也可以是完整 endpoint；程序负责避免重复拼接路径。例如用户填写 Anthropic 兼容根地址时，请求落到 `/v1/messages`；如果用户已经填完整 messages endpoint，则不再重复追加。
+
+模型列表只能作为辅助能力，不应作为强依赖。部分网关不支持模型枚举，GUI 必须允许用户手动输入模型名。
+
+Key 管理建议：
+
+- 允许保存 API Key 到当前档案。
+- 也允许只填写环境变量名，让 hook 运行时从系统环境读取。
+- 连接档案的名称不等于协议名称，也不等于服务商名称；它只是用户自己识别账号、网关或用途的标签。
+
+#### GUI 交互经验
+
+早期手搓布局或过度依赖基础控件，容易出现区域遮挡、文字看不清、按钮消失、滚轮串动、保存层级不明等问题。实践中改用 PySide6/Qt 后，重点不是“换框架就自动好看”，而是利用成熟布局系统把信息结构整理清楚。
+
+有效的布局原则：
+
+- 左侧是长期项目列表，项目卡片必须有明确选择反馈和 hook 状态。
+- 左侧保留“全局默认规则”作为一个可选项，编辑兜底设置；选择具体项目时才允许安装或卸载 hook。
+- 右侧顶部只展示当前项目与 hook 操作，不放重复的“添加项目”“检查当前项目”按钮。
+- 配置区只保留一个保存目标：当前选择的是全局就保存全局，当前选择的是项目就保存项目。
+- 每个参数的说明放在参数右侧，不单独占一行；下拉框、输入框统一宽度，按钮在右侧。
+- 对容易误解的控件加 tooltip，但不要用大段说明文本淹没操作区。
+- 下拉框滚轮事件应只作用于当前控件，不应带动左侧项目列表滚动。
+
+UI 文案也要按用户任务命名，而不是按内部实现命名。例如“请求协议”“选择档案”“新建自定义档案”“保存此档案”比 `Provider`、`Profile`、`Base URL + API Key` 更容易理解。
+
+#### 单 exe 与相对路径
+
+打包要求是一个 exe。实践中使用 PyInstaller onefile 构建统一入口：
+
+- GUI 与 hook runner 共用同一个 exe。
+- Hook 中写入当前 exe 路径，移动桌面包后需要在 GUI 中重新安装 hook。
+- 桌面包只包含 `GitCommitAI.exe` 和说明文件，zip 保持相对结构。
+- GUI 双击时隐藏控制台窗口；Git hook 调用时保留可等待的命令行退出码语义。
+
+要避免把持久配置写进 PyInstaller 解包临时目录。打包后只读资源可以跟随 bundle；用户配置、项目列表、审计日志、原始日志保留文件必须写入用户目录或仓库 `.git/info` 这类持久位置。
+
+#### 验证闭环
+
+本次实现采用以下验证组合：
+
+- Python 编译检查：验证 GUI、CLI、入口和测试文件无语法错误。
+- 单元测试：覆盖配置合并、OpenAI/Anthropic 请求格式、commit-msg hook 改写与原文保留。
+- Qt offscreen 冒烟测试：验证 GUI 不需要真实显示即可创建窗口、切换测试仓库、新建连接档案、刷新下拉框、重复名称提示。
+- PyInstaller 构建：确认单 exe 能成功生成。
+- 桌面包验证：确认桌面目录和 zip 只有一个 exe 入口和说明文件。
+- exe 命令行验证：执行 `--version` 和 `doctor --repo <test-repo>`，确认打包后的 exe 能加载测试仓库配置并识别 hook 状态。
+
+这些验证比单纯“能打开 GUI”更可靠，因为该工具同时有桌面交互、Git hook 子进程、网络请求格式、文件持久化和打包运行路径几个失效面。
+
+#### 可复用结论
+
+1. 做 Git hook 工具时，先明确 hook 类型和边界；本工具只处理 commit message，因此只管理 `commit-msg`。
+2. GUI 的“保存”必须围绕用户当前选择的目标，而不是暴露内部多层配置结构。
+3. 协议和连接档案要分离；协议决定请求格式，档案保存实际 URL、Key 和模型。
+4. 多服务商适配优先提供通用协议，不要把 GUI 做成服务商清单。
+5. 新建档案时才输入名称，后续只下拉选择；否则用户会误以为每次编辑都在重命名档案。
+6. AI 失败、模型枚举失败、日志校验失败都要有明确提示和可配置处理方式。
+7. PyInstaller onefile 工具要区分 bundle 临时目录与用户持久目录，配置和日志不能写入解包目录。
+8. “一个 exe”并不意味着只能有一种运行模式；可以由同一入口根据参数切换 GUI、hook 和诊断命令。
+
+### 关键代码
+
+Hook 调用入口的核心形态：
+
+```sh
+"$TOOL_EXE" hook commit-msg "$1"
+```
+
+连接档案的抽象结构：
+
+```json
+{
+  "provider": "anthropic-compatible",
+  "active_profile": "Work Gateway",
+  "endpoint_profiles": [
+    {
+      "name": "Work Gateway",
+      "provider": "anthropic-compatible",
+      "base_url": "https://example.invalid/api/anthropic",
+      "api_key_env": "ANTHROPIC_API_KEY",
+      "selected_model": "model-name",
+      "models": ["model-name"]
+    }
+  ]
+}
+```
+
+### 参考链接
+
+- [Git githooks 文档](https://git-scm.com/docs/githooks) - `commit-msg` hook 接收提交日志文件路径，适合检查或改写提交信息。
+- [Qt for Python Layout Management](https://doc.qt.io/qtforpython-6/overviews/qtwidgets-layout.html) - Qt 布局系统用于自动组织子控件尺寸与位置。
+- [PyInstaller Run-time Information](https://pyinstaller.org/en/stable/runtime-information.html) - 打包运行时路径、`sys.frozen`、`__file__` 与 bundle 资源定位说明。
+- [PyInstaller Operating Mode](https://www.pyinstaller.org/en/stable/operating-mode.html) - onefile/onedir 打包模式与单文件可执行程序说明。
+- [OpenAI Chat Completions API](https://platform.openai.com/docs/api-reference/chat/create-chat-completion) - OpenAI 兼容接口的 `/chat/completions` 请求形态参考。
+- [Anthropic Messages API](https://docs.anthropic.com/en/api/messages-examples) - Anthropic Messages 请求示例，包含 `x-api-key` 与 `anthropic-version`。
+- [Anthropic API Overview](https://docs.anthropic.com/en/api/overview) - Anthropic API 认证请求头说明。
+
+### 相关记录
+
+- [PyInstaller 打包 Python 为 Windows EXE 完整指南](./pyinstaller-windows-exe-packaging.md) - 单 exe 打包、资源路径与持久目录问题的相邻经验。
+- [Markdown to Word 转换器实现详解](./md-to-word-converter-implementation.md) - Python GUI 工具实现与桌面工具交付经验。
+- [Claude Code Skill 触发模式与 Hook 提升自动触发率](./claude-code-skill-hook-trigger-boost.md) - Hook 机制与自动化边界的相邻经验。
+
+### 验证记录
+
+- [2026-05-25] 初次记录，来源为 Git Commit AI 本地工具设计、实现、GUI 反馈修正、单 exe 打包与测试实践。
+- [2026-05-25] 本地查重：阿卡西 data 中未发现“Git commit-msg Hook + AI 日志优化 GUI 工具”的直接记录；已有 PyInstaller、GUI 工具和 Hook 相关相邻记录，已在“相关记录”中引用。
+- [2026-05-25] 外部核对：Git 官方 githooks 文档确认 `commit-msg` 的输入和语义；Qt for Python 文档确认布局系统适合解决控件排版和尺寸管理；PyInstaller 官方文档确认 onefile 与运行时路径边界；OpenAI 与 Anthropic 官方文档确认两个通用请求协议的端点形态。
+- [2026-05-25] 工具验证：执行 Python 编译检查、单元测试、Qt offscreen 冒烟测试、PyInstaller 构建、桌面包验证，以及打包后 exe 的 `--version` 与 `doctor --repo <test-repo>` 诊断。
+
+---
