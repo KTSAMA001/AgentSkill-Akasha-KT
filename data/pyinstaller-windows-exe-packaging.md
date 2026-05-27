@@ -4,6 +4,7 @@
 **来源**：实践总结 - 2026-03-05
 **收录日期**：2026-03-05
 **来源日期**：2026-03-05
+**更新日期**：2026-05-27
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐
 **适用版本**：PyInstaller 6.0+
@@ -28,6 +29,17 @@ pause
 with open('build_win.bat', 'w', newline='\r\n', encoding='utf-8') as f:
     f.write(content)
 ```
+
+**补充验证（2026-05-27）**：
+
+Windows 双击 `.bat` 启动 PowerShell 工具时，若 `.bat` 文件使用 LF 换行并包含中文 UTF-8 文案，在部分 `cmd.exe` 环境中可能被拆成半截命令执行，例如出现 `"sitory.ps1"`、`"-NoExit"` 不是内部或外部命令等异常。
+
+更稳的处理方式：
+- `.bat` 启动器保持纯 ASCII 内容，避免中文和复杂提示文案。
+- `.bat` 使用 CRLF 换行。
+- `.bat` 内避免容易被路径特殊字符干扰的括号块，使用 `goto` 标签分支更稳。
+- 中文用户界面放到 PowerShell `.ps1` 中，`.ps1` 使用 UTF-8 BOM 保存，保证 Windows PowerShell 5.1 能正确读取中文。
+- 启动 PowerShell 时使用 `-NoExit -STA -NoProfile -ExecutionPolicy Bypass -File "<script.ps1>"`，其中 `-NoExit` 用于避免双击后窗口闪退，`-STA` 便于使用 Windows Forms 文件夹选择框。
 
 #### 问题 2：资源文件未打包
 
@@ -136,5 +148,6 @@ save_path = Path.cwd() / "saves" / "game.sav"
 ### 验证记录
 - [2026-03-05] 初次记录，来源：璃的故事游戏打包实践
 - [2026-03-05] KT 确认 EXE 可正常运行
+- [2026-05-27] 项目修复工具启动器实战验证：LF + 中文 UTF-8 `.bat` 在同事 Windows 机器上被 `cmd.exe` 解析成半截命令；改为 ASCII + CRLF 的 `.bat` 启动器，并将中文界面放入 UTF-8 BOM 的 `.ps1` 后，双击启动正常。
 
 ---
