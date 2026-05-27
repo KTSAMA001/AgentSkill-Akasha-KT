@@ -1,122 +1,335 @@
-# Shader 案例：顶点运动模糊
+# Shader案例:顶点运动模糊
 
 **标签**：#unity #shader #graphics #hlsl #performance #reference #zhihu
 **来源**：[知乎专栏 - Shader案例:顶点运动模糊](https://zhuanlan.zhihu.com/p/99487181)
 **收录日期**：2026-05-27
-**来源日期**：未知（知乎安全验证页未暴露）
+**来源日期**：2019-12-26
 **更新日期**：2026-05-27
 **状态**：⚠️ 待验证
-**可信度**：⭐⭐（外部社区文章，已抓取到标题与主要前半段思路，未完整复现）
+**可信度**：⭐⭐（外部社区文章，已按原文转载存档，未实测）
 **适用版本**：Unity Built-in / Unlit Shader；Shader Model 2.0 约束场景
 
 ### 概要
 
-这篇知乎文章介绍了一种不依赖后处理的运动模糊近似方案：在顶点着色器中沿运动方向拉伸模型顶点，并用噪声和法线方向遮罩控制偏移强度，用较低成本获得带拖影感的顶点运动模糊。
+知乎文章《Shader案例:顶点运动模糊》的转载存档。文章介绍通过顶点着色器沿运动方向偏移顶点，并结合噪声、法线方向遮罩和脚本实时更新参数，近似实现低成本运动模糊效果。
 
 ### 内容
 
-#### 记录范围
+## 前言
 
-本文是对外部知乎文章的合规摘要存档，不完整搬运原文。2026-05-27 通过 `opencli-rs zhihu download` 可读取文章标题和前半段正文，但输出在 C# 脚本 `MotionVertexController` 片段处截断；Jina/网页读取返回知乎登录与安全验证页。因此本记录保留可验证的技术思路、关键公式、抓取限制和原文链接，不声称已完成全文转载。
+通过后处理我们可以实现效果很好的运动模糊效果，但是怎耐性能却吃不消，于是，让我们变通一下，换个思路来实现另一种风情的运动模糊。
 
-#### 适用场景
+效果如下：
 
-文章针对后处理运动模糊成本较高的情况，提出用顶点形变制造“运动拖影”的视觉近似。这个方法不需要采样相机颜色缓冲，也不需要全屏后处理，更适合对象级别的局部效果、移动端或低成本特效。
+原文视频：00:11（见原文页面）
 
-限制也很明确：它不是基于速度缓冲的真实屏幕空间运动模糊，效果更接近模型沿运动反方向的随机拉伸。透明、细长、拓扑稀疏或顶点密度不足的模型上可能出现明显形变感。
+![原文配图 1](../assets/zhihu-shader-vertex-motion-blur/01-zhihu-image.jpg)
 
-#### 核心思路
+00:11
 
-1. 在顶点本地空间做偏移，而不是在片元阶段做屏幕空间模糊。
-2. 用 `_Direction.xyz` 表示运动方向，用 `_Direction.w` 表示整体偏移强度。
-3. 用 UV 驱动的 hash noise 让每个顶点偏移量不同，避免整体平移。
-4. 用法线与运动方向的点积生成遮罩，让背向运动方向的一侧更容易被拉伸。
-5. 在 C# 中比较当前帧与上一帧位置，计算运动方向和速度，再实时写入材质参数。
+**实现思路 **
 
-#### 顶点偏移参数
+1. 通过在顶点着色器中对顶点进行偏移，加上适当的噪波来实现随机性。
+2. 对象在移动的时候，利用脚本实时更新偏移参数来实现最终的效果。
 
-文章先从默认 Unlit Shader 的顶点函数出发，在 `UnityObjectToClipPos(v.vertex)` 前修改模型本地顶点坐标。偏移参数设计为一个四维向量：
+---
+
+## 顶点着色器部分(一)
+
+顶点着色器是本效果的核心实现，所以我们先来看下顶点着色器中的逐步分解与实现。
+
+首先呢，我们建一个默认的Unlit Shader.
+
+其中顶点着色器代码如下：
 
 ```hlsl
-_Direction("Direction", vector) = (0, 0, 0, 1)
+v2f vert (appdata v)
+{
+      v2f o;
+      o.vertex = UnityObjectToClipPos(v.vertex);
+      o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+      UNITY_TRANSFER_FOG(o,o.vertex);
+      return o;
+}
 ```
 
-其中 `xyz` 是方向，`w` 是偏移强度。基础偏移形式是：
+其中，**UnityObjectToClipPos(v.vertex)**表示的是将模型的顶点本地坐标转换到齐次裁剪空间下，那我们就选择在顶点的本地空间下来做偏移。
+
+**顶点偏移**
+
+同时由于最后顶点的偏移不是固定的一个方向，所以我们需要引入一个vector向量用来承载变化的方向方量,如下面的**_Direction**
+
+```hlsl
+_Direction("Direction",vector) = (0,0,0,1)
+```
+
+ 对顶点本地坐标进行偏移运算，由方向是三维向量，所以我们指定的是xyz分量，同时又由于_Direction是四维向量，刚好最后一个分量w我们可以利用起来，用来做整体偏移的强度。
 
 ```hlsl
 v.vertex.xyz += _Direction.xyz * _Direction.w;
 ```
 
-这一步只能让模型整体沿方向移动，还没有拖影效果。
+此时当我们调节材质面板中的_Direction属性时，可以看到对象的顶点已经产生了偏移，只不过现在是整体偏移了而已(注意橙色框中是角色原来的位置)。
 
-#### 随机偏移
+![原文配图 2](../assets/zhihu-shader-vertex-motion-blur/02-zhihu-image.jpg)
 
-为了让不同顶点的偏移不同，文章提到两种方法：采样噪声贴图，或在 shader 中直接计算噪声。由于文章考虑 Shader Model 2.0 下顶点着色器采样贴图的兼容问题，选择了 hash noise：
+**偏移随机**
+
+好，那接下来呢，我们要实现随机偏移效果
+
+原理很简单，我们只需要让每个顶点的坐标加上的值不一样即可，有两种方式可实现:
+
+1. 在顶点着色器中采样一张噪波贴图
+2. 通过噪波算法实现
+
+由于第一种方式在SM2.0上不支持，所以我们这里采用第二种方式,关于噪波，之前有篇文章专门介绍过，传送门：
+
+ 我们采用常见的噪波公式算出噪波并应用于本地顶点上。
 
 ```hlsl
 float noise = frac(sin(dot(v.uv.xy, float2(12.9898, 78.233))) * 43758.5453);
 v.vertex.xyz += _Direction.xyz * _Direction.w * noise;
 ```
 
-这种写法成本低、实现简单，但噪声和 UV 强绑定；如果模型 UV 分布不均、镜像或重叠，随机拉伸分布也会受到影响。实际项目中可以改用顶点色、额外 UV、对象空间位置 hash 或预烘噪声属性来控制。
+此时的效果如下：
 
-#### 局部拉伸遮罩
+![原文配图 3](../assets/zhihu-shader-vertex-motion-blur/03-zhihu-image.jpg)
 
-文章希望物体运动时“正面不拉伸，背部拉伸”。为此使用类似 Lambert 光照的方向遮罩，用顶点法线和运动方向点积区分表面朝向：
+**偏移部分**
+
+顶点偏移也有了，随机拉伸感也出来了，但是我们希望的并不是整个对象都被拉伸了，而是只需要部分拉伸。
+
+而这里的部分到底是指哪部分呢？
+
+假如对象向正前方移动，那我们所希望的是对象正面不拉伸，背部那部分才会拉伸，其它方向同理，那这个要如何实现呢？
+
+首先哪部分拉伸哪部分不拉伸，这个我们需要用黑白来区分，这样用一个乘法就可以实现了。
+
+那么问题变成了如何根据方向来求出对象表面的黑白效果.
+
+这时大家可以在场景中新建一个默认球体，然后仔细观察它与平行光的关系，是不是恍然大悟。。。
+
+![原文配图 4](../assets/zhihu-shader-vertex-motion-blur/04-zhihu-image.jpg)
+
+没错，通过简单的Lambert光照模型就可以实现我们想要的效果。(需要我们在appdata中引入顶点的normal数据进来)
 
 ```hlsl
-fixed NdotD = max(0, dot(v.normal, _Direction));
+fixed NdotD = max(0,dot(v.normal,_Direction));
+```
+
+![原文配图 5](../assets/zhihu-shader-vertex-motion-blur/05-zhihu-image.jpg)
+
+然后将NdotD乘到顶点偏移中去。
+
+```hlsl
 v.vertex.xyz += _Direction.xyz * _Direction.w * noise * NdotD;
 ```
 
-这个遮罩的意义是：只有法线与方向满足一定关系的表面才产生偏移。实际使用时需要注意方向定义。如果 `_Direction` 传入的是运动方向，拖影通常应沿反方向偏移；如果传入的是拖影方向，则脚本端应直接传入负速度方向，避免 shader 中含义混乱。
+![原文配图 6](../assets/zhihu-shader-vertex-motion-blur/06-zhihu-image.jpg)
 
-#### C# 驱动逻辑
+OK，效果已基本成型，片断着色器中暂时不做任何处理。
 
-文章后半段进入 `MotionVertexController` 脚本，用对象当前帧位置与上一帧位置计算运动方向和速度，再把结果写入材质。可验证抓取内容在脚本成员字段处截断，未拿到完整脚本，因此这里不复原完整代码。
+---
 
-项目实现时可以按以下逻辑补齐：
+## C#脚本部分
+
+当运行时，我们需要动态的获取到对象当前帧的位置坐标与上一帧的位置坐标，这样我们就可以计算出对象运动的方向与速度，然后我们就可以利用这些信息去修改我们上面的Shader，以便产生动态的顶点偏移效果。
+
+脚本代码部分都有详细注释，就不再另做解释，直接贴上代码:
 
 ```csharp
-Vector3 velocity = (currentPosition - lastPosition) / Mathf.Max(Time.deltaTime, 0.0001f);
-Vector3 blurDirection = -velocity.normalized;
-float blurStrength = Mathf.Clamp(velocity.magnitude * strengthScale, 0f, maxStrength);
-material.SetVector("_Direction", new Vector4(blurDirection.x, blurDirection.y, blurDirection.z, blurStrength));
-lastPosition = currentPosition;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class MotionVertexController : MonoBehaviour
+{
+    private Transform trans;
+    private Material[ ] mats;
+    private Vector3 lastPosition;
+    private Vector3 newPosition;
+    private Vector3 direction;
+    private float t = 0;
+
+    void Start ()
+    {
+        trans = transform;
+        lastPosition = newPosition = trans.position;
+
+        //获取对象及子对象中的所有渲染器（MeshRenderer或者SkinnedMeshRenderer）
+        var renderers = trans.GetComponentsInChildren<Renderer> ();
+        //获取所有的材质球(针对有些对象有多个部件多个材质的情况)
+        mats = new Material[renderers.Length];
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            mats[i] = renderers[i].sharedMaterial;
+        }
+    }
+
+    void Update ()
+    {
+        newPosition = trans.position;
+
+        //如果上一帧的位置追到了当前帧的位置，则重置t
+        if (newPosition == lastPosition) t = 0;
+        t += Time.deltaTime;
+        //上一帧的位置通过t来做插值
+        lastPosition = Vector3.Lerp (lastPosition, newPosition, t / 2);
+        //求出移动的方向
+        direction = lastPosition - newPosition;
+        //遍历修改所有材质的_Direction属性
+        foreach (var m in mats)
+        {
+            m.SetVector ("_Direction", new Vector4 (direction.x, direction.y, direction.z, m.GetVector ("_Direction").w));
+        }
+    }
+
+}
 ```
 
-如果对象有多个材质，需要遍历材质数组或使用 `MaterialPropertyBlock`。在大量对象上使用时，优先考虑 `MaterialPropertyBlock`，避免实例化材质造成额外内存和批处理问题。
+使用方法：直接将脚本拖到对象的最外层GameObject上。
 
-#### 实现注意事项
+运行，然后移动角色观察下效果，这时会发现效果很奇怪，主要表现在顶点拉伸的方向不对。这是为什么呢？
 
-- 法线空间要一致：文章片段直接使用 `v.normal` 与 `_Direction` 点积，意味着 `_Direction` 应处于对象本地空间；如果脚本计算的是世界空间速度，需要转到对象本地空间再传入。
-- 拖影方向要一致：视觉上通常沿运动反方向拉伸，脚本端应传入负速度方向，或 shader 中显式取反。
-- 顶点密度决定效果细腻程度：低模网格的拉伸会更块状，高顶点密度模型更平滑。
-- UV hash 噪声不稳定时，可以改用对象空间位置 hash 或顶点色通道。
-- 这类效果是对象级顶点形变，不能替代相机快速移动、遮挡关系和屏幕空间速度带来的真实运动模糊。
-- 若对象使用 SRP Batcher 或 GPU Instancing，需要确认材质参数更新方式不会破坏批处理收益。
+这其实是由于我们在脚本中使用的是模型在世界空间下的坐标，而Shader中的顶点偏移计算却是在模型的本地空间下进行的，两者的坐标空间不一致导致的原因。
 
-#### 抓取与版权说明
+因为，我们选择修改Shader，将相关的计算从模型的本地空间改成世界空间。
 
-原流程中的“完整转载保存”与外部版权内容存在冲突。本记录只保留技术摘要、短代码片段、来源链接和可验证抓取状态，不完整复制知乎原文。后续若需要严格保留全文，应改为保存合法授权副本或仅保存私有离线阅读材料，不进入会推送的阿卡西数据层。
+---
 
-### 关键代码
+##  顶点着色器部分(二)
+
+ 由于UnityObjectToClipPos封装的原因，我们需要自行拆出世界空间，如下：
 
 ```hlsl
-// 顶点本地空间沿方向拉伸，并用噪声与朝向遮罩控制强度。
+float4 wPos = mul(unity_ObjectToWorld,v.vertex);
+o.vertex=mul(UNITY_MATRIX_VP,wPos);
+```
+
+然后我们的顶点偏移改成在世界空间下来做，同时也需要把顶点法线转换到世界空间下。
+
+```hlsl
+float4 wPos = mul(unity_ObjectToWorld,v.vertex);
+half3 wNormal = UnityObjectToWorldNormal(v.normal);
+fixed NdotD = max(0,dot(wNormal,_Direction));
 float noise = frac(sin(dot(v.uv.xy, float2(12.9898, 78.233))) * 43758.5453);
-fixed NdotD = max(0, dot(v.normal, _Direction.xyz));
-v.vertex.xyz += _Direction.xyz * _Direction.w * noise * NdotD;
-o.vertex = UnityObjectToClipPos(v.vertex);
+wPos.xyz += _Direction.xyz * _Direction.w * noise * NdotD;
+o.vertex=mul(UNITY_MATRIX_VP,wPos);
 ```
 
-```csharp
-// 脚本侧思路：由帧间位置差计算拖影方向和强度。
-Vector3 velocity = (currentPosition - lastPosition) / Mathf.Max(Time.deltaTime, 0.0001f);
-Vector3 blurDirection = -velocity.normalized;
-float blurStrength = Mathf.Clamp(velocity.magnitude * strengthScale, 0f, maxStrength);
-material.SetVector("_Direction", new Vector4(blurDirection.x, blurDirection.y, blurDirection.z, blurStrength));
+再次运行，效果就正确了
+
+![原文配图 7](../assets/zhihu-shader-vertex-motion-blur/07-zhihu-image.jpg)
+
+---
+
+## 片断着色器
+
+最后我们可以给整个效果加点修饰，比如给顶点偏移叠加点颜色，这里可以好好利用下顶点着色器中计算出来的NdotD。
+
+完整的代码如下：
+
+```hlsl
+Shader "Unlit/MotionVertex"
+{
+    Properties
+    {
+        _Color("Color",color) = (1,0,0.65,1)
+        _MainTex ("Texture", 2D) = "white" {}
+        _Direction("Direction",vector) = (0,0,0,1)
+    }
+    SubShader
+    {
+        Tags { "RenderType"="Opaque" }
+        LOD 100
+
+        Pass
+        {
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_fog
+
+            #include "UnityCG.cginc"
+
+            struct appdata
+            {
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+                half3 normal:NORMAL;
+            };
+
+            struct v2f
+            {
+                float2 uv : TEXCOORD0;
+                UNITY_FOG_COORDS(1)
+                float4 vertex : SV_POSITION;
+                fixed NdotD:TEXCOORD1;
+            };
+
+            fixed4 _Color;
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
+            half4 _Direction;
+
+            v2f vert (appdata v)
+            {
+                v2f o;
+                float4 wPos = mul(unity_ObjectToWorld,v.vertex);
+                half3 wNormal = UnityObjectToWorldNormal(v.normal);
+                fixed NdotD = max(0,dot(wNormal,_Direction));
+                o.NdotD = NdotD;
+                float noise = frac(sin(dot(v.uv.xy, float2(12.9898, 78.233))) * 43758.5453);
+                wPos.xyz += _Direction.xyz * _Direction.w * noise * NdotD;
+                o.vertex=mul(UNITY_MATRIX_VP,wPos);
+                // o.vertex = UnityObjectToClipPos(v.vertex);
+                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                UNITY_TRANSFER_FOG(o,o.vertex);
+                return o;
+            }
+
+            fixed4 frag (v2f i) : SV_Target
+            {
+                fixed4 col = tex2D(_MainTex, i.uv);
+                col += i.NdotD * _Color;
+                UNITY_APPLY_FOG(i.fogCoord, col);
+                return col;
+            }
+            ENDCG
+        }
+    }
+}
 ```
+
+![原文配图 8](../assets/zhihu-shader-vertex-motion-blur/08-zhihu-image.jpg)
+
+---
+
+## **最后**
+
+欢迎大家关注更多干货的公众号：**Unity技术美术 ( ID:gh_8b69cca044dc )**
+
+![原文配图 9](../assets/zhihu-shader-vertex-motion-blur/09-zhihu-image.jpg)
+
+Unity技术美术QQ交流分享群：**19470667(1群已满）､763506271**
+
+![原文配图 10](../assets/zhihu-shader-vertex-motion-blur/10-zhihu-image.jpg)
+
+
+### 图片资源清单
+
+| # | 文件名 | 说明 | 大小 |
+|---|--------|------|------|
+| 1 | `01-zhihu-image.jpg` | 原文配图 1 | 33 KB |
+| 2 | `02-zhihu-image.jpg` | 原文配图 2 | 26 KB |
+| 3 | `03-zhihu-image.jpg` | 原文配图 3 | 33 KB |
+| 4 | `04-zhihu-image.jpg` | 原文配图 4 | 11 KB |
+| 5 | `05-zhihu-image.jpg` | 原文配图 5 | 16 KB |
+| 6 | `06-zhihu-image.jpg` | 原文配图 6 | 26 KB |
+| 7 | `07-zhihu-image.jpg` | 原文配图 7 | 26 KB |
+| 8 | `08-zhihu-image.jpg` | 原文配图 8 | 27 KB |
+| 9 | `09-zhihu-image.jpg` | 原文配图 9 | 25 KB |
+| 10 | `10-zhihu-image.jpg` | 原文配图 10 | 46 KB |
 
 ### 参考链接
 
@@ -129,5 +342,6 @@ material.SetVector("_Direction", new Vector4(blurDirection.x, blurDirection.y, b
 
 ### 验证记录
 
-- [2026-05-27] 初次记录。已执行 `git pull origin main`；重复检测未发现 `99487181` 或同题记录。`opencli-rs zhihu download https://zhuanlan.zhihu.com/p/99487181` 可读取标题和前半段正文，但在 C# 脚本处截断；Jina/网页读取遇到知乎登录/安全验证。本文按合规摘要方式入库，未完整搬运原文，未实测 shader 效果。
+- [2026-05-27] 初次记录。已执行重复检测，未发现 `99487181` 或同题记录。先前误写成摘要版，后按“转载存档”要求改为基于 `/tmp/zhihu-99487181-full.json` 的全文转载版；正文来自 `zhihu download-full` 抓取结果，图片已保存到 `assets/zhihu-shader-vertex-motion-blur/` 并替换为相对路径。原文视频为知乎临时签名直链，未写入直链，仅保留视频占位与封面图。未实测 shader 效果。
 
+---
