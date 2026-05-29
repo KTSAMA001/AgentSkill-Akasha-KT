@@ -58,7 +58,7 @@ dotnet build "$targetProject\Assembly-CSharp-Editor.csproj" | Select-String -Pat
 
 ### 相关记录
 
-- [unity-editor-api.md](./unity-editor-api.md) - Unity Editor 开发知识
+- [unity-editor-api.md](./unity-editor-api.md) - Unity CustomEditor 子类继承支持
 
 ### 验证记录
 - [2026-02-25] 初次记录，来源：跨项目迁移 GM 工具时实际踩坑总结

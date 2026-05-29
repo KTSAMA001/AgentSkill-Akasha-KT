@@ -471,7 +471,7 @@ Scripts/Generated/             // 自动生成代码目录
 ### 相关记录
 
 - [unity-framework-architecture.md](./unity-framework-architecture.md) - Unity 中的 C# 脚本编程相关经验
-- [unity-editor-api.md](./unity-editor-api.md) - Unity Editor 开发知识
+- [unity-editor-api.md](./unity-editor-api.md) - Unity CustomEditor 子类继承支持
 - [effect-system-code-review.md](./effect-system-code-review.md) - EffectSystem 效果系统 - 代码审查与架构分析
 
 ### 验证记录

@@ -1,7 +1,7 @@
-# Unity Editor 开发知识
+# Unity CustomEditor 子类继承支持
 
 ### 概要
-Unity Editor 开发知识
+Unity 的 `[CustomEditor]` 属性可以通过 `editorForChildClasses=true` 让自定义 Inspector 作用于目标类型的派生子类；如果子类声明了自己的 CustomEditor，则子类专用 Editor 优先。
 
 
 ## [CustomEditor] 对子类的继承支持
@@ -10,7 +10,7 @@ Unity Editor 开发知识
 **来源**：Unity Scripting API
 **来源日期**：2026-02-02
 **收录日期**：2026-02-02
-**更新日期**：2026-02-02
+**更新日期**：2026-05-29
 **可信度**：⭐⭐⭐⭐⭐(官方)
 **状态**：📘 有效
 
@@ -63,3 +63,4 @@ public class LogicMatAnimMarkerController : LogicMatAnimController
 
 ### 验证记录
 - [2026-04-15] 结构修复：补齐模板必填章节，未改动原结论。
+- [2026-05-29] 标题修正：原标题“Unity Editor 开发知识”过于宽泛，按正文实际主题收窄为“Unity CustomEditor 子类继承支持”，并同步概要；未改动技术结论。
