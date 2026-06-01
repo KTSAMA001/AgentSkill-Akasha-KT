@@ -185,7 +185,7 @@ Unity 内部定义了一套骨架模板，所有 Avatar 骨骼都必须映射到
 ### 参考链接
 
 - [知乎原文 - Funny David](https://zhuanlan.zhihu.com/p/25064011) - 原始出处（270+ 赞同）
-- [CSDN 转载](https://blog.csdn.net/rexgp/article/details/126387954) - 转载版
+- [CSDN 同题页面](https://blog.csdn.net/rexgp/article/details/126387954) - 同题版本
 - [Unity 官方 Retargeting 文档](https://docs.unity3d.com/Manual/Retargeting.html)
 - [《Real-time Motion Retargeting to Highly Varied User-Created Morphologies》](http://slim.chrishecker.com/images/c/cb/Sporeanim-siggraph08.pdf) - 《孢子》游戏动画系统论文
 

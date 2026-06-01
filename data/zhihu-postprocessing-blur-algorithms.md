@@ -6,12 +6,12 @@
 **来源日期**：2020-04-06
 **更新日期**：2026-06-01
 **状态**：⚠️ 待验证
-**可信度**：⭐⭐（外部社区文章；知乎原页受反爬限制，正文按同作者 CSDN 页面与 SegmentFault/UWA 转载交叉校验归档，未实测算法效果）
+**可信度**：⭐⭐（外部社区文章；知乎原页受反爬限制，正文按同作者 CSDN 页面与 SegmentFault/UWA 同题页面交叉校验归档，未实测算法效果）
 **适用版本**：Unity Post Processing Stack v2；实时后处理 Blur 算法参考
 
 ### 概要
 
-知乎文章《高品质后处理：十种图像模糊算法的总结与实现》的转载存档。文章横向比较高斯模糊、Kawase 模糊、Dual Blur、散景模糊、径向模糊、方向模糊等十种实时图像模糊算法，并结合 X-PostProcessing Library 给出 Unity 后处理实现方向与效果示例。
+知乎文章《高品质后处理：十种图像模糊算法的总结与实现》的学习用途本地留档。文章横向比较高斯模糊、Kawase 模糊、Dual Blur、散景模糊、径向模糊、方向模糊等十种实时图像模糊算法，并结合 X-PostProcessing Library 给出 Unity 后处理实现方向与效果示例。
 
 ### 内容
 
@@ -735,17 +735,17 @@ The End.
 
 ### 参考链接
 
-- [知乎专栏原文](https://zhuanlan.zhihu.com/p/125744132) - 用户指定的原始转载目标；抓取时返回知乎 JS 校验壳，未直接取得正文。
+- [知乎专栏原文](https://zhuanlan.zhihu.com/p/125744132) - 用户指定的原始留档目标；抓取时返回知乎 JS 校验壳，未直接取得正文。
 - [CSDN 同作者页面](https://blog.csdn.net/poem_qianmo/article/details/105350519) - 正文开头列出同一知乎专栏链接，用作全文与图片归档来源。
-- [SegmentFault 转载页](https://segmentfault.com/a/1190000023013329) - 页面元数据 `origin_url` 指向同一知乎专栏链接，用于交叉校验来源。
-- [UWA 转载页](https://blog.uwa4d.com/archives/USparkle_PostProcessing.html) - 同题转载，用于交叉校验正文尾部与图片序列。
+- [SegmentFault 同题页面](https://segmentfault.com/a/1190000023013329) - 页面元数据 `origin_url` 指向同一知乎专栏链接，用于交叉校验来源。
+- [UWA 同题页面](https://blog.uwa4d.com/archives/USparkle_PostProcessing.html) - 同题页面，用于交叉校验正文尾部与图片序列。
 - [X-PostProcessing-Library](https://github.com/QianMo/X-PostProcessing-Library) - 文章引用的 Unity 后处理开源库。
 
 ### 相关记录
 
-- [Shader案例:顶点运动模糊](./zhihu-shader-vertex-motion-blur.md) - 同为知乎图形/Shader 文章转载存档。
+- [Shader案例:顶点运动模糊](./zhihu-shader-vertex-motion-blur.md) - 同为知乎图形/Shader 文章学习用途本地留档。
 - [NPR 渲染 Outline 技术](./npr-rendering-outline.md) - 同属 Unity 后处理与 Shader 效果方向。
 
 ### 验证记录
 
-- [2026-06-01] 初次记录。已在阿卡西 `data/` 内查重，未发现 `125744132`、同题标题或相关 Dual Blur/Kawase 记录；知乎原页抓取返回 `zse-ck` JS 校验壳，未取得正文；正文与图片按 CSDN 同作者页面归档，并用 SegmentFault `origin_url`、UWA 同题转载和搜索结果交叉确认同一来源。文章算法效果未在 Unity 中实测，状态标记为待验证。
+- [2026-06-01] 初次记录。已在阿卡西 `data/` 内查重，未发现 `125744132`、同题标题或相关 Dual Blur/Kawase 记录；知乎原页抓取返回 `zse-ck` JS 校验壳，未取得正文；正文与图片按 CSDN 同作者页面归档，并用 SegmentFault `origin_url`、UWA 同题页面和搜索结果交叉确认同一来源。文章算法效果未在 Unity 中实测，状态标记为待验证。
