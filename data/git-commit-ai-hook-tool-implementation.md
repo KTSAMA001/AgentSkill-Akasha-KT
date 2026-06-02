@@ -330,6 +330,5 @@ if ($missing) {
 - [2026-05-25] 修正：补充 `behavior.skip_valid_original` 实践结论。经本地单元测试与打包后临时仓库 hook 验证，原始日志首行合规且已有正文时会静默跳过 AI，不再二次改写，也不会追加“原始提交日志”区块；该结论与 Git 官方 `commit-msg` hook 可检查/改写消息文件的语义一致。
 - [2026-05-25] 补充完整工作流程 Mermaid 流程图，覆盖 GUI 配置、配置保存、hook 安装、Git 首次提交触发、跳过判断、AI 优化、校验、审计记录与最终 commit 的全链路；外部依据为 Git 官方 `commit-msg` hook 文档。
 - [2026-06-02] 修正：补充源码虚拟环境版设计与关键实现。经本地验证，`GitCommitAI_Source.cmd --version` 可首次创建 `.vene`、按 `requirements.txt` 安装 PySide6，并在二次运行时复用环境；临时仓库安装 hook 后，hook 内容指向 `.vene/Scripts/python.exe` 和源码模块路径。外部核对 Python `venv`、pip requirements 与 `importlib.util.find_spec` 官方文档，确认实现依据一致。
-- [2026-06-02] 脱敏审查：对源码虚拟环境版补充内容执行敏感信息固定模式扫描与人工复核；未写入本机绝对路径、真实仓库地址、账号、邮箱、token、API Key 或密码。扫描命中的 `ANTHROPIC_API_KEY` 与 `x-api-key` 分别是环境变量名占位符和官方请求头名，`<source-root>`、`<source-parent>`、`https://example.invalid` 均为泛化占位内容。
 
 ---
