@@ -6,12 +6,12 @@
 **来源日期**：2026-06-02（本次实践排查）；2024-01-03（Unity Issue Tracker UUM-59751）
 **更新日期**：2026-06-02
 **状态**：✅ 已验证
-**可信度**：⭐⭐⭐⭐（项目实测 + Unity 官方 Issue Tracker + 本地源码检查；未来 Unity 版本需重新确认）
-**适用版本**：截至 2026-06-02，已在 Unity 2022.3 / URP 14 项目中复现；Unity Issue Tracker UUM-59751 标注 2021.3.34f1、2022.3.17f1、2023.2.4f1、2023.3.0b1 可复现。未来 Unity 版本若改变 `Color`/Color Picker 序列化策略，需要重新验证。
+**可信度**：⭐⭐⭐⭐（项目实测 + Unity 官方 Issue Tracker + 本地源码检查；未覆盖 Unity 版本需重新确认）
+**适用版本**：本地复现版本为 Unity 2022.3.62f3 / URP 14；Unity Issue Tracker UUM-59751 标注 2021.3.34f1、2022.3.17f1、2023.2.4f1、2023.3.0b1 可复现。其他 Unity 版本需以实际 `Color`/Color Picker 序列化行为为准重新验证。
 
 ### 概要
 
-截至 2026-06-02，Unity 材质 `Color` 属性只按 RGB/RGBA 保存颜色，颜色面板中的 HSV 只是编辑交互模式。若在 HSV 模式下把 `V` 设为 0，写入材质的 RGB 会变成纯黑，关闭并重新打开颜色面板后无法恢复原来的 H/S；shader 侧再做最小亮度补偿，也只能得到灰色或默认色，而不能还原原始色相。
+在已验证版本范围内，Unity 材质 `Color` 属性只按 RGB/RGBA 保存颜色，颜色面板中的 HSV 只是编辑交互模式。若在 HSV 模式下把 `V` 设为 0，写入材质的 RGB 会变成纯黑，关闭并重新打开颜色面板后无法恢复原来的 H/S；shader 侧再做最小亮度补偿，也只能得到灰色或默认色，而不能还原原始色相。
 
 ### 内容
 
@@ -44,14 +44,14 @@ HSV(0.7, 0.5, 0.0) -> RGB(0, 0, 0)
 
 Unity 官方 Issue Tracker `UUM-59751` 对同类问题的处理意见也是：Color 值按 RGB 序列化，因此精确 HSV 值可能不会在转换中保留；若自定义系统需要保留 HSV，必须单独存储 HSV，再转换成 Unity Color。
 
-#### 时效性边界
+#### 版本边界
 
-本记录不是永久性 Unity API 断言，而是截至 2026-06-02 的排查结论：
+本记录不是永久性 Unity API 断言，而是基于以下 Unity 版本范围的排查结论：
 
-- 本地项目复现环境为 Unity 2022.3 / URP 14，使用 Unity 默认 `Color` 材质属性绘制路径。
+- 本地复现环境为 Unity 2022.3.62f3 / URP 14，使用 Unity 默认 `Color` 材质属性绘制路径。
 - Unity Issue Tracker UUM-59751 在 2024-01-03 标注的可复现版本包括 2021.3.34f1、2022.3.17f1、2023.2.4f1、2023.3.0b1。
-- 如果未来 Unity 修改 `Color` 序列化方式、Color Picker 行为，或提供单独持久化 HSV 的材质属性支持，本记录需要重新验证并更新状态。
-- 在未完成新版验证前，只能把本结论用于“Unity 默认 `Color`/`EditorGUI.ColorField` 仍按 RGB 持久化”的场景。
+- 如果目标 Unity 版本修改了 `Color` 序列化方式、Color Picker 行为，或提供单独持久化 HSV 的材质属性支持，本记录需要重新验证并更新状态。
+- 在未完成目标版本验证前，只能把本结论用于“Unity 默认 `Color`/`EditorGUI.ColorField` 仍按 RGB 持久化”的场景。
 
 #### LWGUI 不是根因
 
@@ -135,5 +135,6 @@ baseRGB = lerp(baseRGB, baseRGB * _TintColor.rgb, mask);
 ### 验证记录
 
 - [2026-06-02] 初次记录。基于某 Unity 材质调色 shader 的 `Color` 属性调试、LWGUI 普通 `Color` 属性绘制路径检查、Unity Issue Tracker UUM-59751 与 Unity `Color.RGBToHSV` 文档交叉验证。结论：`Color` 属性在 `V=0` 时只能保存为 RGB 纯黑，H/S 信息丢失后不可恢复；工程上应在写入端限制 HSV V 下限，或改用独立 HSV 参数。
-- [2026-06-02] 修正：补充时效性边界，将适用版本从泛化的 Unity 2021.3+/2022.3+/2023.2+ 收窄为“截至 2026-06-02 的本地复现与官方 Issue Tracker 标注版本”，并明确未来 Unity 版本需要重新验证。
+- [2026-06-02] 修正：补充版本边界，将适用版本从泛化的 Unity 2021.3+/2022.3+/2023.2+ 收窄为“本地复现版本与官方 Issue Tracker 标注版本”，并明确其他 Unity 版本需要重新验证。
 - [2026-06-02] 修正：执行记录脱敏补强，移除示例参数中的业务语义前缀，统一改为 `_TintColor`、`_Hue`、`_Saturation`、`_Value` 等通用技术命名。
+- [2026-06-02] 修正：将日期式边界表述调整为版本边界，本地复现版本精确为 Unity 2022.3.62f3 / URP 14；其他 Unity 版本以实际 `Color`/Color Picker 序列化行为重新验证。
