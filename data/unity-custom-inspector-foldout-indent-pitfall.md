@@ -3,6 +3,7 @@
 **标签**：#unity #editor #custom-editor #experience #bug
 **来源**：实践排查 + Unity Issue Tracker + Unity Scripting API
 **收录日期**：2026-05-29
+**更新日期**：2026-06-02
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐（实践验证 + 官方 Issue Tracker 交叉验证）
 **适用版本**：Unity 2022.3+（重点关注 IMGUI `OnInspectorGUI` 路径）
@@ -10,6 +11,8 @@
 ### 概要
 
 在 Unity `CustomEditor.OnInspectorGUI` 中混用 `Foldout`、`foldoutHeader`、`BeginFoldoutHeaderGroup` 和数组/列表 `PropertyField` 时，常见问题不是单一控件“画歪了”，而是 Unity IMGUI 已知问题族叠加导致的：折叠箭头缩进错位、点击区与图标不一致、以及 `FoldoutHeaderGroup` 内首个列表直接报错。更稳的规避思路是：顶层分区避免依赖 `BeginFoldoutHeaderGroup` 承载列表，手工 Header 走显式 `Rect`，数组/列表单独做安全缩进兜底。
+
+注意：不要把这条记录外推成“Odin 不适合做这类 Inspector”。它聚焦的是 IMGUI `OnInspectorGUI` 混绘路径的已知问题族；如果纯 Odin 布局仍直接修改真实序列化字段，它反而可能是更低风险的展现层实现。
 
 ### 内容
 
@@ -21,7 +24,7 @@
 - `foldoutHeader` 与右侧按钮拼接时，背景、箭头和按钮边界错位
 - 数组/列表字段的第一个折叠入口在 Header 容器内报错：
 
-```text
+``text
 You can't nest Foldout Headers, end it with EndFoldoutHeaderGroup.
 ```
 
@@ -44,7 +47,7 @@ You can't nest Foldout Headers, end it with EndFoldoutHeaderGroup.
    - Unity 默认 `PropertyField`
    - 手工 `EditorGUI.Foldout`
    - Odin `PropertyTree`
-   - `helpBox` / `toolbar` 等容器样式  
+   - `helpBox` / toolbar` 等容器样式  
    各层 margin / padding / indent 会叠加，最终把本来就不稳定的箭头缩进问题放大成明显越界。
 
 #### 不推荐的组合
@@ -112,7 +115,8 @@ using (new EditorGUI.IndentLevelScope(1))
 
 - 如果分区内部会画数组/列表，优先不要让它直接挂在 `BeginFoldoutHeaderGroup` 下面
 - 如果一个折叠标题右边还要塞按钮，优先自己画 `Rect`
-- 如果只是普通字段折叠且没有复杂布局，默认 `PropertyField` / `Foldout` 仍然够用，不要过度自绘
+- 如果只是普通字段折叠且没有复杂布局，默认 PropertyField / Foldout 仍然够用，不要过度自绘
+- 如果问题主要来自手工 Rect / Foldout / toolbar 混拼，优先收口到纯 Odin 或单一 GUI 体系；不要把 IMGUI 混绘不稳误判成 Odin 不适合。
 
 ### 关键代码
 
@@ -150,4 +154,4 @@ private static void DrawListPropertyWithSafeIndent(SerializedProperty property, 
 ### 验证记录
 
 - [2026-05-29] 初次记录，来源：Unity 2022.3 项目中的自定义 Inspector 实修 + Unity Issue Tracker / Scripting API 交叉核对
-
+- [2026-06-02] 补充边界：本记录聚焦 IMGUI `OnInspectorGUI` 混绘问题，不构成对纯 Odin Inspector 的反证。若字段仍落在真实序列化对象上，纯 Odin 往往更适合承接折叠、布局与按钮编排。
