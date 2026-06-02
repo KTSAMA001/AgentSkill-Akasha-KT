@@ -62,6 +62,7 @@
 | #font | 字体 | doc | specialty | 字体、字形与排版相关 |
 | #gamma | Gamma | shader | specialty | Gamma 校正 |
 | #git | Git | code | domain | Git 版本控制 |
+| #godot | Godot 引擎 | unity | domain | Godot 游戏引擎 |
 | #hook | Hook | wrench | specialty | Claude Code Hooks 机制 |
 | #github-actions | GitHub Actions | network | specialty | GitHub CI/CD |
 | #gpgpu | GPGPU | shader | specialty | GPU 通用计算 |
