@@ -152,6 +152,7 @@
 | [unity6-migration-guide.md](../data/unity6-migration-guide.md) | #unity #shader #reference #urp #rendering #ecs | ⚠️ 待验证 | 从 Unity 2022.3 迁移到 Unity 6.3 LTS (6000.3.x) 的完整参考。Unity 6 经历了 6.0→6.1→6.2→6.3 四个迭代，6.3 是当前推荐 LTS（支持至 2027 年 12 月）。覆盖各版本累计变化、Breaking Changes、新功能速查、TA/客户端影响评估和 5 阶段迁移路线图。 |
 | [urp-grabpass-alternative.md](../data/urp-grabpass-alternative.md) | #shader #unity #experience #urp #srp-batcher #renderer-feature | ✅ 已验证 | URP 中 GrabPass 替代方案 (GrabColor RenderFeature) {#grab-color-renderfeature} |
 | [urp-renderer-feature-guide.md](../data/urp-renderer-feature-guide.md) | #shader #unity #experience #urp #srp-batcher #renderer-feature | ✅ 已验证 | URP Renderer Feature 开发要点 |
+| [urp-renderfeature-per-frame-gc-pitfalls.md](../data/urp-renderfeature-per-frame-gc-pitfalls.md) | #unity #urp #renderer-feature #performance #experience | ✅ 已验证 | `OnCameraSetup` 每帧执行，在其中用 `$""` 字符串插值生成 RTHandle 名称是每帧 GC 的典型根因；`ReAllocateIfNeeded` 每帧用 `handle.name != descriptor.name` 做字符串**值比较**，名称内容必须逐帧稳定，否则会触发 RT 反复重建。正确做法是把 RT 名称提为静态常量字符串数组。 |
 | [urp-renderfeature-runtime-toggle.md](../data/urp-renderfeature-runtime-toggle.md) | #shader #unity #experience #urp #srp-batcher #renderer-feature | ✅ 已验证 | RenderFeature 运行时开关控制 {#renderfeature-toggler} |
 | [urp-skybox-notes.md](../data/urp-skybox-notes.md) | #unity #urp #shader #skybox #experience | ✅ 已验证 | URP 天空盒不能使用 URP 格式 Shader，必须使用 Built-in 管线写法。 |
 | [urp-srp-architecture.md](../data/urp-srp-architecture.md) | #unity #graphics #knowledge #urp #srp | 📘 有效 | URP / SRP 知识 |
