@@ -137,6 +137,7 @@ half4 Frag(Varyings input) : SV_Target
 - [URP 内置 Bloom vs 自定义 Dual Kawase 性能对比](./urp-builtin-bloom-vs-dual-kawase-renderfeature-performance.md) - 本案例与内置方案的量化对比
 - [URP 中 GrabPass 替代方案](./urp-grabpass-alternative.md) - 同体系的另一个 RTHandle+Blit 案例
 - [Godot Bloom：Fast Mipmap Dual Kawase 4K 实践](./godot-bloom-fast-mipmap-dual-kawase-4k-practice.md) - 算法来源
+- [移动 GPU 渲染术语速查](./mobile-gpu-terms-tbr-gmem-backbuffer-glossary.md) - 本文 GMEM/TBR/中间 RT/Load-Store 等术语的解释
 
 ### 验证记录
 

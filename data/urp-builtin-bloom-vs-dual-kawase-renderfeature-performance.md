@@ -67,6 +67,7 @@ URP 14 内置 Bloom 默认配置是 **16 个 Blit、1/2 分辨率起步、每级
 - [Godot Bloom：Fast Mipmap Dual Kawase 4K 实践](./godot-bloom-fast-mipmap-dual-kawase-4k-practice.md) - Dual Kawase 算法来源
 - [URP RenderFeature 每帧 GC 排查](./urp-renderfeature-per-frame-gc-pitfalls.md) - 同一 RenderFeature 的零 GC 实践
 - [后处理模糊算法综述（知乎留档）](./zhihu-postprocessing-blur-algorithms.md) - 高斯/Kawase/Dual Kawase 算法对比背景
+- [移动 GPU 渲染术语速查](./mobile-gpu-terms-tbr-gmem-backbuffer-glossary.md) - 本文 GMEM/带宽当量/全屏内存往返等术语的解释
 
 ### 验证记录
 
