@@ -24,7 +24,7 @@
 - `foldoutHeader` 与右侧按钮拼接时，背景、箭头和按钮边界错位
 - 数组/列表字段的第一个折叠入口在 Header 容器内报错：
 
-``text
+```text
 You can't nest Foldout Headers, end it with EndFoldoutHeaderGroup.
 ```
 
@@ -47,7 +47,7 @@ You can't nest Foldout Headers, end it with EndFoldoutHeaderGroup.
    - Unity 默认 `PropertyField`
    - 手工 `EditorGUI.Foldout`
    - Odin `PropertyTree`
-   - `helpBox` / toolbar` 等容器样式  
+   - `helpBox` / `toolbar` 等容器样式
    各层 margin / padding / indent 会叠加，最终把本来就不稳定的箭头缩进问题放大成明显越界。
 
 #### 不推荐的组合
