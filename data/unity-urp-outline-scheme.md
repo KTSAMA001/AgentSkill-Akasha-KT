@@ -173,8 +173,8 @@ float3 outlinePosition = positionOS + normalOS * outlineWidth;
 
 ### 相关记录
 
-- [非真实感渲染 (Non-Photorealistic Rendering) 相关经验](./npr-rendering-outline.md) - 屏幕空间描边与 Renderer Feature 实践，可与本文的非后处理描边方案对比。
-- [URP SRP 架构](./urp-srp-architecture.md) - URP 渲染管线与扩展点背景。
+- [URP 屏幕空间描边 RenderFeature 实现](./urp-renderfeature-screen-space-outline.md) - 屏幕空间描边与 Renderer Feature 实践，可与本文的非后处理描边方案对比。
+- [URP 核心 Renderer / Pass / Feature 架构](./urp-core-renderer-pass-feature-architecture.md) - URP 渲染管线与扩展点背景。
 - [URP Renderer Feature 开发指南](./urp-renderer-feature-guide.md) - RenderObject / Renderer Feature 相关实现背景。
 
 ### 验证记录

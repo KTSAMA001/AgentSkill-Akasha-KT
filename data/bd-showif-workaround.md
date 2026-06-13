@@ -71,4 +71,4 @@ public class MyAction : ProfilingAction
 
 ### 理论基础
 
-- [BehaviorDesigner ObjectDrawer 系统](./behavior-designer-api.md#behaviordesigner-objectdrawer-系统)
+- [BehaviorDesigner ObjectDrawer 系统](./behavior-designer-object-drawer.md)

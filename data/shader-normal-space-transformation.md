@@ -117,7 +117,7 @@ Multiply.Out ──→ 对象空间切线
 
 ### 相关记录
 
-- [Unity Shader / HLSL 基础知识](./hlsl-syntax-semantics.md) - Shader 语义与语法
+- [Unity Shader / HLSL 基础知识](./hlsl-semantics-basics.md) - Shader 语义与语法
 - [Amplify Shader Editor 架构解析](./amplify-shader-editor-architecture.md) - ASE 节点系统详解
 
 ### 验证记录

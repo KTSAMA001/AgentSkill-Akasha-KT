@@ -66,7 +66,7 @@ Web 侧常见实现手法（不绑定特定颜色）：
 ### 与经验关联（可选）
 
 - 实践验证：CI/CD 经验里的“工业风站点 + Mermaid 渲染 + 自动部署”
-  - [experiences/tools/cicd.md](./cicd-vitepress-deploy.md)
+  - [VitePress 宝塔 Nginx 部署记录](./vitepress-nginx-deploy-403-cleanurls.md)
 
 
 ### 验证记录

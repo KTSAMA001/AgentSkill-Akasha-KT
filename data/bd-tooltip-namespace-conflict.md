@@ -53,4 +53,4 @@ public enum DirectionType
 
 ### 理论基础
 
-- [BehaviorDesigner Task Attributes 系统](./behavior-designer-api.md#behaviordesigner-task-attributes-系统)
+- [BehaviorDesigner Task Attributes 系统](./behavior-designer-task-attributes.md)

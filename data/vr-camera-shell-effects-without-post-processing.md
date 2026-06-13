@@ -120,8 +120,8 @@ return float4(_TintColor.rgb, alpha);
 
 ### 相关记录
 
-- [渲染管线全景笔记](./rendering-pipeline-overview.md) - 透明队列、深度、Stencil、后处理与管线顺序的基础背景。
-- [NPR 渲染描边](./npr-rendering-outline.md) - 典型后处理/Renderer Feature 路线，可与相机壳层路线对比。
+- [深度、模板与逐片元操作](./depth-stencil-per-fragment-ops.md) - 透明队列、深度、Stencil、后处理与管线顺序的基础背景。
+- [URP 屏幕空间描边 RenderFeature 实现](./urp-renderfeature-screen-space-outline.md) - 典型后处理/Renderer Feature 路线，可与相机壳层路线对比。
 - [URP GrabPass 替代方案](./urp-grabpass-alternative.md) - 当效果必须采样相机颜色时的替代路线。
 - [Unity Render Settings 软切换](./unity-render-settings-soft-transition.md) - VR 项目中与后处理曝光/环境切换相关的实践背景。
 

@@ -83,4 +83,4 @@ half4 frag(Varyings i) : SV_Target
 
 **相关经验**：
 
-- [屏幕空间描边 SSOutLine RenderFeature](./npr-rendering-outline.md#ss-outline-renderfeature) — 依赖此 GrabColor 功能
+- [屏幕空间描边 SSOutLine RenderFeature](./urp-renderfeature-screen-space-outline.md) — 依赖此 GrabColor 功能

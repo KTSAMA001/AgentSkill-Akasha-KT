@@ -51,7 +51,7 @@
 - [Agent Skills 规范](./agent-skills-spec.md) - 阿卡西记录技能基于 Agent Skills 标准构建
 - [阿卡西记录写入前脱敏预览门禁](./akasha-record-redaction-preview-gate.md) - 记录入库前的敏感信息语义审查与预览说明规则
 - [Git 仓库管理经验](./git-commit-conventions.md) - 记录技能的版本控制与同步流程
-- [持续集成/持续部署相关经验](./cicd-vitepress-deploy.md) - 网站的自动化构建与部署踩坑记录
+- [Akasha Webhook PM2 守护与 HTTPS 反向代理](./akasha-webhook-pm2-https-proxy.md) - 网站的自动化构建与部署踩坑记录
 - [明日方舟工业风 UI 分析](./arknights-ui-industrial-style.md) - 视觉设计的灵感来源与规范
 
 

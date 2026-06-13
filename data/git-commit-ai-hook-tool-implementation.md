@@ -315,7 +315,7 @@ if ($missing) {
 
 ### 相关记录
 
-- [开发工具术语速查：Qt、冒烟测试、CI/CD](./developer-terms-qt-smoke-test-cicd.md) - 解释本记录中出现的 Qt/PySide6、Qt offscreen 冒烟测试与 CI/CD 术语。
+- [Qt / PySide6 GUI 框架术语](./qt-pyside6-gui-framework-terms.md) - 解释本记录中出现的 Qt/PySide6、Qt offscreen 冒烟测试与 CI/CD 术语。
 - [PyInstaller 打包 Python 为 Windows EXE 完整指南](./pyinstaller-windows-exe-packaging.md) - 单 exe 打包、资源路径与持久目录问题的相邻经验。
 - [Markdown to Word 转换器实现详解](./md-to-word-converter-implementation.md) - Python GUI 工具实现与桌面工具交付经验。
 - [Claude Code Skill 触发模式与 Hook 提升自动触发率](./claude-code-skill-hook-trigger-boost.md) - Hook 机制与自动化边界的相邻经验。

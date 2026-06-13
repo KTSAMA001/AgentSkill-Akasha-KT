@@ -338,7 +338,7 @@ Unity技术美术QQ交流分享群：**19470667(1群已满）､763506271**
 ### 相关记录
 
 - [VR 相机壳层特效替代后处理](./vr-camera-shell-effects-without-post-processing.md) - 同样关注用几何/材质方案替代昂贵后处理
-- [渲染管线概览](./rendering-pipeline-overview.md) - Lambert 光照、顶点/片元阶段等基础概念
+- [Shader 阶段：顶点与片元](./shader-stage-vertex-fragment.md) - Lambert 光照、顶点/片元阶段等基础概念
 
 ### 验证记录
 

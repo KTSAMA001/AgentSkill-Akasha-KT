@@ -744,7 +744,7 @@ The End.
 ### 相关记录
 
 - [Shader案例:顶点运动模糊](./zhihu-shader-vertex-motion-blur.md) - 同为知乎图形/Shader 文章学习用途本地留档。
-- [NPR 渲染 Outline 技术](./npr-rendering-outline.md) - 同属 Unity 后处理与 Shader 效果方向。
+- [URP 屏幕空间描边 RenderFeature 实现](./urp-renderfeature-screen-space-outline.md) - 同属 Unity 后处理与 Shader 效果方向。
 
 ### 验证记录
 
