@@ -48,7 +48,6 @@ TAGS_FIXES = {
     "unity-blendtree-audio-sync.md": "#unity #experience #animation #blend-tree #audio",
     "unity-framework-architecture.md": "#unity #csharp #architecture",
     "unity6-migration-guide.md": "#unity #shader #reference #urp #rendering #ecs",
-    "vera-kt-dog-identity.md": "#design #reference #social #vera #identity",
     "vitepress-architecture-deep-dive.md": "#web #vitepress #architecture",
 }
 

@@ -29,7 +29,6 @@
 |------|------|------|------|
 | [3dsmax-skin-normal-fbx-export.md](../data/3dsmax-skin-normal-fbx-export.md) | #unity #3dsmax #fbx #experience #troubleshooting | ⚠️ 待验证 | 美术在做模型资产时法线正常（硬边效果），但动画绑定后法线被打乱。通过网络搜索汇总了可能的原因和解决方案，**待美术验证后更新状态**。 |
 | [aces-tone-mapping.md](../data/aces-tone-mapping.md) | #graphics #knowledge #pbr #hdr #post-processing #color-space | 📘 有效 | ACES Tone Mapping 是将 HDR 渲染结果压缩到 LDR 显示范围的色调映射曲线，常用于在保留暗部细节的同时压缩高光。 |
-| [agent-skill-record-test.md](../data/agent-skill-record-test.md) | #agent-skills #experience #akasha | ⚠️ 待验证 | 本记录仅用于验证子 Agent 是否会按阿卡西 record 流程完成写入、索引同步与脚本校验，不可作为正式知识引用。 |
 | [agent-skills-spec.md](../data/agent-skills-spec.md) | #ai #knowledge #agent-skills | 📘 有效 | Agent Skills 规范 |
 | [akasha-semantic-search-architecture.md](../data/akasha-semantic-search-architecture.md) | #architecture #ai #mcp #akasha #search-engine #python | 💡 构想中 | 为阿卡西记录（Akasha-KT）设计基于向量模型的语义搜索架构，提升自然语言查询体验，实现从关键词匹配到语义理解的升级。 |
 | [akasha-visualization-web.md](../data/akasha-visualization-web.md) | #tools #web #reference #akasha #arknights | 📘 有效 | 阿卡西记录可视化网站 |
@@ -191,7 +190,6 @@
 | [urp-renderfeature-screen-space-hair-shadow.md](../data/urp-renderfeature-screen-space-hair-shadow.md) | #shader #unity #experience #urp #npr #renderer-feature #post-processing | ✅ 已验证 | 屏幕空间刘海阴影通过 URP RenderFeature 将脸部与头发深度信息写入自定义 RT，再由脸部 Shader 采样以形成风格化投影。 |
 | [urp-renderfeature-screen-space-outline.md](../data/urp-renderfeature-screen-space-outline.md) | #shader #unity #experience #urp #npr #renderer-feature #post-processing | ✅ 已验证 | URP 屏幕空间描边可通过深度 Mask、GrabColor 和后处理描边 Pass 多个 RenderFeature 协作实现，并通过 Volume 控制描边参数。 |
 | [urp-skybox-notes.md](../data/urp-skybox-notes.md) | #unity #urp #shader #skybox #experience | ✅ 已验证 | URP 天空盒不能使用 URP 格式 Shader，必须使用 Built-in 管线写法。 |
-| [vera-kt-dog-identity.md](../data/vera-kt-dog-identity.md) | #design #reference #social #vera #identity | 📘 有效 | 薇拉的身份设定 |
 | [vitepress-architecture-deep-dive.md](../data/vitepress-architecture-deep-dive.md) | #web #vitepress #architecture #arknights | 📘 有效 | AkashaRecord-Web 是阿卡西记录知识库的 Web 前端展示平台，采用 VitePress 构建静态站点，辅以 Express Webhook 服务实现自动构建。本文档提供了完整的技术架构、核心流程、组件系统、数据流与部署方案解析。 |
 | [vitepress-dynamic-sidebar-index.md](../data/vitepress-dynamic-sidebar-index.md) | #tools #web #experience #vitepress | ✅ 已验证 | VitePress 动态侧边栏标签 + 分类索引页自动生成 |
 | [vitepress-emoji-to-svg-icon.md](../data/vitepress-emoji-to-svg-icon.md) | #tools #web #experience #vitepress | ✅ 已验证 | 全站 Emoji 替换为 SVG 图标的完整流程 {#emoji-to-svg} |
