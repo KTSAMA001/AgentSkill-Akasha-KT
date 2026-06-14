@@ -1,13 +1,13 @@
 # Claude Code 作为 Agent 框架接入多种模型 (LLM Gateway)
 
 **收录日期**：2026-01-31
-**来源日期**：2026-05-14
-**更新日期**：2026-05-18
+**来源日期**：2026-06-12
+**更新日期**：2026-06-14
 **标签**：#ai #tools #reference #claude-code
 **来源**：Claude Code 官方文档 / 发布说明 / 实践验证
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐ (实践验证)
-**适用版本**：Claude Code 2.1.142 官方模型配置；本机 Claude Code 2.1.133
+**适用版本**：Claude Code 2.1.176 官方模型配置；本机 Claude Code 2.1.111
 
 **问题/场景**：
 
@@ -21,14 +21,25 @@ Claude Code 作为 Agent 框架接入多种模型 (LLM Gateway)
 
 **Claude Code 本质上是一个 Agent 框架**，不绑定特定模型，通过配置 `ANTHROPIC_BASE_URL` 等环境变量可接入不同的后端 API。
 
-### 最新 Claude 模型系列 (2026-05)
+### 最新 Claude 模型系列 (2026-06)
 
 | 模型 | API ID | 定价 (input/output per MTok) | 上下文 | 最大输出 | 特性 |
 |------|--------|------------------------------|--------|----------|------|
-| **Opus 4.7** | `claude-opus-4-7` | 以官方 pricing 为准 | 200K / 1M（按账号/平台可用性） | 以官方模型页为准 | 当前最强 Opus，复杂推理、agentic coding、`xhigh` effort |
-| **Opus 4.6** | `claude-opus-4-6` | $5 / $25（历史参考） | 200K / 1M | 128K | 前代旗舰；2.1.142 起 Fast Mode 默认切到 Opus 4.7 |
-| **Sonnet 4.6** | `claude-sonnet-4-6` | $3 / $15 | 200K / 1M (beta) | 64K | 自适应思考、速度智能平衡 |
+| **Opus 4.8** | `claude-opus-4-8` | $5 / $25 | 1M（Foundry 例外为 200K） | 128K | Anthropic API 当前最新 Opus，复杂推理、agentic coding、adaptive thinking |
+| **Sonnet 4.6** | `claude-sonnet-4-6` | $3 / $15 | 1M | 64K | 日常编码主力，速度与智能平衡 |
 | **Haiku 4.5** | `claude-haiku-4-5-20251001` | $1 / $5 | 200K | 64K | 最快速度、成本最优 |
+
+> 补充：**Claude Fable 5** 已于 2026-06-09 在 Claude API / Claude Platform on AWS / Bedrock / Vertex / Foundry 进入 GA，但它是独立高阶模型线，不属于 Opus/Sonnet/Haiku 三层对照表。
+
+### 别名解析与提供商差异（2026-06）
+
+| 场景 | 当前官方结论 |
+|------|--------------|
+| `best` | 有 Fable 5 权限时优先使用 Fable 5，否则回落到最新 Opus |
+| `fable` | 直接使用 Claude Fable 5 |
+| Anthropic API | `opus` -> Opus 4.8；`sonnet` -> Sonnet 4.6 |
+| Claude Platform on AWS | `opus` -> Opus 4.7；`sonnet` -> Sonnet 4.6 |
+| Bedrock / Vertex / Foundry | `opus` 默认仍解析到 Opus 4.6；`sonnet` 默认仍是 Sonnet 4.5。若要使用更新模型，需显式指定完整模型 ID 或设置 `ANTHROPIC_DEFAULT_*_MODEL` |
 
 ### 官方支持的提供商
 
@@ -47,12 +58,12 @@ Claude Code 作为 Agent 框架接入多种模型 (LLM Gateway)
 
 | 模型系列 | 提供商 |
 |----------|--------|
-| **GLM-4.7 / GLM-4.5** | 智谱 AI (bigmodel.cn) |
-| **GPT-4 / GPT-4o** | OpenAI |
-| **Gemini Pro / Ultra** | Google |
-| **DeepSeek** | DeepSeek |
-| **Qwen (通义千问)** | 阿里云 |
-| **Moonshot (Kimi)** | 月之暗面 |
+| **GLM 系列** | 智谱 AI (bigmodel.cn) |
+| **OpenAI 兼容模型** | OpenAI / 兼容网关 |
+| **Gemini 系列** | Google |
+| **DeepSeek 系列** | DeepSeek |
+| **Qwen 系列** | 阿里云 |
+| **Moonshot / Kimi 系列** | 月之暗面 |
 | **本地模型** | Ollama、vLLM、LocalAI 等 |
 
 ### 认证优先级与网页登录关系
@@ -97,15 +108,15 @@ Claude Code CLI 支持多种认证方式。若配置了网关/代理凭证，通
 - Claude Code **界面显示的仍是 Anthropic 模型名**，但实际调用的是配置的后端模型
 - 后端 API 需**兼容 Anthropic Messages 格式**（或通过网关转换）
 - 使用 `/model` 命令可查看/切换可用模型
-- 2.1.x 会在发送给非 Anthropic provider 前清理模型 ID 后缀；如果需要固定模型，优先使用完整 ID（如 `claude-opus-4-7`）或 `ANTHROPIC_DEFAULT_*_MODEL`
+- 若要避免 provider 默认 alias 落到旧模型，优先使用完整 ID（如 `claude-opus-4-8`）或 `ANTHROPIC_DEFAULT_*_MODEL`
 
 **参考链接**：
 
 - [Claude Code Model Configuration](https://code.claude.com/docs/en/model-config) - 模型配置官方文档
 - [Claude Code LLM Gateway](https://code.claude.com/docs/en/llm-gateway) - LiteLLM 等网关配置
-- [Claude Code Authentication](https://docs.anthropic.com/en/docs/claude-code/authentication) - 认证方式与优先级
+- [Claude Code Authentication](https://code.claude.com/docs/en/authentication) - 认证方式与优先级
 - [Claude Code on Amazon Bedrock](https://code.claude.com/docs/en/amazon-bedrock) - AWS Bedrock 配置
-- [Claude Opus 4.7 API Docs](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-7) - Opus 4.7 模型 ID 与迁移说明
+- [Claude Models Overview](https://platform.claude.com/docs/en/about-claude/models/overview) - 最新模型、ID、价格、上下文与 provider 差异
 - [Claude Code Changelog](https://code.claude.com/docs/en/changelog) - Fast Mode、模型和 CLI 版本变化
 - [智谱 GLM Coding Plan](https://docs.bigmodel.cn/cn/guide/develop/claude) - 智谱 AI Claude 兼容 API
 
@@ -114,3 +125,4 @@ Claude Code CLI 支持多种认证方式。若配置了网关/代理凭证，通
 - [2026-05-15] 时效性更新：官方文档确认 Opus 4.7 模型 ID 为 `claude-opus-4-7`，Claude Code changelog 确认 2.1.142 起 Fast Mode 默认使用 Opus 4.7；本机 `claude --version` 为 2.1.133。
 - [2026-05-18] 基于 Claude Code 官方认证文档补充认证优先级：网关/代理优先使用 `ANTHROPIC_AUTH_TOKEN` 或 `ANTHROPIC_API_KEY`，无需把“关闭网页登录”理解为 `settings.json` 中的某个 disable 字段；`hasCompletedOnboarding` 位于 `~/.claude.json`。
 - [2026-05-18] 合并校验：保留 2026-05-15 模型/Fast Mode 更新与 2026-05-18 认证优先级补充；本记录聚焦模型后端与网关接入，`/config` 文件边界详见 `claude-code-config-dialog-settings.md`。
+- [2026-06-14] 时效性复核：官方模型总览确认 Anthropic API 当前 `opus` 主线为 Opus 4.8，`sonnet` 为 Sonnet 4.6；Model Configuration 确认 `best/fable` alias 与 provider 差异；本机 `claude --version` 为 2.1.111。
