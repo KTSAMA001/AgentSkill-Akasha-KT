@@ -31,7 +31,6 @@
 | [aces-tone-mapping.md](../data/aces-tone-mapping.md) | #graphics #knowledge #pbr #hdr #post-processing #color-space | 📘 有效 | ACES Tone Mapping 是将 HDR 渲染结果压缩到 LDR 显示范围的色调映射曲线，常用于在保留暗部细节的同时压缩高光。 |
 | [agent-skill-record-test.md](../data/agent-skill-record-test.md) | #agent-skills #experience #akasha | ⚠️ 待验证 | 本记录仅用于验证子 Agent 是否会按阿卡西 record 流程完成写入、索引同步与脚本校验，不可作为正式知识引用。 |
 | [agent-skills-spec.md](../data/agent-skills-spec.md) | #ai #knowledge #agent-skills | 📘 有效 | Agent Skills 规范 |
-| [akasha-record-redaction-preview-gate.md](../data/akasha-record-redaction-preview-gate.md) | #tools #knowledge #akasha #credential | ✅ 已验证 | 阿卡西记录写入前必须先做敏感信息语义审查，并在记录前预览中向用户说明是否发现敏感信息、发现的类型或位置概览、以及拟采用的脱敏方式。脚本只能作为结构校验或高置信固定模式告警，不能证明记录“不含敏感信息”。 |
 | [akasha-semantic-search-architecture.md](../data/akasha-semantic-search-architecture.md) | #architecture #ai #mcp #akasha #search-engine #python | 💡 构想中 | 为阿卡西记录（Akasha-KT）设计基于向量模型的语义搜索架构，提升自然语言查询体验，实现从关键词匹配到语义理解的升级。 |
 | [akasha-visualization-web.md](../data/akasha-visualization-web.md) | #tools #web #reference #akasha #arknights | 📘 有效 | 阿卡西记录可视化网站 |
 | [akasha-web-sync-git-deploy-pitfalls.md](../data/akasha-web-sync-git-deploy-pitfalls.md) | #web #tools #git #experience #deployment #cicd #github-actions #troubleshooting | ✅ 已验证 | Akasha Web 部署时，Git `dubious ownership`、国内服务器拉取 GitHub 不稳定、`.akasha-repo` 本地残留修改、`npx` 缓存版本不一致，都会导致同步或构建异常。同步脚本应内置 safe.directory、清理本地修改、镜像 URL 和本地 VitePress 调用策略。 |
