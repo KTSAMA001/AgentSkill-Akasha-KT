@@ -125,6 +125,7 @@
 | [python-docx-emoji-font-solution.md](../data/python-docx-emoji-font-solution.md) | #python #docx #experience #font #unicode | ✅ 已验证 | 解决 python-docx 生成的 Word 文档中 emoji 显示为方框或方框带问号的问题。根因是 `run.font.name` 只设置 Word XML 的 `w:ascii` 属性，而 emoji 字符（Unicode 补充平面，code point > 0xFFFF）需要通过 `w:hAnsi` 属性指定字体才能正确渲染。 |
 | [python-web-scraping-antibot.md](../data/python-web-scraping-antibot.md) | #python #experience #playwright #selenium #anti-bot | ✅ 已验证 | 网页抓取与反爬虫绕过 |
 | [qt-pyside6-gui-framework-terms.md](../data/qt-pyside6-gui-framework-terms.md) | #tools #python #knowledge #ui #cross-platform | 📘 有效 | Qt 是跨平台 GUI 应用开发框架；PySide6 是 Qt 官方 Python 绑定，用于在 Python 中使用 Qt 6 的窗口、布局、控件、事件和绘图等能力。 |
+| [remote-server-agent-operation-sop.md](../data/remote-server-agent-operation-sop.md) | #agent-skills #network #tools #deployment #credential #troubleshooting #experience | ✅ 已验证 | 让 AI Agent 介入远程服务器时，关键不是把账号密码直接塞进对话，而是建立“本地密钥文件 + 脱敏入口记录 + 操作前验证 + 最小权限命令 + 可撤销授权”的闭环。若需要跨会话复用，应把流程固化为本地 Skill，但 Skill 只能记录目标说明、占位符、密钥路径策略和验证命令，不能记录私钥正文。 |
 | [render-queue-design.md](../data/render-queue-design.md) | #unity #rendering #performance #experience | ✅ 已验证 | 多特效叠加时，固定渲染队列比动态距离排序更稳定可控，且能保证批次数量。 |
 | [rendering-pipeline-stages.md](../data/rendering-pipeline-stages.md) | #graphics #knowledge #rendering-pipeline #rendering | 📘 有效 | 渲染管线是将 3D 场景转换为 2D 图像的一系列处理步骤，可按职责拆成应用阶段、几何阶段、光栅化阶段。 |
 | [safari-svg-favicon-compat.md](../data/safari-svg-favicon-compat.md) | #tools #web #experience #vitepress | ⚠️ 待验证 | Safari SVG Favicon 兼容性 |
