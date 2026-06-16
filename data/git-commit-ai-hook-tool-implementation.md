@@ -7,7 +7,7 @@
 **更新日期**：2026-06-16
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐（本地端到端验证 + 官方资料核对）
-**适用版本**：Git commit-msg hook / Python 3.13 / PySide6 / PyInstaller 6.20 / Python venv 源码版 / OpenAI-compatible Chat Completions / Anthropic Messages API
+**适用版本**：Git commit-msg hook / Python 3.13 / PySide6 / PyInstaller 6.20 / Python venv 源码版 / OpenAI-compatible Chat Completions / Anthropic Messages API / Codex CLI non-interactive mode
 
 ### 概要
 
@@ -158,6 +158,24 @@ Key 管理建议：
 - 允许保存 API Key 到当前 API 配置。
 - 也允许只填写环境变量名，让 hook 运行时从系统环境读取。
 - API 配置的名称不等于协议名称，也不等于服务商名称；它只是用户自己识别账号、网关或用途的标签。
+
+#### Codex CLI 接入与非交互输出
+
+Codex CLI 可以作为第三类 AI provider 使用，但它和普通 URL 型 API 不同：它复用本机 `codex exec`，不保存 Base URL，也不需要把提交日志优化任务写进 Codex 桌面端会话。实践中更稳的调用方式是：
+
+```sh
+codex --ask-for-approval never exec --json --ephemeral --skip-git-repo-check --sandbox read-only --ignore-user-config --ignore-rules --model gpt-5.5 -
+```
+
+关键取舍：
+
+- 使用 `--json`，只解析 JSONL 事件流里的最终 `agent_message`；不要把普通 stderr 当成可展示错误，因为非交互运行会把进度或上下文输出到 stderr。
+- 使用 `--ephemeral`、隔离 `CODEX_HOME` 和中性工作目录，避免日志优化请求污染用户日常 Codex 会话、记忆、规则或项目配置。
+- 使用 `--ignore-user-config` 与 `--ignore-rules`，让 hook 行为由 GitCommitAI 的 API 配置和提示词配置决定，而不是被用户全局 Codex 配置或 execpolicy 规则间接改变。
+- 失败弹窗只显示结构化错误或精简诊断，不展示完整 prompt、diff、原始提交日志、仓库绝对路径或会话转录。
+- 空模型不能完全交给 Codex CLI 当前默认值；部分 CLI/账号组合会回退到已弃用的 `gpt-5.3-codex`，ChatGPT 登录场景下会请求失败。工具应在 Codex provider 模型为空时显式使用 OpenAI 官方推荐的 `gpt-5.5`，同时允许用户手填其他模型覆盖。
+
+这个 provider 的验证重点不是“命令能启动”，而是完整提交闭环能成功：测试仓库安装 hook 后，用随手提交信息执行真实 `git commit`，最终 `git log -1 --format=fuller` 应显示被优化后的 Conventional Commits 中文日志，并保留原始日志区块；本地审计文件也应记录原始日志和优化日志。若第一次失败是模型选择问题，应在修复后再次执行真实提交，而不是只用单元测试替代端到端验证。
 
 #### GUI 交互经验
 
@@ -357,6 +375,8 @@ if ($missing) {
 - [OpenAI Chat Completions API](https://platform.openai.com/docs/api-reference/chat/create-chat-completion) - OpenAI 兼容接口的 `/chat/completions` 请求形态参考。
 - [Anthropic Messages API](https://docs.anthropic.com/en/api/messages-examples) - Anthropic Messages 请求示例，包含 `x-api-key` 与 `anthropic-version`。
 - [Anthropic API Overview](https://docs.anthropic.com/en/api/overview) - Anthropic API 认证请求头说明。
+- [OpenAI Codex Non-interactive mode](https://developers.openai.com/codex/noninteractive) - `codex exec`、`--json`、`--ephemeral`、`--ignore-user-config` 与 `--ignore-rules` 的非交互用法。
+- [OpenAI Codex Models](https://developers.openai.com/codex/models) - Codex 推荐模型、`gpt-5.5` 默认配置示例，以及 `gpt-5.3-codex` 在 ChatGPT 登录场景下已弃用的说明。
 
 ### 相关记录
 
@@ -378,5 +398,6 @@ if ($missing) {
 - [2026-06-16] 修正：补充双配置池设计与关键实现。经本地单元测试、hook 回归、Qt offscreen 冒烟测试、测试仓库 `doctor --repo`、桌面源码包 `GitCommitAI_Source.cmd --version` 与 `doctor --repo` 验证，API 配置池和提示词配置池可独立复用，项目配置只保存引用，旧配置可迁移到用户级池，诊断输出不显示明文 Key；脱敏审查确认记录仅保留占位符、相对路径和通用技术结论。
 - [2026-06-16] 修正：补充 GUI 信息架构与源码包更新脚本实践。经 Python 编译检查、20 项单元/Hook/Qt offscreen 测试、桌面源码包 `GitCommitAI_Source.cmd --version`、zip 内容抽查与敏感信息扫描验证：主界面只保留项目配置选择，API/提示词配置维护进入弹窗；左侧不再把共享配置池伪装成项目；源码包更新保留已存在 `.vene`，zip 不包含 `.vene`、`__pycache__` 或 `.pyc`。外部依据为 Qt Layout、QDialog、QScrollArea 与 QSizePolicy 官方文档；扫描命中仅为 README 占位符、空 Key 字段、代码变量名和测试假数据。
 - [2026-06-16] 修正：补充 API 配置稳定内部 ID 与可编辑显示名称实践。经 22 项单元/Hook/Qt offscreen 测试、Python 编译检查、`doctor --repo <test-repo>`、桌面源码包 `GitCommitAI_Source.cmd --version` 验证：GUI 下拉显示配置名称，项目配置保存内部 ID；修改 API 配置显示名称后，既有项目引用仍解析到同一配置的新 URL 和模型。外部依据为 Python `uuid4()` 官方文档；脱敏审查确认记录使用占位符 ID、占位符 URL 和通用测试仓库描述，未写入真实 Key、内部路径或服务商凭据。
+- [2026-06-16] 修正：补充 Codex CLI provider 非交互调用实践。经官方 Codex 手册核对，`codex exec --json` 适合脚本消费 JSONL 事件流，`gpt-5.5` 为推荐模型，`gpt-5.3-codex` 在 ChatGPT 登录场景下已弃用。经本地 28 项单元/Hook/Qt offscreen 测试、Python 编译检查、桌面源码包入口验证、zip 内容抽查、`doctor --repo <test-repo>` 与真实测试仓库 `git commit` 验证：Codex provider 会显式传入 `--model gpt-5.5`，成功优化随手提交日志并保留原始日志；失败诊断只保留结构化错误或精简摘要，不展示完整 prompt、diff、原始提交内容、绝对路径或凭据。
 
 ---
