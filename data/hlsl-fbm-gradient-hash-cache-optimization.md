@@ -4,7 +4,7 @@
 **来源**：实践总结 - Unity HLSL 3D Value Noise FBM 优化
 **收录日期**：2026-05-15
 **来源日期**：2026-05-15
-**更新日期**：2026-05-15
+**更新日期**：2026-06-20
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐（本地数值抽样 + 渲染现象回归确认）
 **适用版本**：HLSL / Unity Shader，3D value-noise FBM 梯度实现
@@ -139,6 +139,10 @@ float3 rockFBMGradient(float3 p, int octaves, float e, float freq, float lacunar
 }
 ```
 
+### 关联资源
+
+- [FBMView 交互式可视化演示](../assets/hlsl-fbm-gradient-hash-cache-optimization/01-fbm-view.html) - 本地 HTML/Three.js 演示，用于快速调节 `_Distortion`、`_NormalScale`、`_Frequency`、`_Reflectivity`、`_FresnelPower` 并观察岩石法线扰动与反射表现。该演示片段中的 `getSimpleGradient` 使用有限差分，只作为视觉调参辅助，不作为本文“解析梯度替代前向差分”的验证依据；页面依赖公开 Three.js r128 CDN，离线使用时需改成本地 three.js 文件。
+
 ### 参考链接
 
 - [Microsoft Learn - smoothstep (HLSL)](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-smoothstep) - HLSL `smoothstep` 是 0 到 1 的 smooth Hermite interpolation，用于确认 shader 语义层面的插值基础。
@@ -153,3 +157,4 @@ float3 rockFBMGradient(float3 p, int octaves, float e, float freq, float lacunar
 - [2026-05-15] 脱敏检查：记录正文改用泛化项目描述，移除了本机路径、具体项目名和仓库结构细节。
 - [2026-05-15] 修正：补充白边处理要点，明确白边来自前向差分跨 cell 的边界敏感性；移除与本记录主题无直接关联的 Git 操作相关记录。
 - [2026-05-15] 修正：补充 smoothstep、插值解析导数和本地验证依据的参考链接，避免记录只给结论而缺少来源链路。
+- [2026-06-20] 资源关联：补充 FBMView 交互式 HTML 资源，作为岩石 FBM 法线扰动参数和反射表现的可视化调试入口；该页面保留有限差分示例与 Three.js CDN 依赖，已在关联资源中标明用途边界，避免误解为解析梯度验证证据。
