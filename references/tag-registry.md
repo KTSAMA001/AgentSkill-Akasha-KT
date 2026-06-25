@@ -122,6 +122,7 @@
 | #texture | 纹理 | shader | specialty | 纹理格式、压缩与采样 |
 | #tools | 工具 | wrench | domain | 开发工具 |
 | #troubleshooting | 故障排查 | wrench | specialty | 问题排查 |
+| #ugui | UGUI | monitor | specialty | Unity UGUI（Canvas UI）系统 |
 | #ui | UI | monitor | specialty | 用户界面 |
 | #unicode | Unicode | code | specialty | Unicode 字符与编码 |
 | #unity | Unity 引擎 | unity | domain | Unity 游戏引擎 |
