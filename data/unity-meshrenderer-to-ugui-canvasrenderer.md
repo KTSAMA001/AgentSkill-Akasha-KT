@@ -57,7 +57,32 @@ UGUI 合批时把 Canvas 下所有 UI 合并成一个大网格，每顶点默认
 ```csharp
 canvas.additionalShaderChannels |= AdditionalCanvasShaderChannels.Normal | Tangent | TexCoord1;
 ```
-注意它是 **Canvas 级**设置：开了会让该 Canvas 下**所有 UI** 顶点变大（内存/带宽涨），移动端敏感，故应做成开关，按 shader 需要决定开关。
+
+**关键约束（容易踩坑）**：
+
+- **Canvas 级全局设置**：`additionalShaderChannels` 是 `Canvas` 组件上的属性，不是 UI 元素级别。任意一个子元素开了某通道，**整个 Canvas 下所有 UI 元素的顶点包**都会带上这些额外字节（Normal 12B、Tangent 16B、每个 TexCoord 8B）。
+- **只增不减**：`|=` 操作无法自动撤销；一旦某帧开启，后续帧不会恢复（即使开启的组件被销毁）。
+- **视觉无副作用，带宽有代价**：标准 UI shader（UI/Default、TextMeshPro 等）不读这些通道，多出来的数据被忽略，不影响视觉；但 VR/移动端顶点带宽敏感，全开（Normal+Tangent+TexCoord1/2/3）每顶点额外约 52 bytes。
+
+**推荐设计：两档独立开关**
+
+```csharp
+// 基础通道（默认开）：带光照/法线贴图的自定义 shader 通常都需要
+if (ensureCanvasShaderChannels)
+{
+    canvas.additionalShaderChannels |= AdditionalCanvasShaderChannels.Normal;
+    canvas.additionalShaderChannels |= AdditionalCanvasShaderChannels.Tangent;
+    canvas.additionalShaderChannels |= AdditionalCanvasShaderChannels.TexCoord1;
+}
+// 扩展通道（默认关）：仅 shader 读取 UV2/UV3（如 pixelPositionOS、dissolveUV）时才开
+if (ensureExtraUvChannels)
+{
+    canvas.additionalShaderChannels |= AdditionalCanvasShaderChannels.TexCoord2;
+    canvas.additionalShaderChannels |= AdditionalCanvasShaderChannels.TexCoord3;
+}
+```
+
+**UV2/UV3 透传的坑**：向 `CanvasMesh` 写 UV2/UV3 时，`Mesh.GetUVs(2, ...)` 的泛型类型需与源数据匹配（`Vector3` for UV2 if the source uses xyz）；同时 `BuildCanvasMesh` 必须显式 `SetUVs(2, ...)` / `SetUVs(3, ...)`，否则通道内容为零（不会自动透传）。未开 TexCoord2/3 通道时 UGUI 在合批阶段会剥掉这些数据，shader 读到的是 0——**表现为 shader 参数在普通 MeshRenderer 下正常，变成 UI 元素后"需要调 ~100 倍才正常"**（典型案例：用 `uv2.xyz` 传递 `pixelPositionOS` 的噪声采样坐标，未开通道时采样坐标全零，FBM/噪声强度严重失真）。
 
 #### 五、Prefab 实例的 Transform 替换限制
 
@@ -115,3 +140,4 @@ protected override void UpdateMaterial()
 ### 验证记录
 
 - [2026-06-25] 初次记录，来源：项目实践（CanvasRenderer.SetMesh 路线，已实测基础可见性与子物体独立性）+ 外部调研（Unity 文档、开源库 README）。
+- [2026-06-26] 补充第四节：additionalShaderChannels 是 Canvas 级全局属性的约束说明、两档开关设计实践、UV2/UV3 透传为零导致 shader 参数失真的具体案例（pixelPositionOS via uv2.xyz）。
