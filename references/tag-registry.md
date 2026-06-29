@@ -32,6 +32,7 @@
 | #bug | Bug | spark | specialty | Bug 记录与修复 |
 | #cicd | CI/CD | network | specialty | 持续集成/持续部署 |
 | #claude-code | Claude Code | chip | specialty | Claude Code CLI 工具 |
+| #code-generation | 代码生成 | code | specialty | 代码生成 / 代码生成器相关 |
 | #collider | 碰撞体 | unity | specialty | Unity 碰撞系统 |
 | #color-banding | 色带 | shader | specialty | 色带问题与修复 |
 | #color-space | 色彩空间 | shader | specialty | Gamma/Linear 色彩空间 |
@@ -87,6 +88,7 @@
 | #npr | NPR 渲染 | shader | specialty | 非真实感渲染 |
 | #openclaw | OpenClaw | monitor | specialty | OpenClaw 项目相关 |
 | #pat | PAT 令牌 | code | specialty | Personal Access Token |
+| #partial-class | partial 类 | code | specialty | C# partial class 跨文件合并 |
 | #pbr | PBR 渲染 | shader | specialty | 基于物理的渲染 |
 | #performance | 性能优化 | spark | specialty | 性能优化 |
 | #physics | 物理系统 | unity | specialty | Unity 物理引擎 |
