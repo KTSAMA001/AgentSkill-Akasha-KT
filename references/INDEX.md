@@ -46,6 +46,7 @@
 | [astrbot-messages-param-error.md](../data/astrbot-messages-param-error.md) | #ai #experience #astrbot #bug | 🔄 待更新 | AstrBot "messages 参数非法" 错误 |
 | [astrbot-plugin-file-upload-onebot.md](../data/astrbot-plugin-file-upload-onebot.md) | #ai #experience #mcp #astrbot | ✅ 已验证 | AstrBot 插件文件上传到QQ实现 |
 | [astrbot-plugin-llm-request-interceptor.md](../data/astrbot-plugin-llm-request-interceptor.md) | #ai #experience #mcp #astrbot | ✅ 已验证 | AstrBot 插件自动触发函数（LLM 请求拦截） |
+| [bakery-sh-toon-lighting-liltoon-alignment.md](../data/bakery-sh-toon-lighting-liltoon-alignment.md) | #unity #shader #graphics #urp #npr #hlsl #experience | ⚠️ 待验证 | 在卡通渲染项目中，直接把 Bakery SH 按表面法线作为间接漫反射使用，容易把角色或场景的暗部推向连续、写实的 PBR 观感。实践方案是在原 `BakerySH_float` 外新增 Toon 包装层：仍复用 Bakery 的 SH 解码、Geomerics 亮度修正、非负 clamp 和抗振铃能力，但把采样方向改成“环境主方向 + 主光方向”的风格化方向，并拆分为亮侧补偿与暗部回填信号。 |
 | [basic-lighting-models.md](../data/basic-lighting-models.md) | #graphics #shader #knowledge #rendering | 📘 有效 | Lambert、Phong、Blinn-Phong 是理解实时光照的基础模型，分别覆盖漫反射和经典镜面高光近似。 |
 | [bd-log-throttle.md](../data/bd-log-throttle.md) | #unity #experience #editor #behavior-designer | ✅ 已验证 | BD 节点日志频率控制 {#bd-log-throttle} |
 | [bd-showif-workaround.md](../data/bd-showif-workaround.md) | #unity #experience #editor #behavior-designer | ✅ 已验证 | BD 节点条件显示的替代方案 {#bd-showif-workaround} |
