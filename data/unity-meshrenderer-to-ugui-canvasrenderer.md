@@ -3,14 +3,14 @@
 **标签**：#unity #ui #ugui #urp #rendering #experience #troubleshooting
 **来源**：项目实践总结 + 外部调研（Unity 官方文档、开源库 LuisDevYT/UIMeshRenderer）
 **收录日期**：2026-06-25
-**更新日期**：2026-06-26
+**更新日期**：2026-07-07
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐（实践验证 + 官方文档佐证）
 **适用版本**：Unity 2022.3 / URP 14
 
 ### 概要
 
-把普通 3D 模型（MeshRenderer）直接渲染到 UGUI Canvas 上、作为 UI 元素参与界面，本质就是 `CanvasRenderer.SetMesh` + 关闭原 MeshRenderer + 设置材质；但**真正的坑在"模型单位→UI像素的尺度转换"**——少了它模型会被缩成亚像素而"看不见"。本记录沉淀可行路线、关键坑、踩过的反面教训与路线边界。
+把普通 3D 模型（MeshRenderer）直接渲染到 UGUI Canvas 上、作为 UI 元素参与界面，本质就是 `CanvasRenderer.SetMesh` + 关闭原 MeshRenderer + 设置材质；但**真正的坑在"模型单位→RectTransform/Canvas 本地 UI 坐标的尺度转换"**——常见 CanvasScaler 配置下可近似理解为 UI 像素语境，少了它模型会被缩成亚像素而"看不见"。本记录沉淀可行路线、关键坑、踩过的反面教训与路线边界。
 
 ### 内容
 
@@ -22,9 +22,9 @@
 3. 把 `Mesh` 喂给 `CanvasRenderer.SetMesh`，并 `SetMaterial`。
 
 **但必须补一个不显眼却致命的步骤——坐标尺度转换**：
-- 模型 `Mesh` 顶点是**模型单位**（一个球包围盒可能才 0.89）。
-- `CanvasRenderer` 把顶点当作 **UI 像素坐标**（rect 动辄 100px）。
-- 所以原封不动 `SetMesh(sharedMesh)`，模型只有约 0.89 像素 → **一个看不见的点**。
+- 模型 `Mesh` 顶点是**模型自身空间的单位**（一个球包围盒可能才 0.89，且 `Mesh.bounds` 不受 Transform 缩放影响）。
+- `CanvasRenderer` 使用的是 **RectTransform/Canvas 本地 UI 坐标体系**；在常见 CanvasScaler 设置下，这个体系经常近似表现为 UI 像素语境，但不是固定的“世界单位 ×100”规则。
+- 所以原封不动 `SetMesh(sharedMesh)`，模型可能只占约 0.89 个 UI 本地单位，在 100×100 这类 UI rect 中接近亚像素 → **看起来像完全没显示**。
 
 当前实践推荐 **每元素独立的自动 fit-to-rect**：每个 UI 元素只看自己的 `mesh.bounds` 和自己的 `RectTransform.rect`，用模型包围盒最长轴适配 rect 最短边，再乘 `fitScale` 做人工微调：
 
@@ -38,9 +38,9 @@ k = (rectMin / maxExtent) * fitScale;
 
 历史上还用过两种做法，应视为旧方案或特殊兜底：
 - **A. 读顶点 × 固定倍数 k 再 SetMesh**（k = sourceUnitsToUiUnits × fitScale，如 100 → 球 89px）。能解决"看不见"，但不同模型仍需手调魔数；当前已验证实践已用自动 fit-to-rect 替代。代价：mesh 需勾 **Read/Write**（`GetVertices/GetTriangles` 才能调用）。
-- **B. 直接 SetMesh 原 mesh，但把该 UI 元素的 `RectTransform.localScale` 设成 100**。不用读顶点、不需要 Read/Write，最省；但若后续需要重写顶点、透传法线/切线/UV 或做元素内居中，就不如显式构建 CanvasMesh 可控。
+- **B. 直接 SetMesh 原 mesh，但把该 UI 元素的 `RectTransform.localScale` 设成 100**。不用读顶点，改动最少；但按 Unity 官方文档，传入 `CanvasRenderer.SetMesh` 的 mesh 仍需开启 Read/Write。若后续需要重写顶点、透传法线/切线/UV 或做元素内居中，就不如显式构建 CanvasMesh 可控。
 
-> `CanvasRenderer.SetMesh` 本身不要求 mesh 可读；只有在 C# 里 `GetVertices` 读顶点才要 Read/Write。
+> Unity 官方文档对 `CanvasRenderer.SetMesh` 的要求是：传入的 Mesh 必须开启 Read/Write。若还要在 C# 中读取源 mesh 顶点并重建 CanvasMesh，源 mesh 也必须可读。
 
 #### 二、必须 vs 可选（容易过度设计）
 
@@ -60,11 +60,11 @@ k = (rectMin / maxExtent) * fitScale;
 
 解决：**override `UpdateMaterial()`**，用源材质（经 `GetModifiedMaterial` 以保留 Mask/RectMask2D stencil）设给 CanvasRenderer。`mainTexture` 从材质的 `_MainTex` 或 URP 的 `_BaseMap` 解析。
 
-#### 四、`Canvas.additionalShaderChannels`：法线/切线/UV1 默认会被丢
+#### 四、`Canvas.additionalShaderChannels`：额外顶点通道需按 Canvas 模式确认
 
-UGUI 合批时把 Canvas 下所有 UI 合并成一个大网格，每顶点默认只带 **Position/Color/UV0**；**Normal/Tangent/TexCoord1/2/3 默认被丢弃**（省带宽）。
+UGUI 合批时会把 Canvas 下 UI 合并成一个大网格。官方文档的默认通道规则是：Overlay Canvas 始终包含 **Position/Color/UV0**；Screen Space Camera 和 World Space Canvas 还会包含 **Normal/Tangent**。`TexCoord1/2/3` 等仍属于可选额外通道。
 
-所以即便你给 CanvasMesh 写了法线/切线/UV1，**若没开对应 `additionalShaderChannels`，合并阶段会被剥掉，到不了 shader**。带光照/法线贴图/菲涅尔（Fresnel = 法线·视线）类 shader 必须显式开：
+所以即便你给 CanvasMesh 写了法线/切线/UV1，**仍要按 Canvas 模式确认这些通道是否真的会进入合批后的 mesh**：Overlay 下法线/切线通常需要显式开启；UV1/UV2/UV3 需要用到时也应显式开启。带光照/法线贴图/菲涅尔（Fresnel = 法线·视线）或自定义 UV 数据的 shader，必须确认对应 `additionalShaderChannels`：
 ```csharp
 canvas.additionalShaderChannels |= AdditionalCanvasShaderChannels.Normal | Tangent | TexCoord1;
 ```
@@ -156,3 +156,5 @@ protected override void UpdateMaterial()
 - [2026-06-25] 初次记录，来源：项目实践（CanvasRenderer.SetMesh 路线，已实测基础可见性与子物体独立性）+ 外部调研（Unity 文档、开源库 README）。
 - [2026-06-26] 补充第四节：additionalShaderChannels 是 Canvas 级全局属性的约束说明、两档开关设计实践、UV2/UV3 透传为零导致 shader 参数失真的具体案例（pixelPositionOS via uv2.xyz）。
 - [2026-06-26] 修正缩放结论：固定 `sourceUnitsToUiUnits × fitScale` 仅作为历史方案；当前已验证实践采用每元素独立的自动 fit-to-rect，`k = (rectMin / maxExtent) × fitScale`，避免共享/合并 bounds 导致亚像素缩放和反向运动。
+- [2026-07-07] 外部复核修正：按 Unity 官方文档收窄“UI 像素坐标”为 RectTransform/Canvas 本地 UI 坐标语境；修正 `CanvasRenderer.SetMesh` 的 Mesh Read/Write 要求；补充 Overlay 与 Screen Space Camera / World Space Canvas 在默认 shader channel 上的差异。
+
