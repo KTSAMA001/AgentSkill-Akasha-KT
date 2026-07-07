@@ -1,6 +1,7 @@
 # URP Renderer Feature 开发要点
 
 **收录日期**：2026-01-31
+**更新日期**：2026-07-07
 **标签**：#shader #unity #experience #urp #srp-batcher #renderer-feature
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐ (实践验证)
@@ -24,15 +25,15 @@ Renderer Feature 是一系列对 **CommandBuffer 操作的集合**。它允许�
 
 ### 2. 为什么需要 Renderer Feature
 
-**URP 的限制**：同一个 Shader 中，输出到某一缓冲区的 Pass 只能有一个。
+**URP 默认主绘制的限制**：Forward Renderer 的默认 DrawObjectsPass 只会在一组受支持的 `LightMode` Pass 中选择并绘制，例如 `SRPDefaultUnlit`、`UniversalForward`、`UniversalForwardOnly`。自定义 `LightMode` 或额外 Pass 不会自动参与主绘制。
 
-**传统多 Pass 做法**（如描边）在 URP 中无法直接实现：
-```
-Pass 1: 渲染扩张后的背面 → 颜色缓冲区
-Pass 2: 渲染正面 → 颜色缓冲区  // URP 不支持！
+**传统多 Pass 的正确迁移方式**：URP 不是不能做多次绘制，而是需要通过 Render Objects / 自定义 RendererFeature 在合适的 `RenderPassEvent` 再次 `DrawRenderers`，并用 Pass 的 `LightMode` tag 选择额外 Pass。
+```shaderlab
+Pass 1: 主体 Pass，LightMode = UniversalForwardOnly，由 URP 默认管线绘制
+Pass 2: 描边 Pass，LightMode = RoleOutline，由 Render Objects / RendererFeature 额外绘制
 ```
 
-**解决方案**：使用 Renderer Feature 在指定渲染阶段添加新的 CommandBuffer
+**解决方案**：使用 Renderer Feature 在指定渲染阶段添加新的绘制 Pass；若只是统一材质高亮，可使用 `overrideMaterial`，若希望角色 Shader 自带描边上下文，则优先让角色 Shader 提供自定义 `LightMode` 的描边 Pass。
 
 ### 3. CommandBuffer 基本流程
 
@@ -137,5 +138,10 @@ public class MyRendererFeature : ScriptableRendererFeature
 }
 ```
 
+### 相关记录
+
+- [URP RenderFeature 使用 LightMode 筛选额外 Pass 的机制](./urp-renderfeature-lightmode-pass-filtering.md) - 补充说明 `ShaderTagId`、Render Objects `Pass Names` 与 ShaderLab `LightMode` / `Pass Name` 的边界。
+
 ### 验证记录
 - [2026-01-31] 从 Technical_Artist_Technotes 整理提取
+- [2026-07-07] 修正：收窄“URP 不支持传统多 Pass”的旧表述。准确边界是默认主绘制不会自动绘制任意额外 Pass；Render Objects / 自定义 RendererFeature 可通过 Pass 的 `LightMode` tag 额外绘制，从而实现 URP 下的多次绘制。
