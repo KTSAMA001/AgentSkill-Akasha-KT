@@ -4,7 +4,7 @@
 **来源**：AI 在 Godot 4 Bloom 算法对比项目中的实现与观察；Godot 官方文档与 ARM SIGGRAPH 2015 资料交叉验证
 **收录日期**：2026-06-02
 **来源日期**：2026-06-02
-**更新日期**：2026-06-02
+**更新日期**：2026-07-13
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐（AI 实践验证 + 官方文档佐证；4K 性能结论来自项目内 FPS 粗测与视觉观察，未做 GPU timestamp profile）
 **适用版本**：Godot 4.6.1 stable mono；Forward Plus；HDR 2D；Bloom 对比项目内 3840x2160 渲染预设
@@ -35,6 +35,16 @@ uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_l
 ```
 
 Godot 官方文档说明，屏幕纹理读取会使用 back-buffer copy；当 sampler 使用 mipmap filter 时，Godot 会自动计算模糊 mipmap。因此 Fast Mipmap 不是零成本路径，它把一部分模糊成本交给屏幕纹理拷贝和 mip 生成路径。
+
+这里要区分“采样多个 mip LOD”和“执行多个渲染 Pass”：当前 Fast Mipmap 实现在同一个全分辨率 Fragment Pass 中执行多次 `textureLod`，读取已经准备好的 mip 层级；它本身不是多 Pass，但在该 Pass 之前仍有屏幕复制和 mip 链生成成本。
+
+逐帧运行顺序：
+
+1. 场景先渲染到当前 `RenderViewport`。
+2. 首个使用 `hint_screen_texture` 的 2D 节点触发当前屏幕到 back buffer 的全屏复制。
+3. `filter_linear_mipmap` 使 Godot 为这份 screen texture 准备模糊 mip 链。
+4. Bloom 全屏 Fragment Pass 在每个输出像素读取 `LOD 0` 原图和多个较高 LOD，分别提取亮部并加权。
+5. 当前 Pass 直接输出 `base + bloom`，不再经过显式的逐级升采样链。
 
 当前实现的亮部提取函数：
 
@@ -83,6 +93,22 @@ Dual Kawase 路线的核心是将亮部能量写入多级低分辨率 RT，再�
 4. Final compose：全分辨率读取原图与半分辨率 Bloom 纹理，完成最终合成。
 
 关键设计点是：Dual 分支只 blit 当前纹理，不会每一级重复渲染火焰场景。
+
+逐帧读写关系：
+
+| 阶段 | 主要输入 | 输出 | 输出分辨率 |
+|---|---|---|---|
+| Scene | 场景几何与材质 | `source` | `1x` |
+| Down 0 | `source`，同时提取亮部 | `down[0]` | `1/2 x 1/2` |
+| Down 1 | `down[0]` | `down[1]` | `1/4 x 1/4` |
+| Down 2 | `down[1]` | `down[2]` | `1/8 x 1/8` |
+| Down 3 | `down[2]` | `down[3]` | `1/16 x 1/16` |
+| Up 2 | `down[3]` + 同分辨率 `down[2]` | `up[2]` | `1/8 x 1/8` |
+| Up 1 | `up[2]` + 同分辨率 `down[1]` | `up[1]` | `1/4 x 1/4` |
+| Up 0 | `up[1]` + 同分辨率 `down[0]` | `up[0]` | `1/2 x 1/2` |
+| Composite | `source` + `up[0]` | 最终画面 | `1x` |
+
+因此，Down 链除第一层外都读取上一层低分辨率 RT；Up 链不只是读取上一层 Up 结果，还通过 `base_texture` 混合同分辨率 Down 结果。每一级都不重绘场景，但仍会产生对应 RT 的纹理读取、写回和 Render Target 切换成本。
 
 Downsample pass：
 
@@ -166,10 +192,12 @@ Dual Kawase 近似成本：
 - Down output pixels：`1920x1080 + 960x540 + 480x270 + 240x135`，约 `2.75M` 像素。
 - Up output pixels：`480x270 + 960x540 + 1920x1080`，约 `2.72M` 像素。
 - Final compose：`3840x2160`，约 `8.29M` 像素。
-- 总 shaded pixels 约 `12.77M`，pass 数更多，但大部分发生在低分辨率。
+- 总 shaded pixels 为 `2.75M + 2.72M + 8.29M`，约 `13.77M`；此前记录中的 `12.77M` 是加总错误。Pass 数更多，但除最终合成外的模糊扩散主要发生在低分辨率。
 - 如果按当前 shader tap 粗估，最终 full-res composite 是主要成本之一。
 
 因此，“Pass 更多”不等于一定明显更慢。Dual Kawase 的多数模糊扩散工作发生在低分辨率 RT；Fast Mipmap 虽然 pass 少，但仍是全分辨率 pass，并且依赖屏幕纹理拷贝与 mip 生成。
+
+更完整的近似成本模型是：`输出像素数 x 每像素纹理采样数 x 单次采样字节量 + RT 写回 + RT 切换/同步 + 数据准备成本`。其中 Fast Mipmap 的数据准备包括 screen texture copy 和 mip 生成；Dual Kawase 的额外成本包括多级 RT 写回、切换与最终全分辨率合成。仅比较 Pass 数或 shaded pixels 都不能直接得出谁更快，最终仍应使用 GPU timestamp 或平台 GPU profiler 验证。
 
 #### 本次实践观察
 
@@ -213,3 +241,4 @@ AI 在当前 Godot Bloom 对比项目中观察到：
 ### 验证记录
 
 - [2026-06-02] 初次记录。来源为 AI 在 Godot 4 Bloom 对比项目中的实现、代码阅读和 4K 预设观察；用户确认实践主体应表述为 AI 实践而非用户亲自操作。已与 Godot 官方 screen texture 文档、SubViewport 文档和 ARM SIGGRAPH 2015 mixed-resolution / Dual filtering 资料交叉验证。性能结论限定为 FPS 粗测与视觉观察，未做 GPU timestamp profile。
+- [2026-07-13] 修正：4K Dual Kawase 总 shaded pixels 从误写的 `12.77M` 更正为约 `13.77M`；补充 Fast Mipmap 的屏幕复制、mip 生成与单 Pass 多 LOD 采样边界，以及 Dual Kawase 各级 RT 的逐帧读写关系和完整成本模型。
