@@ -2,6 +2,7 @@
 
 **收录日期**：2026-02-07
 **来源日期**：2024-08-08
+**更新日期**：2026-07-13
 **标签**：#shader #unity #experience #urp #srp-batcher #renderer-feature
 **来源**：Unity_URP_Learning
 **状态**：✅ 已验证
@@ -21,6 +22,8 @@ URP 不支持内置管线的 `GrabPass`，需要在后续 Shader 中读取当前
 ### 1. 使用 RenderFeature 抓取颜色缓冲
 
 创建 `GrabColorRenderPassFeature`，在合适时机将相机颜色缓冲 Blit 到全局纹理 `_KTGrabTex`。
+
+这里的 `_KTGrabTex` 不是“最终屏幕截图”，而是指定 `renderPassEvent` 时刻的相机颜色缓冲快照。只有在该抓取 Pass 之后渲染的 Shader，才能读取到这次抓取结果；在它之前渲染的对象不会自动受影响。
 
 ### 2. 核心代码
 
@@ -56,6 +59,8 @@ else
 
 ### 4. 在 Shader 中使用
 
+后续 Shader 应使用屏幕空间 UV 采样 `_KTGrabTex`。不要把模型自身的普通 UV 误当成屏幕 UV；折射、热扭曲、屏幕空间描边等效果通常需要由裁剪空间/屏幕坐标推导采样坐标。
+
 ```hlsl
 TEXTURE2D(_KTGrabTex);
 SAMPLER(sampler_KTGrabTex);
@@ -73,6 +78,9 @@ half4 frag(Varyings i) : SV_Target
 - `SetupRenderPasses` 中获取 `renderer.cameraColorTargetHandle`
 - 必须在 `Dispose` 中释放 RTHandle
 - `renderPassEvent` 应在 `AfterRenderingSkybox` / `AfterRenderingOpaques`
+- `_KTGrabTex` 代表抓取时刻的 camera color，不代表最终 BackBuffer
+- 采样时使用屏幕空间 UV；RTHandle、动态分辨率、XR 或非全屏 viewport 下需要考虑 UV scale / viewport scale
+- Camera Stack、Scene View / Game View、多相机渲染时要避免多个相机共用同一个 RTHandle 导致互相覆盖
 
 **参考链接**：
 
@@ -80,6 +88,7 @@ half4 frag(Varyings i) : SV_Target
 
 ### 验证记录
 - [2026-02-07] 从 Unity_URP_Learning 仓库整合
+- [2026-07-13] 补充：明确 GrabColor 是指定 RenderPassEvent 时刻的 camera color 快照，并补充屏幕空间 UV、RTHandle/动态分辨率、多相机场景下的采样边界
 
 **相关经验**：
 
