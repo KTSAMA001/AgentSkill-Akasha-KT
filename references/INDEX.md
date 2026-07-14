@@ -141,7 +141,7 @@
 | [serialize-reference-usage.md](../data/serialize-reference-usage.md) | #unity #csharp #serialization #experience | ✅ 已验证 | 使用 `[SerializeReference]` 特性实现接口或抽象类的多态序列化，支持在 Inspector 中配置不同类型的实现。 |
 | [shader-debug-alpha-srgb-encoding-pitfall.md](../data/shader-debug-alpha-srgb-encoding-pitfall.md) | #shader #urp #color-space #experience #graphics #unity | ✅ 已验证 | 在 Shader 中用 `return alpha` 调试纹理 A 通道时，屏幕取色器读到的值与纹理预览值不一致。这是因为 A 值被灌入了 RGB 通道输出，而 RGB 会被 sRGB Back Buffer 的硬件编码"提亮"。用 `pow(a, 2.2)` 预补偿在暗部会失效，因为 sRGB 编码函数在低值区使用的是线性段而非幂函数。此外，**DXT5/ASTC 纹理压缩**会改变实际 alpha 值，进一步加剧暗部数值偏差。 |
 | [shader-effects-techniques.md](../data/shader-effects-techniques.md) | #shader #experience #effects | ✅ 已验证 | 具体特效实现相关经验 |
-| [shader-normal-space-transformation.md](../data/shader-normal-space-transformation.md) | #graphics #shader #math #knowledge | 📘 有效 | 法线（Normal）是方向向量（co-vector），不能直接用模型矩阵变换，必须使用**逆转置矩阵**（inverse transpose）。位置和方向向量则直接使用模型矩阵或其逆矩阵。 |
+| [shader-normal-space-transformation.md](../data/shader-normal-space-transformation.md) | #graphics #shader #math #knowledge | 📘 有效 | 法线在代码中通常用三维向量存储，但它表达的是“与表面切平面垂直”这一约束，在线性变换下应按余向量（co-vector）的规则处理。模型矩阵含非均匀缩放或剪切时，法线必须使用**逆转置矩阵**（inverse transpose），否则会失去与变换后表面的垂直关系。 |
 | [shader-optimization-hlsl.md](../data/shader-optimization-hlsl.md) | #shader #experience #hlsl #performance | ✅ 已验证 | Shader 性能优化相关经验 |
 | [shader-stage-vertex-fragment.md](../data/shader-stage-vertex-fragment.md) | #graphics #shader #knowledge #rendering-pipeline #hlsl | 📘 有效 | 顶点着色器负责逐顶点处理和空间变换，片元着色器负责逐片元计算最终颜色；二者之间通过可插值数据连接。 |
 | [shader-variants-compile.md](../data/shader-variants-compile.md) | #shader #experience #hlsl #shader-variants | ✅ 已验证 | HLSL 着色器语言相关经验 |
