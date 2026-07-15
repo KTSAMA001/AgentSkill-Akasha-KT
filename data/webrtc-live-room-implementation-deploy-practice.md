@@ -4,10 +4,10 @@
 **来源**：实践总结（已脱敏）
 **收录日期**：2026-06-29
 **来源日期**：2026-06-28
-**更新日期**：2026-06-29
+**更新日期**：2026-07-16
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐（本地实现 + 公网部署 + 多端实测）
-**适用版本**：Node.js 18+ / 原生 WebSocket / Browser WebRTC mesh / Nginx HTTPS 反向代理 / PM2 / coturn
+**适用版本**：Node.js 18+ / 原生 WebSocket / Browser WebRTC mesh / Nginx HTTPS 反向代理 / PM2 / coturn；HDR/WCG 转 SDR 路径要求现代浏览器支持 `VideoFrame` 色彩元数据与 `canvas.captureStream()`
 
 ### 概要
 
@@ -111,17 +111,23 @@
 
 #### HDR 问题处理阶段
 
-HDR 过曝的根因在捕获侧，而不是观众端播放或 CSS 滤镜。
+HDR 过曝的根因仍在捕获和色彩转换链路，而不是观众端 CSS。旧方案把“`getDisplayMedia` 没有 HDR 约束”直接等同于“必须阻止 HDR 环境共享”，适用范围过窄，需要修正。
 
-实践中尝试过“兼容 HDR”的方向，但最终结论是：浏览器 `getDisplayMedia` 没有可靠的 HDR 转 SDR tone mapping 约束。如果 Windows HDR 或游戏 HDR 输出在浏览器捕获时已经过曝/裁剪，WebRTC 发送后无法恢复高光细节。
+当前更准确的结论分为两层：
 
-正确做法是：
+1. 纯浏览器 `getDisplayMedia + RTCPeerConnection` 不能承诺原生端到端 HDR。屏幕捕获规范没有用于强制 PQ/HLG、BT.2020、10-bit 编码或 HDR 元数据透传的约束。
+2. 浏览器仍可做 HDR/WCG 来源兼容：直播端探测 `VideoFrame.colorSpace`，识别 PQ/HLG、BT.2020 或广色域来源，把捕获帧绘制到显式 sRGB 的 canvas，再通过 `canvas.captureStream()` 生成 SDR 视频轨道并保留原始音轨。WebRTC 只发送该标准化后的 SDR 流，观众端无需滤镜。
 
-- 删除误导性的 HDR 兼容开关、滤镜和 canvas SDR 转换补丁。
-- 在 Windows + 高动态范围显示环境下阻止开始共享。
-- 明确提示主播先关闭 Windows HDR 和游戏 HDR，刷新页面后再共享。
+这条路径的目标是“主播可以运行和捕获 HDR 游戏，观众看到正常 SDR”，而不是“观众收到原生 HDR”。实现必须在界面和信令元数据中明确标记 `HDR -> SDR`，避免把兼容转换误称为 HDR 推流。
 
-这类问题应修根因，不应通过观众端滤镜掩盖。
+边界条件：
+
+- 如果操作系统或浏览器在 `getDisplayMedia()` 返回前已经把高光裁剪，后续 canvas 转换无法恢复丢失细节。
+- `VideoFrame.colorSpace` 不可用、元数据为空或 `canvas.captureStream()` 不可用时，只能采用浏览器自身转换并给出降级提示，不能声称已完成 HDR 标准化。
+- canvas 转换会增加一次合成和重新采集成本，需要结合捕获 FPS、编码 FPS、CPU 限制原因和长时间直播统计观察性能。
+- 真实 HDR 游戏、HDR 显示器、浏览器捕获和公网观众端的端到端真机验证仍待完成；当前仅验证了合成 HDR/WCG 输入的识别、sRGB SDR 输出轨道和 WebRTC sender loopback。
+
+因此，不再使用“检测到 HDR 就一律阻止共享”的旧方案，也不在观众端用亮度/对比度滤镜掩盖问题。若真机证明捕获前已裁剪，主播仍需关闭系统或游戏 HDR，或改用原生采集组件。
 
 #### 本地验证阶段
 
@@ -267,7 +273,7 @@ pm2 logs <pm2-process> --lines 20 --nostream
 | 手机一直同步中 | 没有可用 TURN relay | 开放 TURN 端口并用 relay-only 测试验证。 |
 | 开了共享音频但观众听不到 | 主播实际没有采集到 audio track | 根据实际 audio track 提示，不相信 checkbox。 |
 | Chrome 选择程序窗口无反应 | 程序窗口捕获路径超时 | 提供兼容捕获模式和整屏 fallback。 |
-| HDR 画面过曝 | 捕获侧已裁剪高光 | 阻止 HDR 环境共享，要求先关闭系统和游戏 HDR。 |
+| HDR 画面过曝 | 捕获链路缺少可靠色彩标准化，或捕获前已裁剪高光 | 优先在直播端探测色彩元数据并转换为 sRGB SDR；若输入帧已裁剪则提示关闭系统/游戏 HDR 或使用原生采集。 |
 | PC 端下方大片空白 | joined 状态 grid 行数未折叠 | 加入后把 shell grid 改为顶部栏 + 工作区。 |
 
 #### 架构边界
@@ -278,7 +284,7 @@ pm2 logs <pm2-process> --lines 20 --nostream
 - 无持久化消息和离线历史。
 - PM2 重启会丢失房间状态。
 - mesh 下主播上行约等于单观众码率乘以观众数。
-- 浏览器系统音频、HDR 捕获、自动播放仍受平台策略限制。
+- 浏览器系统音频、原生 HDR 透传、自动播放仍受平台策略限制；HDR/WCG 转 sRGB SDR 仅是兼容路径。
 - 多人高码率观看应迁移到 SFU，如 LiveKit、mediasoup 或 Janus。
 
 最终经验：WebRTC 群聊直播项目的完成标准必须是公网双端真实观看成功，包含 HTTPS、WebSocket、TURN、ICE、track unmute、video frame、audio track 和移动端验证。只看到 PM2 online 或 `/health` 返回 ok，不能宣称部署完成。
@@ -313,6 +319,44 @@ async function applySenderLimits(sender, bitrate, maxFramerate) {
 }
 ```
 
+#### HDR/WCG 到 SDR 输出管线核心
+
+```javascript
+async function normalizeCaptureToSdr(sourceStream, preset) {
+  const probe = await probeCaptureColorSpace(sourceStream);
+  if (!shouldNormalizeCaptureColor(probe.colorInfo)) {
+    probe.cleanup();
+    return { stream: sourceStream, normalization: "browser-managed" };
+  }
+
+  // 设计意图：色彩转换只发生在直播端，观众收到统一的 sRGB SDR 流；
+  // 原始音轨直接复用，避免 canvas 视频重采集破坏共享音频。
+  const canvas = document.createElement("canvas");
+  canvas.width = probe.video.videoWidth;
+  canvas.height = probe.video.videoHeight;
+  const context = canvas.getContext("2d", { colorSpace: "srgb" });
+  let callbackId = 0;
+  const drawFrame = () => {
+    const frame = new VideoFrame(probe.video);
+    context.drawImage(frame, 0, 0, canvas.width, canvas.height);
+    frame.close();
+    callbackId = probe.video.requestVideoFrameCallback(drawFrame);
+  };
+  drawFrame();
+
+  const output = canvas.captureStream(preset.fps);
+  sourceStream.getAudioTracks().forEach((track) => output.addTrack(track));
+  return {
+    stream: output,
+    normalization: "hdr-to-sdr",
+    cleanup() {
+      probe.video.cancelVideoFrameCallback(callbackId);
+      probe.cleanup();
+    },
+  };
+}
+```
+
 #### Nginx WebSocket 反代模板
 
 ```nginx
@@ -344,6 +388,10 @@ pm2 restart <pm2-process> --update-env
 ### 参考链接
 
 - [MDN MediaDevices.getDisplayMedia](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia) - 屏幕捕获 API、安全上下文、用户授权和异常边界。
+- [W3C Screen Capture](https://www.w3.org/TR/screen-capture/) - 屏幕捕获可约束属性；当前规范未定义 HDR 动态范围或色彩空间强制约束。
+- [W3C WebCodecs](https://www.w3.org/TR/webcodecs/) - `VideoFrame` 色彩元数据，以及渲染到目标时进行兼容色彩空间转换的要求。
+- [MDN VideoFrame.colorSpace](https://developer.mozilla.org/en-US/docs/Web/API/VideoFrame/colorSpace) - 浏览器侧读取视频帧色彩空间元数据。
+- [MDN HTMLCanvasElement.captureStream](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/captureStream) - 从标准化后的 canvas 生成实时视频轨道。
 - [MDN RTCRtpSender.setParameters](https://developer.mozilla.org/en-US/docs/Web/API/RTCRtpSender/setParameters) - WebRTC sender 编码参数、码率和帧率控制。
 - [Nginx WebSocket proxying](https://nginx.org/en/docs/http/websocket.html) - WebSocket 反向代理需要显式传递 Upgrade/Connection。
 - [PM2 Process Management](https://pm2.keymetrics.io/docs/usage/process-management/) - PM2 进程启动、重启和 `--update-env` 语义。
@@ -362,5 +410,9 @@ pm2 restart <pm2-process> --update-env
 - [2026-06-29] 本地查重：阿卡西 `data/*.md` 中未发现浏览器群聊直播 PoC、WebRTC mesh、TURN 公网观看、观众画质请求、HDR 捕获阻断的专项记录；仅发现 PM2/Nginx/宝塔/服务器操作/HDR 色彩等相邻记录，已在“相关记录”中引用。
 - [2026-06-29] 外部核对：MDN `getDisplayMedia`、MDN `RTCRtpSender.setParameters`、Nginx WebSocket proxying、PM2 Process Management 与本次实践结论一致。
 - [2026-06-29] 脱敏审查：原始实践涉及真实公网域名、服务器 IP、远端目录、本机绝对路径和 PM2 进程名；正式记录已替换为 `<public-domain>`、`<server-ip>`、`<app-root>`、`<local-project>`、`<pm2-process>`、`<app-subpath>` 等占位符，不写入可直接定位个人资产的信息。
+- [2026-07-16] 正确性与时效性修正：废止“检测到 HDR 环境就一律阻止共享”的旧结论。W3C Screen Capture 仍未提供原生 HDR 约束，但 W3C WebCodecs 明确了 `VideoFrame` 色彩元数据与渲染目标色彩转换语义，因此采用直播端 HDR/WCG 探测、sRGB canvas 标准化、WebRTC 发送 SDR 输出的兼容路径。
+- [2026-07-16] 验证范围：已通过合成 HDR/WCG 输入验证 `hdr-to-sdr` 分支、sRGB/SDR 输出元数据、存活的视频轨道和 WebRTC sender loopback；尚未完成真实 HDR 游戏、HDR 显示器、浏览器捕获与公网观众端的真机端到端测试，该部分不得表述为原生 HDR 推流或完整实测通过。
+- [2026-07-16] 本地查重与外部核对：阿卡西命中本记录及 ACES/色彩空间相邻记录，没有第二条浏览器 HDR 屏幕直播专项记录；W3C Screen Capture、W3C WebCodecs、MDN `VideoFrame.colorSpace` 和 `canvas.captureStream()` 与修正后的能力边界一致。
+- [2026-07-16] 脱敏复审：新增内容只保留通用 API、格式名、测试层级与占位化架构边界，未写入真实域名、IP、账号、凭据、绝对路径、内部进程名或个人信息。
 
 ---
