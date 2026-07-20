@@ -1,83 +1,142 @@
 # 3ds Max 到 Unity 的平滑组与 BlendShape 法线异常排查
 
 **标签**：#unity #3dsmax #fbx #experience #troubleshooting
-**来源**：实践总结 - 3ds Max、FBX 与 Unity 对照实验
+**来源**：实践总结 - 3ds Max、FBX 二进制数据与 Unity Mesh 对照实验，并结合 Unity / Autodesk 官方资料复核
 **收录日期**：2026-07-17
 **来源日期**：2026-07-17
+**更新日期**：2026-07-20
 **状态**：✅ 已验证
-**可信度**：⭐⭐⭐⭐（本地对照实验验证）
-**适用版本**：3ds Max 2020、FBX Exporter 2019.2、Unity 2022.3 LTS
+**可信度**：⭐⭐⭐⭐（本地文件与下游 Mesh 交叉验证，并由官方资料佐证）
+**适用版本**：3ds Max 2020、FBX Exporter 2019.2 / 2020.x、Unity 2022.3 LTS
 
 ### 概要
 
-当带有 Morph/BlendShape 的低多边形模型导入 Unity 时，可能出现两种看似矛盾的结果：启用 `Legacy Blend Shape Normals` 后造型符合预期但提示“mesh has no smoothing groups”，关闭 Legacy 后警告消失，表情变形时部分硬面却看起来被平滑。本次实测确认，根因是源网格没有有效平滑组数据，导致 Unity 无法稳定地为基础网格与 BlendShape 使用同一套硬边边界；正确做法是在 3ds Max 中实际编码平滑组，并让 FBX 导出和 Unity 导入设置保持一致。
+带 Morph/BlendShape 的低多边形模型导入 Unity 后，可能出现“基础姿态正常、变形时硬面明暗异常”，或“Legacy 模式视觉正常但提示缺少平滑组”。直接审计源 MAX、FBX 二进制数组和 Unity 最终 Mesh 后确认：基础法线、BlendShape 法线差量和平滑边界是三类独立数据；当 FBX 只有可用的基础法线，却没有与之匹配的 Shape 法线时，`Import / Import` 会触发 FBX SDK 回退并产生错误法线差量。稳定方案是让基础网格与 BlendShape 使用同一套计算规则，或保证 DCC 真正导出了匹配的基础/Shape 法线和有效平滑组。
 
 ### 内容
 
 #### 问题表现
 
-测试对象是一个使用 Skin 与 Morph 的低多边形头部网格。基础姿态外观正常，但将某个表情 BlendShape 从 0 调到 100 后，额头、嘴角等区域的硬面明暗发生变化，看起来像被平滑。
+测试对象是使用 Skin 与 Morph 的低多边形测试网格。基础姿态外观正常，但某些变形通道权重从 0 调到 100 后，局部折面明暗发生异常变化，看起来像被平滑或法线方向呆滞。
 
-Unity 中观察到两组现象：
+常见现象包括：
 
-- 启用 `Legacy Blend Shape Normals`：低多边形外观符合预期，但每个 BlendShape 都可能出现 `Can't generate normals ... mesh has no smoothing groups` 警告。
-- 关闭 Legacy：可以不出现上述旧版警告，但在缺少有效平滑组时，Unity 可能按夹角或回退规则重新计算变形法线，使原本需要断开的硬边发生平均。
-- 将基础网格法线设为 `Calculate`、BlendShape 法线设为 `Import` 时，两种策略不一致，Unity 会提示它将改为重新计算 BlendShape 法线。
+- `Legacy Blend Shape Normals` 开启时，Low Poly 外观符合预期，但 Console 报告 `mesh has no smoothing groups`。
+- Legacy 关闭且基础/BlendShape 法线都设为 `Import` 时，警告消失，但变形后的法线严重偏离几何。
+- 基础法线设为 `Calculate`、BlendShape 法线设为 `Import` 时，Unity 为每个 Shape 警告并改为重新计算。
+- `Normals=Import + Blend Shape Normals=Calculate` 在极限权重可能看起来正确，但中间权重仍可能因两套基准不一致而出现插值伪影。
+
+#### BlendShape 法线的数据原理
+
+BlendShape 不只保存位置变化，也可以保存法线变化。简化表达为：
+
+```text
+位置：P(w) = P0 + w × ΔP
+法线：N(w) = normalize(N0 + w × ΔN)
+```
+
+- `P0` / `N0`：基础姿态的位置和法线。
+- `ΔP`：形态键位置差量。
+- `ΔN`：形态键法线差量。
+- `w`：形态键权重。
+
+Unity 运行时通常使用导入阶段生成的 `ΔN`，不会因为顶点位置变化而自动按所有三角形重新计算法线。因此：
+
+- `ΔP` 正确、`ΔN` 错误：轮廓和变形动作正常，但明暗、高光或 Low Poly 折面异常。
+- `ΔN = 0`：法线停留在基础姿态；可能仍显得“很 Low Poly”，但并未严格跟随变形几何。
+- `N0` 与 `ΔN` 由不同算法生成：权重 0 或 100 可能看似正常，中间权重仍可能错误。
+
+#### 直接文件审计确认的根因
+
+本次对源场景、原始 FBX、补平滑组后的场景副本和对应 FBX 分层审计，得到以下事实：
+
+1. 源 MAX 的测试网格包含 Skin、Morph 和多个变形通道；所有面平滑组均为 0。
+2. 在 3ds Max 中把 Morph 权重调到 100 后，几何位置和视口计算出的面角法线都会变化，说明 Morph 本身没有锁死法线。
+3. 原始 FBX 有基础网格法线，但完全没有 Smoothing Layer。
+4. 原始 FBX 的多个 Shape 节点虽然包含 Normal 数组，但所有 Shape Normal 数值均为 0，即不存在可直接使用的法线差量。
+5. 给源网格写入有效平滑组并重新导出后，FBX 出现 Smoothing Layer，Shape 中也出现非零法线差量。
+6. 仅“补平滑组并导出”仍不能保证 Unity 2022.3 的现代 `Import / Import` 路径正确；测试中的修复 FBX 在该组合下仍出现错误，而一致的 `Calculate / Calculate` 路径稳定。
+
+因此，不能把问题简单归因于 Skin 或 Morpher。直接根因是：原始 FBX 没有可用的 Shape 法线，也没有供下游重建硬边关系的平滑组；Unity 的 Import 路径只能调用 FBX SDK 回退计算，而回退算法与基础网格法线不一致。
+
+#### 为什么 Import / Import 无警告却会异常
+
+`Normals=Import` 使用 FBX 中的基础法线；`Blend Shape Normals=Import` 希望使用 FBX 中的 Shape 法线。如果 Shape 没有可用法线，Unity 2022.3 会让 FBX SDK 自行生成。
+
+FBX SDK 生成 Shape 法线的方法可能与基础法线来源不同，于是导入后得到错误的非零 `ΔN`。这条现代 Import 路径可能不报告警告，所以“没有警告”不能证明法线数据正确。
+
+官方 Issue 也确认过：当 BlendShape 没有有效法线时，FBX SDK 生成的结果可能与基础网格计算方式不同，形成非零差量和可见伪影；另有 Issue 记录部分 FBX 的 BlendShape 法线在 Import 模式下会损坏。
+
+#### 为什么 Legacy 表现正常却仍有警告
+
+Legacy 打开后，Inspector 会隐藏 `Blend Shape Normals`。隔离测试确认，被隐藏的旧值不会影响结果，真正起作用的是基础 `Normals`：
+
+- `Legacy + Normals=Calculate`：旧路径会因缺少平滑组报告警告，但最终法线数据与现代 `Calculate / Calculate` 基本一致，因此可以出现“视觉正确但有警告”。
+- `Legacy + Normals=Import`：缺少平滑组时可能生成 `ΔN=0`，让形态键继续使用基础姿态法线；这可能保持硬朗的 Low Poly 明暗，但法线并未正确跟随几何。
+- 补齐有效平滑组后，Legacy 可完成旧式重建并消除对应警告，但它仍是兼容路径，不应作为新资产规范的首选。
+
+警告描述的是 Legacy 尝试使用缺失平滑组的分支失败，不等于最终 Mesh 一定没有可用法线。反过来，没有警告也不等于 Import 出来的 `ΔN` 正确。
+
+#### Unity 法线配置组合的实际作用
+
+| Normals | Blend Shape Normals | 实际作用 | 风险与适用性 |
+|---|---|---|---|
+| Import | Import | 基础法线和 Shape 法线都取自 FBX；Shape 法线缺失时由 FBX SDK 回退生成 | 只有 FBX 同时包含匹配的基础/Shape 法线且下游验证通过时才可靠；本例异常 |
+| Import | Calculate | 基础法线来自 DCC，Shape 法线由 Unity 计算 | 两套基准可能不一致；Unity 2022.3 的中间权重存在已知风险，不作为稳定规范 |
+| Calculate | Import | 基础法线由 Unity 计算，却要求导入 Shape 法线 | Unity 会逐 Shape 警告并强制改为重新计算；结果近似 Calculate/Calculate，但不应保留这种配置 |
+| Calculate | Calculate | 基础与 Shape 使用相同 Unity 算法 | 本例最稳定，推荐 |
+| Import | None | 导入基础法线，Shape `ΔN=0` | 形变时法线冻结 |
+| Calculate | None | 计算基础法线，Shape `ΔN=0` | 形变时法线冻结 |
+| None | — | Mesh 不保存法线 | 仅适合不受实时光照影响的渲染路径 |
+
+基础姿态下，`Import` 与 `Calculate + From Angle 0°` 可能看起来非常接近，因为 FBX 基础法线本身就可能是逐面硬法线。但这不能推出 Shape 法线也可导入；基础 `N0` 正常与 `ΔN` 正常是两件事。
+
+#### Smoothness Source 和 Smoothing Angle
+
+Smoothness Source 决定“哪些边可以共享平滑法线”：
+
+| 设置 | 实际作用 |
+|---|---|
+| Prefer Smoothing Groups | FBX 有平滑组时使用平滑组，没有时回退到角度规则 |
+| From Smoothing Groups | 只使用 FBX 平滑组；文件没有平滑组时会警告或回退 |
+| From Angle | 忽略平滑组，按相邻面夹角决定硬边 |
+| None | 不根据硬边拆分法线，容易得到连续平滑结果 |
+
+`Smoothing Angle` 主要在 `From Angle` 下决定边界：
+
+- 0°：几乎所有非共面的边都保持硬边，适合全硬边 Low Poly 测试。
+- 角度升高：更多相邻面参与平滑，硬边拆分减少，外观趋向连续。
+- 180°：接近全部可连接面参与平滑，不适合需要明显折面的 Low Poly 资产。
+
+Unity 的 `Mesh.vertexCount` 可能明显高于 DCC 控制点数。法线硬边、UV 缝、材质、顶点色、蒙皮数据等都可能导致顶点拆分；不能只凭 Unity 顶点数判断源拓扑是否改变。
+
+#### Normals Mode
+
+Normals Mode 决定已经允许平滑的多个面如何平均法线，不负责定义硬边边界：
+
+- `Unweighted`：每个相邻面权重相同。
+- `Area Weighted`：面积大的面影响更大。
+- `Angle Weighted`：顶点角度大的面影响更大。
+- `Area and Angle Weighted`：同时考虑面积和角度。
+- `Unweighted Legacy`：旧算法，仅用于兼容旧资产。
+
+如果一条边已经是完全硬边，每个面使用独立法线，权重模式几乎不起作用。它主要改变平滑区域的高光与明暗过渡。
 
 #### 平滑组实际控制什么
 
-平滑组不是增加几何面数，也不会直接改变顶点位置。它描述相邻多边形之间是否共享平滑法线：
+平滑组不增加几何面数，也不直接改变顶点位置。它描述相邻多边形之间是否共享平滑法线：
 
-- 相邻面的平滑组位掩码有交集时，公共边可以参与法线平均，视觉上形成连续曲面。
-- 相邻面的平滑组位掩码没有交集时，公共边保持硬边，视觉上保留折面。
-- 所有面都为平滑组 0，表示 DCC 没有提供可供下游重建硬边关系的有效平滑组集合。FBX 导出窗口即使勾选“平滑组”，也不能凭空补出源模型中不存在的数据。
+- 相邻面的平滑组位掩码有交集时，公共边可以参与法线平均。
+- 位掩码没有交集时，公共边保持硬边。
+- 所有面都为平滑组 0，表示没有向下游提供可用于重建硬/软边关系的有效平滑组集合。
 
-对于需要保持全硬边的 Low Poly 模型，不必为每个面分配全局唯一的编号；只需保证共享边且需要保持硬边的相邻面使用互不相交的平滑组。互不相邻的面可以复用编号。
+Low Poly 全硬边不需要给每个面分配全局唯一编号；只需保证共享边且需要断开的相邻面没有共同平滑组。互不相邻的面可以复用编号。
 
-#### 根因定位过程
+FBX 导出窗口中的 `Smoothing Groups` 只是写出已有数据的开关，不会为平滑组 0 的源模型凭空生成正确分组。
 
-1. 固定 Unity Scene View 的观察角度、材质、灯光和 BlendShape 权重，对比 Legacy 开关前后的表现，排除 Game View 与 Scene View 视角不同造成的误判。
-2. 在 3ds Max 中检查基础 Editable Poly 的多边形平滑组，确认测试网格所有面均为平滑组 0。
-3. 对比静态网格、Skin 网格、显式法线网格及弯曲姿态，确认“添加 Skin 就必然丢失平滑组”不是本例的直接根因。
-4. 复制源场景，仅对测试头部写入有效平滑组；先以 1° 阈值执行 Auto Smooth，再检查并处理仍为 0 的面，使需要保持硬边的相邻面不共享平滑组。
-5. 重新保存场景并在新的 3ds Max 进程中加载，复核拓扑、Skin、Morph 和平滑组均未丢失。
-6. 导出新的 FBX，确认文件包含 Smoothing Layer 数据，同时保留 Skin、骨骼层级和 BlendShape。
-7. 在 Unity 中关闭 Legacy，使用一致的 Calculate/Calculate 策略重新导入。警告消失，BlendShape 保留，低多边形硬边在变形前后维持预期表现。
+#### 推荐方案 A：现有全硬边 Low Poly 资源
 
-#### 3ds Max 处理要点
-
-在基础网格层处理，而不是只在导出窗口中改设置：
-
-1. 选中目标网格，进入 Editable Poly 的“多边形”子对象级别。
-2. 全选多边形，在“多边形：平滑组”区域检查当前编号。
-3. 使用较小阈值的 Auto Smooth 作为起点；Low Poly 全硬边测试可从 1° 开始。
-4. 检查是否仍有未编码的平滑组 0 面。对于需要保持硬边的相邻面，分配互不相交的平滑组；非相邻面可以复用组号。
-5. 保持 Morpher 与 Skin 修改器及其依赖层级，不要为了处理平滑组而破坏顶点顺序或 BlendShape 拓扑一致性。
-6. 保存到新文件，避免覆盖源资产，并重新打开一次验证持久化结果。
-
-Auto Smooth 不是“执行后必然全部正确”的保证。最终判断依据是面上的实际平滑组数据和硬边关系，而不是按钮是否点击过。
-
-#### 已验证的 FBX 导出配置
-
-使用“导出选定对象”，包含目标网格及 Skin 所需的骨骼父级。关键配置如下：
-
-| 配置 | 值 |
-|---|---|
-| 格式 | Binary FBX |
-| 单位 | m |
-| Up Axis | Y |
-| Smoothing Groups | 开启 |
-| Tangents and Binormals | 关闭 |
-| Triangulate | 开启 |
-| Skin | 开启 |
-| Shape/Morph | 开启 |
-| Bake Animation | 关闭 |
-| Smooth Mesh/Subdivision | 关闭 |
-| Cameras / Lights / Embed Media | 关闭 |
-
-`Smoothing Groups` 是写出已有数据的开关，不是生成器。如果源网格仍全部为平滑组 0，仅开启该项无法解决问题。
-
-#### 已验证的 Unity 导入配置
+当现有 FBX 的基础逐面法线正常，但 Shape 法线不可用，且目标就是近似全硬边效果时：
 
 | 配置 | 值 |
 |---|---|
@@ -85,45 +144,101 @@ Auto Smooth 不是“执行后必然全部正确”的保证。最终判断依�
 | Normals | Calculate |
 | Blend Shape Normals | Calculate |
 | Normals Mode | Unweighted |
-| Smoothness Source | From Smoothing Groups |
-| Smoothing Angle | 1 |
-| Tangents | None |
+| Smoothness Source | From Angle |
+| Smoothing Angle | 0° |
+| Tangents | None（没有法线贴图时） |
 
-基础网格法线与 BlendShape 法线应采用配套策略。若一个设为 `Calculate`、另一个设为 `Import`，Unity 会回退到重新计算并产生额外警告，不能作为稳定的最终配置。
+该配置让基础姿态和 Shape 使用同一套 Unity 算法，并通过 0° 规则维持 Low Poly 硬边。它是现有错误 FBX 的稳定修复方案，但没有补齐 DCC 层的硬/软边语义。
 
-#### 为什么 Legacy 表现正常却仍有警告
+#### 推荐方案 B：正式修复资产
 
-警告表示旧版 BlendShape 法线生成流程需要平滑组，但 FBX 没有提供有效数据。在本次版本和资源组合中，失败后的回退结果恰好没有把 Low Poly 硬边重新平均，因此视觉上更接近预期；这只是失败路径的副作用，不代表输入数据完整，也不是可依赖的资产规范。
+在 3ds Max 中：
 
-因此不能把“看起来正常”当成“导入正确”。应同时满足：
+1. 在基础 Editable Poly 层为目标网格写入真实平滑组。
+2. 检查不应平滑的相邻面没有共同平滑组，且不存在遗漏的平滑组 0 面。
+3. 保持 Morph、Skin 及其拓扑依赖，不改变顶点顺序。
+4. 保存到新文件并重新打开验证持久化结果。
+5. 导出 FBX 时开启 Smoothing Groups、Skin 和 Shape/Morph。
 
-- Console 没有相关 FBX/BlendShape 法线警告。
-- BlendShape 从 0 到 100 的过程中，预期硬边没有发生异常明暗连续化。
-- 骨骼、Skin、BlendShape 数量和名称完整。
-- 相同视角、材质和光照条件下，对比原始姿态与极限表情。
+在 Unity 中：
+
+| 配置 | 值 |
+|---|---|
+| Legacy Blend Shape Normals | 关闭 |
+| Normals | Calculate |
+| Blend Shape Normals | Calculate |
+| Normals Mode | Unweighted |
+| Smoothness Source | From Smoothing Groups 或 Prefer Smoothing Groups |
+| Tangents | None（无切线空间法线贴图时） |
+
+这种方案把硬/软边边界作为美术资产的一部分写入 FBX，再由 Unity 用同一算法计算基础与 Shape 法线，适合长期资产规范。
+
+#### Import / Import 何时才适用
+
+只有同时满足以下条件时，才考虑 `Import / Import`：
+
+1. FBX 中基础网格和每个 Shape 都存在非零、语义正确的法线数据。
+2. 基础与 Shape 法线由同一 DCC 算法和同一硬/软边规则生成。
+3. Unity 导入后检查实际 `deltaNormals`，而不是只看 Inspector 无警告。
+4. 固定视角、材质与灯光，验证权重 0、50、100，而不是只看极限权重。
+5. 多个 BlendShape 同时叠加时也没有累计伪影。
+
+只补平滑组、只消除警告、或只验证基础姿态，都不足以证明 Import 路径正确。
+
+#### 已验证的 FBX 导出要点
+
+使用“导出选定对象”，包含目标网格及 Skin 所需骨骼父级。关键配置：
+
+| 配置 | 值 |
+|---|---|
+| 格式 | Binary FBX |
+| 单位 | 与项目约定一致 |
+| Up Axis | Y |
+| Smoothing Groups | 开启 |
+| Split Per-Vertex Normals | 关闭（除非面对旧 MotionBuilder 工作流） |
+| Tangents and Binormals | 无法线贴图时关闭 |
+| Triangulate | 开启或在 DCC 中固定三角化结果 |
+| Skin | 开启 |
+| Shape/Morph | 开启 |
+| Bake Animation | 无需动画时关闭 |
+| Smooth Mesh/Subdivision | 关闭 |
+| Cameras / Lights / Embed Media | 无需时关闭 |
+
+`Split Per-Vertex Normals` 会复制顶点并转换几何，Autodesk 将其定位为旧 MotionBuilder 硬边兼容流程，不应当作本问题的通用修复开关。
 
 #### 可复用排查清单
 
-1. 先区分位置变形异常和法线明暗异常，不要仅凭轮廓判断。
-2. 固定 Scene View 视角和光照，并分别检查 BlendShape 0、50、100。
-3. 检查源网格是否真的含有非零平滑组，而不是只看 FBX 导出勾选项。
-4. 检查 FBX 是否写出了 Smoothing Layer、Skin 和 BlendShape 数据。
-5. 保证 Unity 的基础法线与 BlendShape 法线策略一致。
-6. 清空 Console 后重新导入，避免旧警告干扰判断。
-7. 将静态、Skin、Morph、显式法线作为独立变量做对照，不要一次改变多个条件。
-8. 对修复后的 Max 文件重新打开验证，再导出 FBX，防止只在当前编辑器会话中暂时生效。
+1. 区分位置变形异常和法线明暗异常，不要只看轮廓。
+2. 固定 Unity Scene View 视角、材质和光照，分别检查权重 0、50、100。
+3. 在 3ds Max 中检查源面是否真的含有非零平滑组，而不是只看导出勾选项。
+4. 检查 Max 视口法线是即时计算结果，还是存在可导出的显式法线/Shape 法线。
+5. 直接检查 FBX 是否含 Smoothing Layer、基础 Normal 与 Shape Normal，并确认 Shape Normal 不是全零。
+6. 在 Unity 中读取 `Mesh.GetBlendShapeFrameVertices` 返回的 `deltaVertices` 和 `deltaNormals`，确认法线差量是否实际存在且方向合理。
+7. 保证基础法线与 BlendShape 法线使用一致策略。
+8. 清空 Console 后重新导入，避免旧警告干扰。
+9. 对修复后的 Max 文件重新打开验证，再导出 FBX，防止结果只存在于当前编辑器会话。
+10. 把静态、Skin、Morph、平滑组、显式法线和导入算法作为独立变量做对照。
 
 #### 结论边界
 
-本记录确认的是“源网格缺少有效平滑组时，Unity 的 BlendShape 法线计算无法稳定保持 Low Poly 硬边”这一具体链路。它不能推出所有蒙皮后法线异常都由平滑组造成；修改器顺序、显式法线、负缩放、镜像、拓扑变化和不同 FBX 插件版本仍需单独排查。
+本记录确认的是一条具体数据链：源网格缺少有效平滑组，FBX 又没有可用 Shape 法线时，Unity 的 BlendShape Import 路径可能生成与基础法线不一致的 `ΔN`；一致的 Calculate 路径可以稳定规避。
+
+它不能推出所有蒙皮或变形法线异常都由平滑组造成。修改器顺序、显式法线、负缩放、镜像、切线空间、拓扑变化、不同 FBX 插件版本和不同 Unity 版本仍需单独排查。FBX 文件也无法完整还原当时所有导出窗口选择，资产来源版本必须另行追溯。
+
+### 参考链接
+
+- [Unity 2022.3 Model Import Settings](https://docs.unity3d.com/2022.3/Documentation/Manual/FBXImporter-Model.html) - Normals、Blend Shape Normals、Smoothness Source 和 Tangents 的官方定义。
+- [Unity Issue 1160752](https://issuetracker.unity3d.com/issues/blenshape-normals-are-not-being-imported-correctly) - FBX SDK 在部分 BlendShape Normal Import 场景产生伪影，Legacy 可作为兼容回避路径。
+- [Unity Issue UUM-122300](https://issuetracker.unity3d.com/issues/blend-shape-normals-are-incorrect-for-fbx-files-when-normals-are-set-to-import-and-blend-shape-normals-are-set-to-calculate) - `Normals=Import + Blend Shape Normals=Calculate` 使用不一致基准生成差量的问题。
+- [Autodesk 3ds Max FBX Geometry](https://help.autodesk.com/cloudhelp/2024/ENU/3DSMax-Interoperability/files/GUID-249100FE-67BE-43B8-AF12-D20703CDF8D1.htm) - Smoothing Groups、Split Per-Vertex Normals、Tangents 和 Triangulate 的官方说明。
 
 ### 相关记录
 
-- [3ds Max 蒙皮后法线异常问题调查](./3dsmax-skin-normal-fbx-export.md) - 相邻问题记录；该记录侧重 Skin 与导出法线，本记录侧重平滑组和 BlendShape 法线。
+- [3ds Max 蒙皮后法线异常问题调查](./3dsmax-skin-normal-fbx-export.md) - 相邻问题记录；该记录侧重 Skin、显式法线与导出条件，本记录侧重平滑组和 BlendShape 法线差量。
 
 ### 验证记录
 
 - [2026-07-17] 初次记录。通过源场景、补齐平滑组的场景副本、对应 FBX 以及 Unity 导入设置进行对照验证；在关闭 Legacy 的情况下消除相关警告，并保持 BlendShape 变形时的 Low Poly 硬边表现。
-- [2026-07-17] 完成脱敏：删除真实项目名、内部目录、本机绝对路径、用户名、角色与资源标识；未保存含项目层级和资产名称的截图，仅保留可复用参数与技术结论。
+- [2026-07-20] 深化验证：使用独立 3ds Max 批处理检查基础网格、Morph 通道、平滑组和变形前后法线；直接解析原始/修复 FBX 的 Mesh、Shape、Normal 与 Smoothing 数组；在 Unity 2022.3 隔离项目中测试多组 Normals、Blend Shape Normals、Legacy、Smoothness Source、Smoothing Angle 和 Normals Mode 组合，并检查权重 0、50、100 下的 `deltaNormals` 与几何法线。确认原始 Shape Normal 全零、Import 回退可产生错误非零差量、Legacy 隐藏设置不生效，以及一致 Calculate 策略的稳定性。
 
 ---

@@ -28,7 +28,7 @@
 | 文件 | 标签 | 状态 | 简述 |
 |------|------|------|------|
 | [3dsmax-skin-normal-fbx-export.md](../data/3dsmax-skin-normal-fbx-export.md) | #unity #3dsmax #fbx #experience #troubleshooting | ⚠️ 待验证 | 美术在做模型资产时法线正常（硬边效果），但动画绑定后法线被打乱。通过网络搜索汇总了可能的原因和解决方案，**待美术验证后更新状态**。 |
-| [3dsmax-unity-blendshape-smoothing-group-normals.md](../data/3dsmax-unity-blendshape-smoothing-group-normals.md) | #unity #3dsmax #fbx #experience #troubleshooting | ✅ 已验证 | 当带有 Morph/BlendShape 的低多边形模型导入 Unity 时，可能出现两种看似矛盾的结果：启用 `Legacy Blend Shape Normals` 后造型符合预期但提示“mesh has no smoothing groups”，关闭 Legacy 后警告消失，表情变形时部分硬面却看起来被平滑。本次实测确认，根因是源网格没有有效平滑组数据，导致 Unity 无法稳定地为基础网格与 BlendShape 使用同一套硬边边界；正确做法是在 3ds Max 中实际编码平滑组，并让 FBX 导出和 Unity 导入设置保持一致。 |
+| [3dsmax-unity-blendshape-smoothing-group-normals.md](../data/3dsmax-unity-blendshape-smoothing-group-normals.md) | #unity #3dsmax #fbx #experience #troubleshooting | ✅ 已验证 | 带 Morph/BlendShape 的低多边形模型导入 Unity 后，可能出现“基础姿态正常、变形时硬面明暗异常”，或“Legacy 模式视觉正常但提示缺少平滑组”。直接审计源 MAX、FBX 二进制数组和 Unity 最终 Mesh 后确认：基础法线、BlendShape 法线差量和平滑边界是三类独立数据；当 FBX 只有可用的基础法线，却没有与之匹配的 Shape 法线时，`Import / Import` 会触发 FBX SDK 回退并产生错误法线差量。稳定方案是让基础网格与 BlendShape 使用同一套计算规则，或保证 DCC 真正导出了匹配的基础/Shape 法线和有效平滑组。 |
 | [aces-tone-mapping.md](../data/aces-tone-mapping.md) | #graphics #knowledge #pbr #hdr #post-processing #color-space | 📘 有效 | ACES Tone Mapping 是将 HDR 渲染结果压缩到 LDR 显示范围的色调映射曲线，常用于在保留暗部细节的同时压缩高光。 |
 | [agent-skills-spec.md](../data/agent-skills-spec.md) | #ai #knowledge #agent-skills | 📘 有效 | Agent Skills 规范 |
 | [akasha-semantic-search-architecture.md](../data/akasha-semantic-search-architecture.md) | #architecture #ai #mcp #akasha #search-engine #python | 💡 构想中 | 为阿卡西记录（Akasha-KT）设计基于向量模型的语义搜索架构，提升自然语言查询体验，实现从关键词匹配到语义理解的升级。 |
