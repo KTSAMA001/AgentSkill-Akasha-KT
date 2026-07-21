@@ -102,7 +102,7 @@ Unity 看到的依赖哈希相同
 
 自定义依赖名称是全局的，应包含工具命名空间和稳定处理器 ID，避免与其他工具冲突。`RegisterCustomDependency` 不能在 Asset Import 过程中调用，因此应在主 Editor 的配置恢复、Domain Reload 后安全入口或导入任务开始前完成注册；导入过程中只调用 `DependsOnCustomDependency`。
 
-`AssetDatabase.GetAssetDependencyHash` 可作为资源、meta、目标平台和 Importer 版本变化的快速信号，但不能单独证明处理器已成功执行。最终正确性仍需要处理器级回执。
+`AssetDatabase.GetAssetDependencyHash` 可作为资源、meta、目标平台和 Importer 版本变化的快速信号，但不能单独证明处理器已成功执行，也不能把它的每次变化都直接解释为源资源变化。实践中该聚合值还可能随脚本或导入管线状态改变；如果产品策略明确不检测代码变化，完整性检查应在依赖哈希变化时继续核对源文件 SHA-256 和独立导入设置指纹。源文件、`.meta`、目标平台、Unity 版本和处理器语义均未变时，只更新观察到的聚合值，不创建重导任务。最终正确性仍需要处理器级回执。
 
 #### 六、处理记录是正确性证据，不只是性能缓存
 
@@ -121,6 +121,7 @@ AssetRecord
 - assetPath
 - sourceHash
 - dependencyHash
+- importSettingsHash
 - processorResults
 - lastSuccessfulImportTime
 
@@ -136,11 +137,29 @@ ProcessorResult
 - GUID 和当前路径有效，不在未完成任务中。
 - 当前期望处理器集合与记录完全一致。
 - 每个处理器的语义指纹一致，结果为成功或终止性跳过。
-- 依赖哈希非空，且没有失败或缺失回执。
+- 源文件、聚合依赖和导入设置指纹非空，且没有失败或缺失回执。
 
 源文件 SHA-256 适合诊断和确认真实源变化，但读取大型 FBX 成本较高。可在新记录、依赖哈希变化或诊断时计算，而不是每次完整性检查都顺序读取全部源文件。
 
-#### 七、使用两阶段提交恢复失败和中断
+#### 七、命名空间迁移要区分序列化类型和 Unity 回调类型
+
+`[SerializeReference]` 会把 managed-reference 的 ID、完整类型名和字段值写入宿主资产。配置、处理器或枚举改命名空间时，应使用 `MovedFrom` 描述旧命名空间、程序集和类型名，并用 `SerializationUtility.HasManagedReferencesWithMissingTypes` 验证旧配置副本。迁移成功至少应确认：
+
+- 旧配置和当前配置都能加载，缺失 managed-reference 为 0。
+- 处理器数量、稳定 ID 和输出参数保持不变。
+- 旧配置与当前配置的语义指纹相同。
+- 持久化快照中的旧类型名只迁移元数据，不因此创建重导任务。
+
+具体 `AssetPostprocessor` 类型需要单独处理。Unity 官方的 `MovedFrom` 说明面向 API/序列化类型迁移，并不保证维持 Asset Import Pipeline 对具体后处理器类型的缓存身份。Unity 2022.3 隔离对照测试表明：直接改变具体后处理器完整类型名，即使添加 `MovedFrom`，仍会使测试 FBX 重导；保持原具体类型名，把业务实现继承或转发到新命名空间时，代码变化不导入 FBX，真实修改 FBX 后回调仍会执行。
+
+因此安全迁移方式是：
+
+1. 配置、处理器、扩展接口和实际实现迁移到新命名空间。
+2. 仅保留 Unity 扫描所需的旧完整名具体回调作为薄兼容入口。
+3. 兼容入口不承载配置或业务逻辑，只继承新实现或转发静态处理函数。
+4. 用隔离项目分别验证“直接移动”“稳定入口 + 新实现”和真实资源变化，不能仅凭编译成功判断没有触发模型缓存重建。
+
+#### 八、使用两阶段提交恢复失败和中断
 
 批量重导不能把“调用了 `ImportAsset`”当作完成。应使用可持久化的未完成任务：
 
@@ -162,7 +181,7 @@ ProcessorResult
 
 若启用了 Parallel Import，Import Worker 与主 Editor 不是同一进程，不能依赖静态内存共享回执。可让 Worker 原子写入每资源 sidecar，主 Editor 在批次完成后消费、复核处理器集合与指纹，再删除 sidecar。
 
-#### 八、统一使用资源批次回调作为恢复入口
+#### 九、统一使用资源批次回调作为恢复入口
 
 五参数 `OnPostprocessAllAssets` 在资源批次完成后调用，并通过 `didDomainReload` 表明是否发生 Domain Reload。推荐把它作为统一协调入口：
 
@@ -181,7 +200,7 @@ ProcessorResult
 
 官方文档提醒：在 `OnPostprocessAllAssets` 中触发新导入会再次调用该回调。没有去重、任务状态和延迟执行时，很容易形成递归重导循环。
 
-#### 九、不要把代码错误等同于“Unity 正在编译”
+#### 十、不要把代码错误等同于“Unity 正在编译”
 
 资源进入项目时可能存在 C# 错误，但 Unity 可能仍在运行上一次成功编译的 Editor 程序集。也可能因为 Domain Reload、配置类型暂不可用或导入回调未加载而没有执行最新处理逻辑。
 
@@ -194,7 +213,7 @@ ProcessorResult
 
 这能覆盖“错误期间资源已进入项目，之后修复代码”的场景，而不需要推测当时 Unity 是否处于编译状态。
 
-#### 十、持久化文件必须验证结构，而不只是 JSON 可解析
+#### 十一、持久化文件必须验证结构，而不只是 JSON 可解析
 
 `JsonUtility.FromJson` 成功不代表数据完整。类似 `{"version":3}` 的截断文件仍可能生成一个看似合法的空对象。
 
@@ -215,7 +234,7 @@ ProcessorResult
 3. 主备都无效时，因历史范围不可恢复，只能进入项目级保守重建。
 4. 旧版本迁移时先保留全部历史 GUID，再与当前范围合并，禁止迁移前清空旧记录。
 
-#### 十一、菜单语义必须与恢复模型一致
+#### 十二、菜单语义必须与恢复模型一致
 
 - “检测并处理”：只补导当前不一致的资源。
 - “强制全量重导”：目标为历史 GUID 与当前作用范围并集；先保存未完成任务，不能先清空记录。
@@ -223,7 +242,7 @@ ProcessorResult
 
 如果代码变化不自动检测，应在“强制全量重导”的说明中明确：是否需要重导由开发者判断。
 
-#### 十二、可复用验证方法
+#### 十三、可复用验证方法
 
 输出型导入工具不能只验证日志。推荐使用隔离资源和可数值确认的输出：
 
@@ -236,7 +255,7 @@ ProcessorResult
 
 测试结束必须确认：配置恢复、临时类型和资产清理、无未完成任务、主备结构有效、处理器集合和指纹一致、没有新增编译或 Inspector 错误。
 
-#### 十三、常见反模式
+#### 十四、常见反模式
 
 | 反模式 | 后果 | 替代设计 |
 |---|---|---|
@@ -249,6 +268,8 @@ ProcessorResult
 | 清空记录后再全量导入 | 部分失败时丢失历史范围 | 先保存未完成任务，成功后覆盖 |
 | 回调内立即递归重导 | 重复导入或刷新循环 | 入队、去重、delayCall、重入保护 |
 | 只看 `isCompiling` 判断遗漏 | 代码错误与实际程序集状态被混淆 | 以成功回执和 Domain Reload 审计为准 |
+| 依赖哈希一变就补导 | 普通脚本重载可能间接恢复代码变化检测 | 再核对源文件与独立导入设置指纹 |
+| 直接移动具体后处理器并只加 `MovedFrom` | Unity 原生模型缓存可能整体失效 | 保留稳定具体回调类型名，转发或继承新实现 |
 
 ### 关键代码
 
@@ -300,6 +321,9 @@ static void OnPostprocessAllAssets(
 - [Unity AssetImportContext.DependsOnCustomDependency](https://docs.unity3d.com/cn/2021.3/ScriptReference/AssetImporters.AssetImportContext.DependsOnCustomDependency.html) - 在导入上下文中声明自定义依赖。
 - [Unity AssetPostprocessor.OnPostprocessAllAssets](https://docs.unity.cn/ScriptReference/AssetPostprocessor.OnPostprocessAllAssets.html) - 五参数资源批次回调、Domain Reload 和再次导入行为。
 - [Unity AssetDatabase.GetAssetDependencyHash](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/AssetDatabase.GetAssetDependencyHash.html) - 聚合依赖哈希的组成和用途。
+- [Unity SerializeReference](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/SerializeReference.html) - managed-reference 的完整类型名与缺失类型语义。
+- [Unity SerializationUtility.HasManagedReferencesWithMissingTypes](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/SerializationUtility.HasManagedReferencesWithMissingTypes.html) - 检查宿主资产是否含无法解析的 managed-reference。
+- [Unity MovedFromAttribute](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/Scripting.APIUpdating.MovedFromAttribute.html) - 描述类型原有命名空间、程序集和类型名。
 - [Unity Refreshing the Asset Database](https://docs.unity.cn/Manual/AssetDatabaseRefreshing.html) - Asset Database 刷新循环和可能重新启动导入的条件。
 
 ### 相关记录
@@ -309,5 +333,6 @@ static void OnPostprocessAllAssets(
 ### 验证记录
 
 - [2026-07-21] 初次记录。通过 Unity 2022.3 LTS、真实 FBX 源文件变化和隔离处理器验证代码变化策略、语义配置差分、范围扩大/缩小/删除、Unity 自定义依赖、单条记录补偿、失败与 Domain Reload 恢复、配置暂不可用、代码错误、主备结构损坏和 Inspector 打开等场景；同时使用 Unity 官方 API 文档复核关键生命周期与调用限制。
+- [2026-07-21] 补充验证。确认 Unity 聚合依赖哈希变化不能单独作为自动补导依据；增加源文件与导入设置指纹的二次判定。使用隔离 Unity 项目对比具体 `AssetPostprocessor` 直接迁移、稳定旧入口转发/继承新实现和真实资源变化，确认 `MovedFrom` 能恢复旧 managed-reference，但不能替代后处理器缓存身份的稳定入口。
 
 ---
