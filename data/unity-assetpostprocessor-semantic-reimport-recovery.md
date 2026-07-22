@@ -207,6 +207,12 @@ ProcessorResult
 
 命名也应直接表达生命周期。例如内存容器使用 `InMemoryImportReceipts`，文件数据类型使用 `ImportReceiptFileData`，函数使用 `Begin`、`Publish`、`Consume`、`DeleteImportReceiptFile` 等动词。避免使用需要额外猜测的 `PendingReceipts`、`Envelope`、`Stage`，也不要把临时回执描述成长期处理记录。
 
+Parallel Import 表示 Unity 可以同时处理多个受支持资源，但不能据此直接推断“同一资源的同一个 Artifact 会被多个 Worker 同时处理”。官方文档能够确认的是：`OutOfProcessPerQueue` 会尽可能并行处理资源，同时遵守导入器队列和依赖；资源在导入期间发生时间戳变化时，会被重新加入导入队列。官方文档没有承诺所有 Unity 版本和所有导入入口都绝不会让同一 Artifact 重叠执行，因此设计判断还需要受控实测。
+
+在 Unity 2022.3.62f3 中，将刷新模式切换为真实 `OutOfProcessPerQueue`，对同一个已有成功记录的模型资源连续发起多次导入，并在导入期间多次改变源文件时间戳。日志显示：重复请求被合并或重新排队；当前 Artifact 因源变化失效后，后一个请求只在前一个 Artifact 完成后才开始，且由同一个 Worker 串行处理，其他 Worker 没有同时接收该资源路径。这个结果只证明当前 Unity 版本和当前导入入口的行为，不应扩张为未来版本的永久保证。
+
+因此，当前实现可以继续让一个资源路径对应一个临时回执文件，不因未经证实的竞争假设增加导入尝试编号、同资源跨进程锁或按尝试拆分的目录。原子替换仍然必须保留，但它解决的是主 Editor 不能读取半写 JSON、跨进程只能看到完整发布结果的问题，而不是用来掩盖同一资源并发写入。如果升级 Unity、改变导入 API，或日志出现“前一个 Artifact 尚未完成，另一个 Worker 已开始处理同一路径”的证据，再扩展协议和锁设计。
+
 主 Editor 内存中的最新回执与磁盘长期记录还存在一个提交顺序边界。典型竞态如下：
 
 1. Import Worker 完成导入并发布完整回执。
@@ -302,6 +308,8 @@ EnsureRecordsReady(reloadRequested);
 
 Parallel Import 的验证还应覆盖“Worker 导入与 Domain Reload 检查处于同一事件链”的场景：选择已有成功记录的少量资源，连续执行普通 Worker 导入和带 Domain Reload 的 Worker 导入，确认资源级与每个处理器级最近成功时间均逐次前进、结果状态保持一致、未完成任务清空、一次性回执目录为空。只看到 Worker 日志或 `ImportAsset` 返回不足以证明主 Editor 已正确提交结果。
 
+验证同一资源是否存在 Worker 竞争时，应对同一路径连续发起多次导入，并在导入期间改变源文件时间戳以强制产生重新排队条件，然后联合检查所有 Worker 日志。只有在前一个 Artifact 尚未完成时，另一个 Worker 已开始处理同一路径，才算发现真实重叠；请求数量大于实际 Artifact 数量、同一 Worker 的顺序执行或导入失效后的后续重排都不属于并发写入证据。
+
 测试结束必须确认：配置恢复、临时类型和资产清理、无未完成任务、主备结构有效、处理器集合和指纹一致、没有新增编译或 Inspector 错误。
 
 #### 十四、常见反模式
@@ -320,6 +328,7 @@ Parallel Import 的验证还应覆盖“Worker 导入与 Domain Reload 检查处
 | 依赖哈希一变就补导 | 普通脚本重载可能间接恢复代码变化检测 | 再核对源文件与独立导入设置指纹 |
 | 直接移动具体后处理器并只加 `MovedFrom` | Unity 原生模型缓存可能整体失效 | 保留稳定具体回调类型名，转发或继承新实现 |
 | Parallel Import 只用静态字典传结果 | Import Worker 与主 Editor 不共享内存，主进程收不到可靠回执 | 同进程内存快速通道 + 跨进程原子临时回执文件 |
+| 未调查调度语义就为同一资源增加导入尝试编号和跨进程锁 | 协议复杂度、锁恢复和故障面在没有竞争证据时被扩大 | 先核对官方队列语义并做同路径重复请求与导入中变化测试；只在出现真实重叠证据后扩展协议 |
 | 已消费的临时回执文件继续保留 | 后续同路径导入可能误用旧成功结果 | 校验后消费即删除；长期状态只写入处理记录 |
 | 内存回执待保存时仍强制重载磁盘 | 旧磁盘记录覆盖本次成功结果，出现两次导入记录不一致 | 先原子保存并保留最新内存状态，后续安全入口重试持久化 |
 | 成功时间只写一次或失败时清零 | 无法判断最近一次真实成功；历史成功证据被破坏 | 每次成功更新；失败只保留同语义下的历史时间且状态仍为失败 |
@@ -377,6 +386,7 @@ static void OnPostprocessAllAssets(
 - [Unity SerializeReference](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/SerializeReference.html) - managed-reference 的完整类型名与缺失类型语义。
 - [Unity SerializationUtility.HasManagedReferencesWithMissingTypes](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/SerializationUtility.HasManagedReferencesWithMissingTypes.html) - 检查宿主资产是否含无法解析的 managed-reference。
 - [Unity MovedFromAttribute](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/Scripting.APIUpdating.MovedFromAttribute.html) - 描述类型原有命名空间、程序集和类型名。
+- [Unity Parallel importing](https://docs.unity3d.com/2022.3/Documentation/Manual/ParallelImport.html) - 支持并行导入的资源类型、Worker 设置和并行导入器的确定性要求。
 - [Unity Refreshing the Asset Database](https://docs.unity.cn/Manual/AssetDatabaseRefreshing.html) - Asset Database 刷新循环和可能重新启动导入的条件。
 
 ### 相关记录
@@ -389,5 +399,6 @@ static void OnPostprocessAllAssets(
 - [2026-07-21] 补充验证。确认 Unity 聚合依赖哈希变化不能单独作为自动补导依据；增加源文件与导入设置指纹的二次判定。使用隔离 Unity 项目对比具体 `AssetPostprocessor` 直接迁移、稳定旧入口转发/继承新实现和真实资源变化，确认 `MovedFrom` 能恢复旧 managed-reference，但不能替代后处理器缓存身份的稳定入口。
 - [2026-07-22] 补充 Parallel Import 回执生命周期。通过 Unity 2022.3 LTS 主 Editor 与两个 Asset Import Worker 验证：脚本刷新和 Domain Reload 后无编译失败、无意外 FBX 重导、无回执读写错误；长期处理记录无失败/未完成任务，临时回执目录为空。同步明确 pending/complete、原子发布、严格消费和消费即删除的职责边界，并完成敏感信息泛化。
 - [2026-07-22] 补充最近成功时间和延迟持久化顺序。通过 Unity 2022.3 LTS 的实际 Import Worker 子进程，使用两个已有成功记录的测试 FBX 连续验证普通导入、Domain Reload 后导入与修复后回归：三个匹配处理器及资源级最近成功时间均在每次成功后前进，失败不会伪造成功；临时回执全部消费，无新增编译、回执或保存错误。复现并修复了主 Editor 已消费回执但尚未落盘时，延迟检查从旧磁盘文件重载并覆盖内存结果的问题。
+- [2026-07-22] 补充同一资源的 Import Worker 调度调查。Unity 2022.3.62f3 的真实 `OutOfProcessPerQueue` 测试中，对同一路径重复请求并在导入期间改变源文件时间戳，观察到当前 Artifact 失效后串行重排，未观察到多个 Worker 同时处理同一路径。结合官方“遵守导入队列与依赖”和“导入中源时间戳变化会重新入队”的说明，当前不增加导入尝试编号或同资源跨进程锁；该结论限定于已验证版本和入口，升级或出现重叠日志证据时重新评估。
 
 ---
