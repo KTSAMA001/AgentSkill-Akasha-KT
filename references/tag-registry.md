@@ -13,6 +13,7 @@
 | 标签 | 显示名 | 图标 | 维度 | 说明 |
 |------|--------|------|------|------|
 | #agent-skills | Agent Skills | chip | domain | Agent 技能开发相关 |
+| #agent-workflow | Agent 工作流 | chip | specialty | Agent 工作流与编排 |
 | #ai | AI | chip | domain | 人工智能领域 |
 | #ai-navigation | AI 寻路 | unity | specialty | Unity AI 导航系统 |
 | #akasha | 阿卡西记录 | book | custom | 知识库系统本身 |
@@ -57,10 +58,12 @@
 | #editor | 编辑器 | unity | specialty | Unity 编辑器 |
 | #effect-system | 效果系统 | unity | specialty | 特效系统 |
 | #effects | 特效 | shader | specialty | 视觉特效 |
+| #error-handling | 错误处理 | code | specialty | 错误处理与重试机制 |
 | #experience | 经验 | book | type | 实践经验类记录 |
 | #excel | Excel | doc | specialty | Excel 表格与生成 |
 | #fbx | FBX | unity | specialty | FBX 资产与导入流程 |
 | #font | 字体 | doc | specialty | 字体、字形与排版相关 |
+| #game-design | 游戏设计 | monitor | domain | 游戏设计与策划 |
 | #gamma | Gamma | shader | specialty | Gamma 校正 |
 | #git | Git | code | domain | Git 版本控制 |
 | #godot | Godot 引擎 | unity | domain | Godot 游戏引擎 |
@@ -76,6 +79,7 @@
 | #knowledge | 知识 | book | type | 知识学习类记录 |
 | #ktsama | KTSAMA | doc | specialty | KTSAMA 个人相关 |
 | #linear | 线性空间 | shader | specialty | 线性颜色空间 |
+| #llm | LLM | chip | specialty | 大语言模型 |
 | #markdown | Markdown | doc | specialty | Markdown 文档与转换 |
 | #material | 材质 | unity | specialty | Unity 材质系统 |
 | #math | 数学 | code | specialty | 数学相关 |
@@ -83,6 +87,7 @@
 | #memory | 内存 | code | specialty | 内存占用与内存管理 |
 | #meilisearch | Meilisearch | wrench | specialty | Meilisearch 搜索引擎 |
 | #mvvm | MVVM 架构 | code | specialty | MVVM 设计模式 |
+| #narrative | 叙事 | book | specialty | 游戏叙事与剧情 |
 | #nav-mesh | NavMesh | unity | specialty | Unity 导航网格 |
 | #network | 网络 | network | domain | 网络、连通性、代理、DNS 等问题 |
 | #npr | NPR 渲染 | shader | specialty | 非真实感渲染 |
@@ -94,6 +99,7 @@
 | #physics | 物理系统 | unity | specialty | Unity 物理引擎 |
 | #playwright | Playwright | network | specialty | Playwright 测试框架 |
 | #post-processing | 后处理 | shader | specialty | 后处理效果 |
+| #procedural-generation | 程序化生成 | code | specialty | 程序化内容生成 |
 | #proxy | 代理 | network | specialty | HTTP/HTTPS/SOCKS 代理配置与故障 |
 | #python | Python | code | domain | Python 编程语言 |
 | #raycast | 射线检测 | unity | specialty | 射线检测 |
@@ -120,6 +126,7 @@
 | #social | 社交 | network | specialty | 社交平台相关 |
 | #srp | SRP | shader | specialty | Scriptable Render Pipeline |
 | #srp-batcher | SRP Batcher | shader | specialty | SRP Batcher 优化 |
+| #structured-output | 结构化输出 | code | specialty | LLM 结构化输出与 Schema 校验 |
 | #skybox | 天空盒 | shader | specialty | Skybox 与天空渲染 |
 | #texture | 纹理 | shader | specialty | 纹理格式、压缩与采样 |
 | #tools | 工具 | wrench | domain | 开发工具 |
