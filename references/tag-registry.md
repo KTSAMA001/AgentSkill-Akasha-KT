@@ -37,6 +37,7 @@
 | #collider | 碰撞体 | unity | specialty | Unity 碰撞系统 |
 | #color-banding | 色带 | shader | specialty | 色带问题与修复 |
 | #color-space | 色彩空间 | shader | specialty | Gamma/Linear 色彩空间 |
+| #comparison | 对比分析 | doc | type | 技术方案对比与选型 |
 | #compute-shader | 计算着色器 | shader | specialty | GPU 计算着色器 |
 | #conventional-commits | 提交规范 | code | specialty | Git 提交信息规范 |
 | #cook-torrance | Cook-Torrance | shader | specialty | Cook-Torrance BRDF 模型 |
