@@ -1,15 +1,15 @@
 # Web Archive MCP — 实现蓝图
 
 **标签**：#mcp #python #playwright #architecture #web #tools
-**来源**：实践总结 — `d:\AI\MCPs\web_archive_mcp`
+**来源**：自有项目源码与实践总结
 **收录日期**：2025-02-12
-**更新日期**：2025-02-12
+**更新日期**：2026-07-23
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐（自有项目，源码可查）
-**适用版本**：Python 3.10+ / MCP SDK 1.22.0 / Playwright latest
+**适用版本**：Python 3.10+ / MCP SDK 1.22.0 / Playwright（版本未锁定，需按实际环境验证）
 
 ### 概要
-基于 FastMCP + Playwright (Edge) 的网页归档 MCP 服务，提供 4 个工具：`save_as_markdown`、`archive_web_page`（兼容别名）、`save_as_mhtml`、`save_as_zip`。支持反爬（stealth 模式）、站点弹窗处理、CDP 协议抓取 MHTML，输出 HTML 源码 / Markdown / MHTML / 全页截图 / ZIP 打包。
+基于 FastMCP + Playwright (Edge) 的网页归档 MCP 服务，提供 4 个工具：`save_as_markdown`、`archive_web_page`（兼容别名）、`save_as_mhtml`、`save_as_zip`。支持动态页面渲染、站点弹窗处理、CDP 协议抓取 MHTML，以及基础反检测缓解（stealth + User-Agent，不保证绕过反爬），输出 HTML / Markdown / MHTML / 全页截图 / ZIP 打包。
 
 ### 内容
 
@@ -40,10 +40,10 @@ web_archive_mcp/
 |------|------|------|
 | `mcp` | 1.22.0 | MCP SDK / FastMCP 服务框架 |
 | `httpx` | 0.28.1 | HTTP 客户端（预留，当前未实际调用） |
-| `beautifulsoup4` | latest | HTML 解析 / 标题提取 |
-| `markdownify` | latest | HTML → Markdown |
-| `playwright` | latest | 浏览器自动化（Edge） |
-| `playwright-stealth` | latest | 反反爬隐身模式 |
+| `beautifulsoup4` | 未锁定 | HTML 解析 / 标题提取 |
+| `markdownify` | 未锁定 | HTML → Markdown |
+| `playwright` | 未锁定 | 浏览器自动化（Edge） |
+| `playwright-stealth` | 未锁定 | 基础自动化特征缓解，不保证绕过检测 |
 
 > **部署提示**：安装依赖后还需执行 `playwright install msedge` 安装 Edge 浏览器内核。
 
@@ -128,11 +128,31 @@ web_archive_mcp/
       └─ 9. 返回结果字典
 ```
 
+### 5.1 为什么使用真实浏览器，而不是只做 HTTP GET
+
+HTTP GET 适合抓取服务器直接返回的响应体，但现代网页经常依赖 JavaScript、客户端跳转、懒加载请求、Cookie/会话状态和用户交互来生成最终内容。Playwright 驱动浏览器的主要价值是：
+
+- 执行页面 JavaScript，取得渲染后的当前 DOM，而不只是初始响应；
+- 等待页面生命周期与异步内容，并处理跳转、弹窗和必要交互；
+- 复用浏览器上下文中的 Cookie、缓存和会话状态；
+- 直接生成全页截图，并通过 CDP 获取 MHTML 等浏览器级产物。
+
+使用真实浏览器可能减少“请求行为不像浏览器”导致的兼容问题，但 Playwright 仍属于自动化工具，不能仅凭“真实浏览器”就视为已经绕过反爬。User-Agent 与 stealth 只能缓解部分基础检测。
+
+### 5.2 四种归档产物的职责边界
+
+| 产物 | 主要用途 | 重要边界 |
+|------|----------|----------|
+| HTML | 保存浏览器执行脚本后的当前 DOM 完整序列化，便于解析与二次处理 | 通常只保留外部 CSS、图片、脚本等资源的引用，不内嵌资源本体 |
+| Markdown | 将正文转换为便于阅读、检索和交给 AI 处理的轻量结构化文本 | 会丢失复杂布局、脚本行为和部分视觉样式，并非网页的完整副本 |
+| MHTML | 将 HTML 根文档及可捕获的从属资源聚合为单文件，尽量保留离线布局 | 仍是捕获时快照，不保证所有流媒体、运行时状态或受限资源都可离线复现 |
+| 全页截图 | 固化捕获时的视觉呈现，作为肉眼核验和视觉证据 | 不保留可搜索 DOM、语义结构或交互能力 |
+
 ---
 
 ## 六、关键实现细节
 
-### 6.1 反爬策略
+### 6.1 基础反检测缓解（非保证）
 
 ```python
 from playwright_stealth.stealth import Stealth
@@ -140,8 +160,9 @@ from playwright_stealth.stealth import Stealth
 await Stealth().apply_stealth_async(page)
 ```
 
-- 使用 `playwright-stealth` 注入 stealth 脚本，隐藏 WebDriver 特征
+- 使用 `playwright-stealth` 注入 stealth 脚本，缓解部分 WebDriver 特征暴露
 - 自定义 User-Agent 模拟真实 Edge 浏览器
+- 强反爬仍可能结合浏览器指纹、网络信誉、行为模式和验证码识别自动化；这些配置不能保证通过检测
 
 ### 6.2 弹窗处理机制
 
@@ -180,7 +201,7 @@ mhtml_content = result.get("data")
 ```
 
 - 通过 Playwright 的 CDP Session 调用 Chrome DevTools Protocol
-- `Page.captureSnapshot` 可将完整页面（含内联资源）保存为 MHTML 单文件
+- `Page.captureSnapshot` 将页面序列化为 MHTML；CDP 文档明确包含 iframe、Shadow DOM、外部资源和元素内联样式
 - Windows 下写入时使用 `newline=""` 防止 `\r\n → \r\r\n` 双回车
 
 ### 6.4 标题提取优先级
@@ -289,14 +310,24 @@ playwright install msedge
 | `save_as_mhtml` | L264-277 | 工具：MHTML 保存 |
 | `save_as_zip` | L280-294 | 工具：ZIP 打包 |
 
+### 相关记录
+
+- [网页抓取与反爬虫绕过](./python-web-scraping-antibot.md) - stealth 工具的能力边界与强反爬场景
+- [浏览器自动化搜索 MCP 开发记录](./browser-automation-search-mcp-dev.md) - Playwright 浏览器抓取的相邻实践
+
 ### 参考链接
 
 - [MCP Python SDK (FastMCP)](https://github.com/modelcontextprotocol/python-sdk) - MCP 服务框架
 - [Playwright Python](https://playwright.dev/python/) - 浏览器自动化
+- [Playwright Navigations](https://playwright.dev/python/docs/navigations) - 动态页面加载与客户端跳转
+- [Playwright Page.content](https://playwright.dev/python/docs/api/class-page#page-content) - 当前页面 HTML 序列化
+- [Playwright Screenshots](https://playwright.dev/python/docs/screenshots) - 全页截图
 - [playwright-stealth](https://github.com/nicedouble/playwright_stealth) - 反检测隐身模式
 - [Chrome DevTools Protocol - Page.captureSnapshot](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-captureSnapshot) - MHTML 抓取
+- [RFC 2557 - MHTML](https://datatracker.ietf.org/doc/html/rfc2557) - HTML 根文档与从属资源的 MIME 聚合格式
 
 ### 验证记录
-- [2025-02-12] 初次记录，从 `d:\AI\MCPs\web_archive_mcp` 源码完整分析归档
+- [2025-02-12] 初次记录，根据自有项目源码完整分析归档。
+- [2026-07-23] 结合 Playwright 官方文档、Chrome DevTools Protocol 与 RFC 2557 复核：补充真实浏览器相对 HTTP GET 的动态渲染价值；明确 HTML、Markdown、MHTML、截图的职责边界；将 stealth 收窄为基础检测缓解；清理本机绝对路径并标明未锁定依赖版本。
 
 ---
