@@ -1,6 +1,6 @@
 # LLM 结构化事件生成架构 - 游戏动态剧情系统
 
-**标签**：#ai #game-design #llm #architecture #narrative #procedural-generation #structured-output #agent-workflow #error-handling #idea
+**标签**：#ai #game-design #llm #architecture #narrative #procedural-generation #structured-output #agent-workflow #error-handling
 **来源**：KTSAMA 实践构想 + 生产级 Agent 系统架构模式研究
 **收录日期**：2026-07-23
 **来源日期**：2026-07-23
