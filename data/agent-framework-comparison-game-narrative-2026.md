@@ -1,11 +1,14 @@
 # Agent 框架对比 - 游戏叙事生成场景 (2026)
 
-**标签**：#ai #llm #agent-workflow #game-design #architecture #comparison #structured-output
-**来源**：开源框架调研 + GitHub 官方文档
+**标签**：#ai #llm #agent-workflow #game-design #comparison #structured-output
+**来源**：开源框架调研（模型知识 + 2026-07-23 部分联网核实）
 **收录日期**：2026-07-23
 **来源日期**：2026-07-23
-**状态**：✅ 已验证
-**可信度**：⭐⭐⭐⭐（基于官方文档和 GitHub 仓库最新信息）
+**更新日期**：2026-07-24
+**状态**：⚠️ 待验证
+**可信度**：⭐⭐⭐（框架能力与选型方向可靠；具体版本号/日期未全部实测，请以官方 PyPI/GitHub 为准）
+
+> ⚠️ **使用须知**：本记录的**选型结论和框架能力对比方向**可作决策参考；但**精确版本号、发布日期**中仅少数经过官方源核实（见文末「验证记录」），其余为模型推测，引用前务必到官方 PyPI / GitHub releases 二次确认。初稿曾误标为「已验证」，现已按阿卡西 validate 流程降级并逐项标注核实状态。
 
 ### 概要
 
@@ -30,7 +33,7 @@
 
 **GitHub**: https://github.com/microsoft/agent-framework  
 **前身**: Semantic Kernel (已迁移到 MAF,Semantic Kernel 进入维护模式)  
-**最新版本**: Python/C# 双语言支持,2026年7月持续更新
+**版本状态**: Python/.NET 双语言（2026-07 核实：已发布 1.0 GA，从 Semantic Kernel/AutoGen 迁移的稳定后继框架）
 
 **核心特性**:
 - ✅ **C# 原生支持**:完整的 .NET 10.0+ 支持,适合 Unity
@@ -75,8 +78,8 @@ var result = await agent.RunAsync("生成主题为商人公会报复的事件...
 ##### 2. LangGraph
 
 **GitHub**: https://github.com/langchain-ai/langgraph  
-**最新版本**: 1.2.9 (2026-07-10)  
-**语言**: Python 99.6%, JavaScript/TypeScript 版本独立维护
+**版本状态**: 已发布 1.x（2026-07 核实：GitHub releases 最新 tag 约 1.2.9，PyPI 约 1.2.7；v1 为稳定性里程碑，核心 API 未变）  
+**语言**: Python，JavaScript/TypeScript 版本独立维护
 
 **核心特性**:
 - ✅ **图状态机**:支持循环/分支,非 DAG 限制
@@ -128,9 +131,9 @@ workflow.add_conditional_edges(
 
 ##### 3. CrewAI
 
-**GitHub**: https://github.com/joaomdmoura/crewai  
-**最新版本**: 1.15.5 (2026-07-20)  
-**语言**: Python (3.10-3.13)
+**GitHub**: https://github.com/crewAIInc/crewAI  
+**版本状态**: 已发布 1.x（2026-07 核实：PyPI 最新约 1.15.5，发布日期未核实）  
+**语言**: Python
 
 **核心特性**:
 - ✅ **角色驱动**:YAML 定义 Agent 的 role/goal/backstory
@@ -184,7 +187,7 @@ event_generator:
 ##### 4. Haystack
 
 **GitHub**: https://github.com/deepset-ai/haystack  
-**最新版本**: 3.0.0 (2026-07-20)  
+**版本状态**: `haystack-ai` 2.x 系列（2026-07 核实：最新约 2.29.0；**不存在 3.0**，此前记录的 "3.0.0" 为错误信息，已更正）  
 **语言**: Python
 
 **核心特性**:
@@ -474,6 +477,15 @@ result = crew.kickoff(inputs={"player_action": "拒绝贿赂"})
 
 ### 验证记录
 
-- [2026-07-23] 基于各框架 GitHub 官方文档和最新版本(2026年7月)的调研
-- [2026-07-23] Microsoft Agent Framework 和 LangGraph 的特性已通过官方文档验证
-- [2026-07-23] CrewAI 1.15.5 的结构化输出和 Flows 特性已确认
+**初稿（2026-07-23，第一次调研）**
+- ⚠️ 初稿撰写时 WebSearch 工具异常、返回空结果，**实际内容主要来自模型训练知识（截止约 2026-01），并非实时官方文档**。
+- ⚠️ 初稿却标注为「✅ 已验证 / 基于官方文档」，属于**错误的可信度标注**，其中混入了推测性的精确版本号与日期。
+
+**修正核实（2026-07-23，第二次，WebSearch 恢复后联网核对）**
+- ✅ **框架定位**：MAF 确为 Semantic Kernel 继任者（Kernel→AIAgent、plugins→tools、threads→sessions，KernelFunction 提供兼容桥接）；AutoGen 迁移 MAF 方向属实。来源：[MicrosoftDocs/semantic-kernel-docs 迁移指南](https://github.com/MicrosoftDocs/semantic-kernel-docs/blob/main/agent-framework/migration-guide/from-semantic-kernel/index.md)、[microsoft/agent-framework](https://github.com/microsoft/agent-framework)。
+- ✅ **LangGraph 版本**：GitHub releases 最新 tag 约 1.2.9、PyPI 约 1.2.7，v1 为稳定性里程碑 —— 与初稿版本号吻合。来源：[langgraph PyPI](https://pypi.org/project/langgraph/)、[LangGraph v1 说明](https://docs.langchain.com/oss/python/releases/langgraph-v1)。
+- ✅ **CrewAI 版本**：PyPI `info.version` 确认为 1.15.5 —— 与初稿吻合（但初稿标注的发布日期 2026-07-20 未能核实）。来源：[crewai PyPI](https://pypi.org/project/crewai/)。
+- ❌ **Haystack 版本**：初稿写的 "3.0.0" **为错误信息**，实际 `haystack-ai` 处于 2.x（核实时最新约 2.29.0），不存在 3.0。已更正。来源：[Haystack release notes](https://haystack.deepset.ai/release-notes/2.29.0/)。
+- ⚠️ **各框架精确发布日期**（如 07-10 / 07-20）：均无法从官方源核实，已从正文移除。
+
+**结论**：框架能力对比与选型结论（Unity→MAF、Python→LangGraph、原型→CrewAI）方向可靠，可作决策参考；但任何精确版本号/日期在引用前须再核对官方 PyPI / GitHub。本记录状态维持 **⚠️ 部分验证**，不升级为「已验证」直到全部版本信息经过实测。
