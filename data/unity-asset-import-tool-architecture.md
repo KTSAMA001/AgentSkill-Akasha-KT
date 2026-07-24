@@ -3,6 +3,7 @@
 **标签**：#unity #custom-editor #tools #architecture #scriptable-object #fbx #texture
 **来源**：实地代码分析
 **收录日期**：2026-03-31
+**更新日期**：2026-07-24
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐（实地分析）
 **适用版本**：Unity 2021+
@@ -162,6 +163,17 @@ public interface IPostprocessModule
 - **查找并移除 Missing Scripts**：遍历 Prefab/SO/Scene 递归清理
 - **平台特定纹理设置**：Android / Windows 分 Tab 页独立配置格式、压缩等
 
+#### 10. 自动化边界与最小状态
+
+该三层架构解决“配置如何驱动导入”，不意味着工具还要并行维护一套资源状态监控系统。普通资源新增、内容修改、`.meta` 和 Importer 变化由 Unity Asset Pipeline 触发；配置型工具默认只补充 Unity 无法自行推导的部分：
+
+- 会影响输出的外部配置应声明为自定义导入依赖。
+- 配置范围扩大、缩小、禁用或删除时，重导旧范围与新范围的并集。
+- 资源移动时，仅在移动前后的匹配规则集合发生变化时补充重导。
+- 处理器代码变化和罕见漏处理由开发者人工强制全量重导兜底。
+
+只有产品明确要求跨代码错误、配置不可用、中断或重启后自动证明“没有漏处理”，并且已有可复现故障表明 Unity 原生导入不足时，才增加逐资源结果、未完成任务、Import Worker 回执和完整性审计。框架的可扩展性不应成为默认启用高成本恢复协议的理由。
+
 ### 设计要点总结
 
 | 设计点 | 实现方式 | 收益 |
@@ -180,7 +192,13 @@ public interface IPostprocessModule
 - [Unity AssetPostprocessor 官方文档](https://docs.unity3d.com/ScriptReference/AssetPostprocessor.html)
 - [Odin Inspector - SerializedScriptableObject](https://odininspector.com/documentation/sirenix.odinInspector.editor/serializedscriptableobject)
 
+### 相关记录
+
+- [Unity 输出型 AssetPostprocessor 的最小重导策略](./unity-assetpostprocessor-minimal-reimport-strategy.md) - 外部配置依赖、旧/新范围差分、移动范围转换和自动恢复强度的决策边界。
+- [历史方案：Unity 输出型 AssetPostprocessor 的强恢复重导设计](./unity-assetpostprocessor-semantic-reimport-recovery.md) - 已废弃的强恢复默认方案；仅保留特定强保证需求下的机制参考。
+
 ### 验证记录
 - [2026-03-31] 初次记录，来源：完整阅读项目 AssetsTool 全部 13 个源文件的实地代码分析
+- [2026-07-24] 架构边界修正。结合输出型 FBX 后处理工具的简化实践，明确配置驱动和模块化扩展不等于需要逐资源状态监控；普通资源变化交给 Unity，只保留外部配置依赖、范围差分、范围转换和人工全量重导作为默认闭环。
 
 ---
