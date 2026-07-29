@@ -4,14 +4,14 @@
 **来源**：项目实现与 Unity 编辑器实测（主体）；GDC 2022《Advanced Weather System for Mobile Game: 'Dark Area'》（方案启发与外部参照）；JCGT 单位向量编码论文；Khronos 色彩传递函数规范；Arm ASTC 官方指南
 **收录日期**：2026-07-27
 **来源日期**：2014 / 2022 / 2026-07-27（实践验证）
-**更新日期**：2026-07-28
+**更新日期**：2026-07-29
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐（公开编码理论 + Unity 编辑器内实现与多视角验证）
 **适用版本**：Unity Shader Model 3.0+；移动端 ASTC 平台
 
 ### 概要
 
-只需要上半球天空时，可把方向映射到一张铺满正方形的半八面体二维纹理。运行时使用一次普通 `Texture2D` 采样；HDR 数据以逐通道 LogRGB 编码到 8-bit PNG，优先把码值分给天空常见的中低亮度，再在 Tone Mapping 后加入低幅度屏幕空间抖动，分别治理源纹理量化和最终输出量化造成的色带。
+只需要上半球天空时，可把方向映射到一张铺满正方形的半八面体二维纹理。基础 HDR 天空以逐通道 LogRGB 编码到 RGBA8 的 RGB，Alpha 可保存一个同映射、独立可控的标量瞬态响应；需要覆盖更宽雷暴区域时，再用第二张 LogRGBA 保存四个可线性组合的固定闪电传输单元。两张纹理合计提供五个位置明显不同的单元，平静帧只采基础纹理，非零闪电帧增加一次 Basis 采样。Tone Mapping 后加入低幅度屏幕空间抖动，分别治理源纹理量化和最终输出量化造成的色带。
 
 ### 内容
 
@@ -146,7 +146,7 @@ float3 DecodeHemiOctahedralDirection(float2 uv)
 | RGBM/RGBD | RGB + 共享倍率 | 常见 HDR 压缩方式 | Alpha 误差会共同影响 RGB，过滤和块压缩敏感 |
 | 逐通道 LogRGB | RGB 各自 log1p | 曲率可调，不依赖 Alpha 倍率 | exp2 ALU，过滤发生在对数域 |
 
-当前目标是“单张普通 2D 纹理、一次采样、移动 ASTC、静态天空平滑渐变”，因此最终选择逐通道 LogRGB。它不是所有 HDR 纹理的普遍最优解。
+当前基础路径目标是“普通 2D 纹理、平静帧一次采样、移动 ASTC、静态天空平滑渐变”，因此最终选择逐通道 LogRGB。闪电路径使用第二张同 UV 的 LogRGBA，但只在瞬态贡献非零时启用。它不是所有 HDR 纹理的普遍最优解。
 
 #### 为什么平方根 RGB 仍可能出现大块色带
 
@@ -296,8 +296,8 @@ decode(average(encode(c))) <= average(c)
 1. GPU 瓦片先汇总成线性的 RGBAHalf HDR 母图。
 2. 可选用 EXR 保存未编码母版。
 3. CPU 对 RGB 每个通道执行 clamp + LogRGB。
-4. 写入 RGB24 Texture2D，再 EncodeToPNG。
-5. Alpha 不参与当前发布纹理。
+4. 写入 RGBA32 Texture2D，再 EncodeToPNG。
+5. RGB 保存基础 LogRGB；Alpha 独立保存第一条闪电路径的 LogR 标量响应，作为无第二张 Basis 纹理时的一采样兼容路径。
 
 ~~~csharp
 float clamped = Mathf.Clamp(value, 0.0f, hdrRange);
@@ -314,7 +314,8 @@ float encoded = Mathf.Log(
 |---|---|---|
 | Texture Type | Default | 作为普通二维天空数据 |
 | sRGB Texture | 关闭 | 编码值不是显示 sRGB 颜色 |
-| Alpha Source | None | 当前 LogRGB 只使用 RGB |
+| Alpha Source | Input Texture Alpha | Alpha 保存独立 LogR 标量响应，不是透明度或 RGBM 倍率 |
+| Alpha Is Transparency | 关闭 | 数据通道不得做透明边缘扩张或预乘解释 |
 | Mipmap | 开启 | 降低远处/旋转采样闪烁 |
 | Wrap | Clamp | 四边都是地平线，不允许跨边 Repeat |
 | Filter | Trilinear | 在 Mip 间平滑过渡 |
@@ -334,6 +335,45 @@ ASTC 每块固定 128 bit。4×4 即 8 bit/像素，不论源 PNG 是 RGB 还是
 | 2048² | 4 MiB | 5.33 MiB |
 
 这些是 GPU 压缩纹理近似值，不含 Unity 资产数据库、PNG 文件和平台打包开销。ASTC 6×6 体积更小，但当前平滑天空实测更容易暴露块和梯度问题，因此改用 4×4。
+
+#### 基础 LogRGBA 与闪电 Basis LogRGBA 的双纹理契约
+
+当前发布链路把“基础天空”和“事件型辅助数据”分开。这里的 Alpha/RGBA 都是线性可加的标量传输响应，不是透明度、RGBM 倍率、规则区域 Mask 或四张完整天空：
+
+| 纹理 | 通道 | 解码后语义 | 生命周期 |
+|---|---|---|---|
+| 基础 LogRGBA | RGB | 无闪电静态天空 HDR 出射辐亮度 | 所有上半球像素 |
+| 基础 LogRGBA | A | 一个独立固定闪电单元的标量体积传输响应 | 闪电峰值和短尾迹；也支持无第二张纹理的一采样兼容模式 |
+| 闪电 Basis LogRGBA | RGBA | 另外四个固定闪电单元的标量体积传输响应 | 仅非零闪电贡献期间 |
+
+五个单元共享同一重建公式：
+
+~~~text
+L(direction, t)
+  = Lstatic(direction)
+  + LightningColor
+    * (BaseA(direction) * BasePulse(t)
+       + dot(BasisRGBA(direction), PulseRGBA(t)))
+~~~
+
+RGBA 是一次纹理读取得到四个数，不是四次采样；但独立的第二张纹理仍使闪电帧从一次采样变为两次。每个单元保存一个完整且固定的空间造型。动漫式多样性优先来自 one-hot 选择不同单元、远隔单元接力或两个远隔单元同时点亮，而不是在同一小区域内混入难以察觉的相邻微变形。
+
+旧资产需要版本化解释：早期 schema 可能让基础 Alpha 与 Basis R 保存同一位置，运行时只能按四个独立单元计数；新 schema 才允许基础 Alpha 与 RGBA 分别保存五个不同位置。迁移代码不能仅看“有 Alpha”就假设它一定是第五单元，必须比较 metadata/schema 与中心方向。
+
+离线求解器还可以输出一张散射阶诊断纹理，其通道约定为：
+
+| 诊断通道 | 语义 |
+|---|---|
+| R | Direct，观察方向直接看到有限半径发光路径的贡献 |
+| G | Single，一次真实体积散射 |
+| B | Multiple，两次及以上体积散射 |
+| A | Combined，Direct + Single + Multiple |
+
+这张 `Orders` 诊断纹理不是运行时四位置 Basis；把它误绑到 Basis 槽位会把四种散射阶当成四处闪电，时序与空间语义都会错误。正式打包时应先为每个固定单元选定同一传输量，再分别写入 Base A 与 Basis RGBA。
+
+四通道适合保存能被同一滤波、Mip 和线性组合规则处理的数据，不应随意混装深度、类别 ID、法线和极值 Mask。闪电传输响应本身已经包含云体和光源共同决定的空间支撑，默认不再乘规则球形 RegionMask；额外 Mask 会在高亮时暴露原型边缘，并把本应沿相连云体传播的能量硬切断。
+
+若未来需要层感知卡通调色，可试验低分辨率、关键字可选的 CloudAux RGBA，四通道统一保存不同云型的视线积分软光学厚度。它只能作为连续 LUT/调色权重，不能替代闪电传输基；在 A/B 证明画质收益且真机验证三次采样成本前，不应升级为常驻契约。
 
 #### 色带必须分两级处理
 
@@ -372,7 +412,7 @@ ASTC 每块固定 128 bit。4×4 即 8 bit/像素，不论源 PNG 是 RGB 还是
 
 #### 运行时成本
 
-上半球每眼的核心成本为：
+平静上半球每眼的核心成本为：
 
 - 一次 `Texture2D` 采样。
 - 半八面体方向编码的少量 ALU。
@@ -395,6 +435,8 @@ ASTC 每块固定 128 bit。4×4 即 8 bit/像素，不论源 PNG 是 RGB 还是
   → 屏幕空间 Dither
   → 输出
 ~~~
+
+非零闪电峰值和短尾迹会启用第二张 RGBA Basis 采样；黑场、冷却和普通天气恢复基础一次采样。运行时动态开启的 Basis 本地关键字必须确保 Player 构建保留开/关两个变体；参考实现使用 `multi_compile_local`，避免正式材质默认关闭关键字时把 ON 变体裁掉。
 
 Single-Pass Instanced/Multiview 减少的是提交和双眼组织成本，不会让两眼共用同一次像素着色。左右眼共享纹理资产，但每眼覆盖的像素仍各自采样。
 
@@ -477,5 +519,7 @@ float InterleavedGradientNoise(float2 pixelPosition)
 - [2026-07-27] 完整性与来源性修正：补全平方根编码的编码、8-bit 量化与解码公式，解释 `c`、`R`、`e`、`q`、`ĉ`、`K` 等参数，并加入 `R = 8` 数值示例。外部复核确认《暗区突围》GDC 2022 分享公开支持半八面体缓存、RGBA8、预曝光与 Gamma 压缩，但未确认 `sqrt(c / R)` 是其原始公式；已将平方根和 LogRGB 明确标为本地解释/实践方案。Tone Mapping 表述收紧为“可能经组合处理使台阶更可见”，不再笼统称其总会放大量化误差。
 - [2026-07-27] 来源层级修正：明确本文以项目实现与 Unity 编辑器实测为主体，《暗区突围》GDC 仅作为半八面体缓存与有限位深压缩的方案启发。保留并强化 LogRGB、ASTC、源纹理色带、最终输出等高线和 Dither 的项目实践结论，避免将文章误读为 GDC 内容复述。
 - [2026-07-28] 正确性复核与实现扩写：确认新增的 GDC 来源边界、平方根量化数值和 Tone Mapping 收窄表述正确；修正 LogRGB 公式，显式加入 clamp 与 8-bit 量化。补充半八面体逆映射和五个基准方向、LogRGB 误差表、range/K 选择方法、对数域过滤与 Mip 偏差、Unity CPU 编码和导入链路、ASTC 内存量级、线性空间 Dither 限制、运行时顺序和诊断决策表。
+- [2026-07-28] 双纹理契约更新：基础发布纹理由 RGB24 调整为 LogRGBA，Alpha 保存第一条闪电路径的 LogR 兼容响应；新增第二张四通道闪电传输基。验证 1024×1024 基础与 Basis 均为 Linear、Mip、Clamp、不可读、Android ASTC 4×4；平静/黑场一次采样，非零峰值/短尾迹两次采样。补充动态关键字 Player 变体保留和可选 CloudAux RGBA 的适用边界。Quest 真机 ASTC、双眼和 GPU 抓帧仍未覆盖。
+- [2026-07-29] 正确性与数据契约修正：将 Base A + Basis RGBA 明确为五个可独立布局的固定闪电单元，并保留旧 schema 中 Base A/Basis R 重复时只能按四单元计数的兼容边界。新增 `Orders` 诊断纹理的 Direct/Single/Multiple/Combined 通道语义，禁止把散射阶纹理误当四位置 Basis。根据夜间多视角实践撤销默认 RegionMask 建议：传输响应本身决定空间支撑，规则 Mask 会产生原型软边并切断相连云体受光。Quest 真机双眼、构建变体与 GPU 采样数仍待验证。
 
 ---
