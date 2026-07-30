@@ -1,17 +1,17 @@
 # 静态体积云天空的高质量离线烘焙
 
 **标签**：#unity #graphics #shader #rendering #experience
-**来源**：项目实现与 Unity 编辑器实测（主体）；Guerrilla Games Horizon/Nubis、EA Frostbite、Dobashi 2007、Fattal 2009 与 NOAA/NSSL 公开资料（理论、求解器和现实视觉参照）
+**来源**：项目实现与 Unity 编辑器实测（主体）；Guerrilla Games Horizon/Nubis、EA Frostbite、Dobashi 2007、Jarosz 2008、Fattal 2009、Kulla 2012、SVGF 2017、Herholz 2019 与 NOAA/NSSL 公开资料（理论、求解器和现实视觉参照）
 **收录日期**：2026-07-27
-**来源日期**：2007 / 2009 / 2015-08 / 2016-07 / 2026-07-29（实践验证）
+**来源日期**：2007 / 2008 / 2009 / 2012 / 2015-08 / 2016-07 / 2017 / 2019 / 2026-07-29（实践验证）
 **更新日期**：2026-07-29
 **状态**：✅ 已验证
-**可信度**：⭐⭐⭐⭐（静态云链路已多视角验证；闪电传输参考解已通过数值收敛，最终球面视觉仍待验收）
+**可信度**：⭐⭐⭐⭐（静态云链路已多视角验证；闪电传输参考解曾通过数值收敛，但首轮 128² 球面视觉门禁已失败，源采样改进仍待验证）
 **适用版本**：Unity 2021.3+；Built-in/URP 天空盒路径
 
 ### 概要
 
-当云形、天气和时间段只需要离散预设时，可以把体积云的高成本密度与光照积分完全移到 Editor。静态天空用球壳云层、程序化密度、Beer–Lambert 消光、Henyey–Greenstein 相位、Powder 与多重散射近似生成 HDR 半八面体母图；动态云后闪电则在同一静态密度体上，为若干固定发光路径离线求传输响应。快速标量扩散只能形成低频灯罩，不能作为真实参考；当前参考解采用保留方向、遮挡、云边界逃逸和散射阶的反向逐纹素 Monte Carlo。发布阶段仍只输出基础 LogRGBA 与第二张 Basis LogRGBA，Player 平静帧一次采样，非零闪电帧两次采样。
+当云形、天气和时间段只需要离散预设时，可以把体积云的高成本密度与光照积分完全移到 Editor。静态天空用球壳云层、程序化密度、Beer–Lambert 消光、Henyey–Greenstein 相位、Powder 与多重散射近似生成 HDR 半八面体母图；动态云后闪电则在同一静态密度体上，为若干固定发光路径离线求传输响应。快速标量扩散只能形成低频灯罩，不能作为真实参考；反向逐纹素 Monte Carlo 保留了方向、遮挡、云边界逃逸和散射阶，但当前按发射功率采样线源的 NEE 在首轮 128² 球面门禁中仍暴露高方差。下一步先验证无偏的碰撞点条件化等角提案，再决定是否进入高分辨率与五单元发布。发布契约仍只使用基础 LogRGBA 与第二张 Basis LogRGBA，Player 平静帧一次采样，非零闪电帧两次采样。
 
 本文重点记录可复现的原理、实现链路、参数关系、失败模式和验证边界；Horizon/Nubis/Frostbite 是理论与设计参照，不代表当前代码逐行复刻这些引擎。
 
@@ -333,7 +333,7 @@ Basis_i      = integral_view(T_view * sigma_s * sum_j(single_j) ds)
 1. 用与正式云烘焙一致的程序化密度生成三维体素快照；`sigma_t = density * extinction`。连接透射对该三线性体素表示求解，不冒充对原始连续噪声的解析精确解。
 2. 每个体素 cell 根据局部最大密度建立 majorant，观察者路径用 cell DDA 和 delta/null-collision tracking 采样真实碰撞。
 3. 每个半八面体纹素从观察者沿纹素中心方向发射相同预算的相机路径；纹素立体角单独计算，用于能量统计。
-4. 在每次真实碰撞处，对连续闪电折线执行 next-event estimation。折线按“线段长度 × 局部功率”采样位置，源到碰撞点的透射用 cell DDA 与二点 Gauss–Legendre 积分。
+4. 在每次真实碰撞处，对连续闪电折线执行 next-event estimation。当前基线按“线段长度 × 局部功率”采样源位置，源到碰撞点的透射用 cell DDA 与二点 Gauss–Legendre 积分；该提案不随当前碰撞点重新分配源样本，是首轮球面视觉失败后首先要验证的方差来源。
 5. 后续散射方向按 Henyey–Greenstein 相位函数重要性采样；throughput 累积单散射反照率，高阶路径使用 Russian roulette 保持期望能量。
 6. 另行估计观察者直接看到发光路径的 Direct，输出 Direct、Single、Multiple 和 Combined 四种诊断量。检查“云体被照亮”时应先观察 `Single + Multiple`，把 Direct/可见电弧作为独立职责。
 7. 原始参考探针关闭球面 Tent 重建和引导降噪，避免用空间平滑制造虚假的跨种子一致结构。
@@ -375,8 +375,73 @@ A = Combined
 | 最大阶 `12 -> 24` | Combined 能量增加约 `1.35%`；硬截断由 `1229` 降至 `8` | 参考探针采用 O24 |
 | 128²、1024 spp、O24 | `16,777,216` 条路径；Combined 能量约 `0.000137781`；RSE 中位数约 `0.2502` | 数值参考已进入可做球面视觉检查的阶段 |
 | 水平半域 `64 km -> 96 km` | Combined 能量差约 `0.33%` | 规则方形观感不是局部密度盒裁切造成 |
+| 128² `Single + Multiple` 球面四方向 | `13,020` 个正值纹素；P99.5 `0.0005930066`；最大值 `0.00350952`；相对峰值 5% / 18% 支撑约 `9.729%` / `3.418%`；2 个编码值裁切 | 响应非空，但视觉门禁失败 |
 
-这些数据证明估计器开始收敛，不证明最终画面已经像真实闪电。下一门禁是把 128² 的 `Single + Multiple` 投回测试天空球，从雷源中心、左右偏转和上视角分别捕获 Idle、峰值与响应调试图，并检查：云胞暗缝是否保留、远端是否分层响应、无云区是否泄漏、是否仍像均匀雾罩，以及半八面体接缝/规则边界是否可见。通过后才值得运行第二个 128² 高样本种子、升至发布分辨率并批量求五单元。
+前六项数据只证明估计器的部分统计量开始收敛，不证明最终画面已经像真实闪电。随后已把正确的 128² `Single + Multiple` 投回测试天空球，从雷源中心、左右各约 15° 和上视约 12° 四个方向分别捕获 Idle、峰值与响应调试图，共 12 图。视觉上，原始响应被放大成明显的径向/竖向条纹和盐粒，并形成宽大的锥形亮罩；无法确认云胞暗缝、褶皱与远端分层。由此首轮球面门禁明确判定为失败。
+
+失败后停止第二个 128² 高样本种子、发布分辨率和五单元批量求解。普通模糊、Tent、提高曝光或 Tone Mapping 只能隐藏噪声或扩大亮罩，不能把欠采样结构变成参考真值；应先修改估计器，再重做同一门禁。
+
+##### 源条件化 NEE：待验证的等角线源提案
+
+Kulla 与 Fajardo 说明，参与介质近光源处的 `1/r²` 弱奇异项会把普通距离采样的方差集中在少量样本上；按该项构造 Cauchy/等角提案，并与其他提案做 MIS，可直接降低这类方差。论文原式是在观察射线上针对点/球光采样距离；这里把同一数学结构适配为“固定碰撞点下，在有限半径线段光源上采样位置”，属于待实践验证的推导，不应写成论文已经验证过本项目线源算法。
+
+设碰撞点为 `x`，第 i 条线段起点为 `y0`、单位方向为 `t`、长度为 `l`、分段常量功率密度为 `q_i`，有限源半径为 `r_s > 0`：
+
+~~~text
+s*       = dot(x - y0, t)
+dPerp²   = lengthSquared(y0 + s* t - x)
+a²       = dPerp² + r_s²
+G(s)     = 1 / (a² + (s - s*)²),       0 <= s <= l
+theta0   = atan((0 - s*) / a)
+theta1   = atan((l - s*) / a)
+I_i      = integral_0^l G(s) ds
+         = (theta1 - theta0) / a
+s(xi)    = s* + a * tan(lerp(theta0, theta1, xi))
+~~~
+
+`I_i` 同时给出该线段软逆平方核的解析积分。条件化提案先按 `q_i * I_i` 选择线段，再用上式在该线段内采样 `s`。若：
+
+~~~text
+Q = sum_i(q_i * l_i)
+C = sum_i(q_i * I_i)
+~~~
+
+则整个折线上的两个 PDF 为：
+
+~~~text
+pEmission(s)    = q_i / Q
+pConditioned(s) = q_i * G(s) / C
+pMix(s)         = (1 - eta) * pEmission(s)
+                + eta * pConditioned(s)
+~~~
+
+新估计器直接使用 `f(s) / pMix(s)`。如果复用旧的 `f(s) / pEmission(s)` 代码路径，就必须额外乘：
+
+~~~text
+weight = pEmission(s) / pMix(s)
+~~~
+
+这样只是改变采样分布，不改变原始线源积分的期望值。保留一部分 `pEmission` 很重要：软逆平方只匹配几何项，源到碰撞点透射、相位函数、可见性和后续路径重要性仍可能把贡献移到其他位置。混合提案比把 `eta` 直接设为 1 更稳健，也为退化段提供完整支撑。
+
+实现时需要同时满足：
+
+- 跳过零长度、零功率线段；`a` 用正源半径和数值下限保护。
+- `C` 或角区间退化时回退到发射提案；不能继续使用无效归一化。
+- 无论样本由哪个分支产生，都在该样本处计算两个 PDF 和完整 `pMix`，禁止只除以被选中分支的 PDF。
+- 当前折线只有约几十至 64 段时，可在每个碰撞点扫描全部线段计算 `q_i I_i`；这是离线质量成本，不增加 Player 采样。段数进一步增长时再考虑层次结构或空间条件化缓存。
+
+验证顺序应固定为：
+
+1. 单线段、无透射/常量相位自检：解析真值是 `q_i I_i`；比较基线与混合提案的均值、置信区间和方差。
+2. 多线段 PDF 归一化、退化段、`eta = 0` 回归和不同源半径测试；确认基线可精确复现。
+3. 同一云体、同一种子和同预算做 64² A/B，同时记录总能量、RSE、峰值、支撑面积、耗时与高方差纹素比例。均值必须在统计置信范围内一致，不能用能量漂移换降噪。
+4. 只有 64² 明显降方差后，才重做 128² 四方向球面视觉门禁；通过后再运行第二种子、升发布分辨率和批量五单元。
+
+##### 若局部 NEE 仍不足：候选方法的证据边界
+
+- Herholz 等人的零方差随机游走理论联合指导碰撞距离、散射方向、Russian roulette 和 splitting。它提示只优化线源 NEE 仍可能留下高阶路径方差；若 64² A/B 只改善 Single、Multiple 仍不稳定，下一候选应是粗伴随场/体积路径引导，而不是继续调滤波。
+- Jarosz 等人的 Beam Radiance Estimate 沿整条相机束一次收集光子，比逐点体积光子估计噪声低；但它通过核估计得到模糊辐亮度，空间核会引入偏差。若采用，必须做核宽收敛和暗缝保真检查。
+- SVGF 依赖时域积累、亮度方差以及深度、法线、对象 ID 和运动矢量。静态单帧烘焙没有论文的时域条件，只有云不透明度与平均深度引导的 à-trous 也明显弱于其 G-buffer；真实的云胞高频可能被误判为噪声。因此它只能作为 raw 结构跨种子成立后的并列重建候选，不能充当参考真值。
 
 #### 瓦片化避免 TDR
 
@@ -488,7 +553,7 @@ Windows TDR 监控的是一次 GPU 工作长时间无响应，而不是整项任
 - 没有单独地面反弹光，也没有场景几何参与云层遮挡。
 - 烘焙参数中的 groundColor 当前不影响上半球输出；它不是云底反弹光参数。
 - 噪声坐标适合局部地表观察，不是完整行星球面天气系统。
-- 快速局部光近似已经生成过可运行的 Base A + Basis RGBA 五单元资产；反向 Monte Carlo 目前只完成单个代表单元的数值参考与 128² 原始输出，尚未完成天空球视觉门禁、五单元正式打包和发布分辨率终稿。
+- 快速局部光近似已经生成过可运行的 Base A + Basis RGBA 五单元资产；反向 Monte Carlo 目前只完成单个代表单元的数值参考，首轮 128² 天空球视觉门禁已经失败。源条件化 NEE、第二高样本种子、五单元正式打包和发布分辨率终稿均尚未通过。
 - 可见闪电主干、动态云影和任意运行时光源不在本模块范围内；无云方向需要看到电弧时，应由独立三维主干或经过明确权衡的 Direct 层承担。
 - Quest 真机 ASTC 通道误差、双眼画面、构建变体和 1/2 次采样 GPU 成本仍需目标设备验证。
 
@@ -534,7 +599,11 @@ for (int i = 0; i < viewSteps && transmittance > 0.002; i++)
 - [Nubis: Authoring Real-Time Volumetric Cloudscapes with the Decima Engine](https://www.guerrilla-games.com/read/nubis-authoring-real-time-volumetric-cloudscapes-with-the-decima-engine) - 云层创作与天气控制。
 - [SIGGRAPH 2016 Course: Physically Based Shading in Theory and Practice](https://blog.selfshadow.com/publications/s2016-shading-course/) - Frostbite《Physically Based Sky, Atmosphere and Cloud Rendering》课程入口及原始演示文稿。
 - [Dobashi et al. 2007: A fast rendering method for clouds illuminated by lightning taking into account multiple scattering](https://doi.org/10.1007/s00371-007-0146-3) - 预计算云体闪电 Basis Intensities，并在运行时线性组合直接光与多重散射响应。
+- [Jarosz et al. 2008: The Beam Radiance Estimate for Volumetric Photon Mapping](https://doi.org/10.1111/j.1467-8659.2008.01153.x) - 沿整条相机束收集光子，比逐点体积光子估计噪声低；核估计偏差要求额外收敛验证。
 - [Fattal 2009: Participating media illumination using light propagation maps](https://doi.org/10.1145/1477926.1477933) - 以 Discrete Ordinates 保留传播方向，并讨论 false scattering 与 ray effect；用于说明标量扩散丢失角向信息的边界，不代表当前实现复刻该算法。
+- [Kulla & Fajardo 2012: Importance Sampling Techniques for Path Tracing in Participating Media](https://doi.org/10.1111/j.1467-8659.2012.03148.x) - 等角/Cauchy 采样匹配近光源 `1/r²` 弱奇异项并与其他提案做 MIS；本文的碰撞点条件化线源公式是基于该结构的适配。
+- [Schied et al. 2017: Spatiotemporal Variance-Guided Filtering](https://doi.org/10.1145/3105762.3105770) - 依赖时域积累、方差与 G-buffer 引导；用于限定静态单帧 à-trous 不能直接等同于 SVGF。
+- [Herholz et al. 2019: Volume Path Guiding Based on Zero-Variance Random Walk Theory](https://doi.org/10.1145/3230635) - 以近似伴随传输联合指导体积路径的距离、方向、终止和分裂决策。
 - [NOAA/NSSL Severe Weather 101: Lightning](https://www.nssl.noaa.gov/education/svrwx101/lightning/) - 闪电类型与现实云内放电参照入口。
 - [Unity Volumetric Clouds Volume Override reference](https://github.com/Unity-Technologies/Graphics/blob/master/Packages/com.unity.render-pipelines.high-definition/Documentation~/volumetric-clouds-volume-override-reference.md) - Cloud Map/LUT 通道打包和数据纹理关闭 sRGB 的官方参考。
 - [Arm ASTC Format Overview](https://github.com/ARM-software/astc-encoder/blob/main/Docs/FormatOverview.md) - 128-bit 固定块、通道共享权重与 dual-plane 边界。
@@ -554,5 +623,6 @@ for (int i = 0; i < viewSteps && transmittance > 0.002; i++)
 - [2026-07-28] 来源性复核：原 EA Frostbite PDF 直链返回 404，改用可访问的 SIGGRAPH 2016 课程索引；该页面仍提供 Frostbite 原始演示文稿。
 - [2026-07-28] 1024 与闪电编码闭环更新：完成 1024×1024、192 视线步、20 太阳光步、4 子样本的正式静态云烘焙，并为四条相邻闪电路径生成快速近似 LogRGBA 传输基。四通道编码最大码值均低于 167、没有 255 饱和纹素；基础与 Basis 导入契约均通过 Unity 检查。该结果证明编码和运行时组合可用，不再作为闪电传播形态已经真实的证据。
 - [2026-07-29] 正确性与求解器重大修正：现实夜间图片复核确认旧 16 图主要扩大、模糊中心光团，缺少大片相连云体的分层响应与暗缝切割。三维标量 Jacobi/双边扩散虽扩大 5% 受光面积，却进一步降低高频结构，正式退出完整传输主线。实现有限半径反向逐纹素 Monte Carlo 参考解，并修复大行星坐标下观察者落在密度 Bounds 外的问题。64²/1024 spp 双种子在能量、空间相关、支撑面积与质心上收敛；O24、128²/1024 spp 和 64/96 km 域对照通过数值门禁。最终天空球多视角、第二个 128² 高样本种子、五单元打包与 Quest 真机仍明确列为未验证。
+- [2026-07-29] 球面门禁与外部论文复核：正确 128² `Single + Multiple` 响应完成四方向 Idle/峰值/Debug 共 12 图检查，但径向/竖向条纹、盐粒和锥形亮罩仍明显，无法确认云胞暗缝、褶皱及远端分层，视觉门禁判定失败。根据 Kulla–Fajardo 对近光源弱奇异项的等角采样、Herholz 对全路径决策的指导、Jarosz 的 Beam Radiance 偏差边界和 SVGF 的时域/G-buffer 前提，下一步改为先做源条件化 NEE 的解析自检与 64² 无偏 A/B；不先升分辨率或用滤波掩盖 raw 方差。
 
 ---

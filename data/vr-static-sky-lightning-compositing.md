@@ -1,12 +1,12 @@
 # VR 静态云天空与动态闪电的分离合成
 
 **标签**：#unity #shader #vr #rendering #experience
-**来源**：Unity Shader、控制器与离线传输实践总结；Unity XR Single-Pass Instanced/Multiview 规范；Dobashi 2007、Fattal 2009 与 NOAA/NSSL 现实参照
+**来源**：Unity Shader、控制器与离线传输实践总结；Unity XR Single-Pass Instanced/Multiview 规范；Dobashi 2007、Jarosz 2008、Fattal 2009、Kulla 2012、SVGF 2017、Herholz 2019 与 NOAA/NSSL 现实参照
 **收录日期**：2026-07-27
-**来源日期**：2007 / 2009 / 2026-07-29（实践验证）
+**来源日期**：2007 / 2008 / 2009 / 2012 / 2017 / 2019 / 2026-07-29（实践验证）
 **更新日期**：2026-07-29
 **状态**：⚠️ 待验证
-**可信度**：⭐⭐⭐⭐（数据契约、控制器、桌面多视角与参考解数值收敛已有实践证据；最终球面形态和目标头显仍待验收）
+**可信度**：⭐⭐⭐⭐（数据契约、控制器、桌面多视角与参考解数值收敛已有实践证据；首轮 128² 球面视觉门禁已明确失败，改进估计器与目标头显仍待验收）
 **适用版本**：Unity 2021.3+；OpenXR/Meta XR 的 Single-Pass Instanced 或 Multiview
 
 ### 概要
@@ -26,7 +26,7 @@
 | VR Stereo/Instancing 宏 | 已实现但未上目标头显 | Shader 编译与桌面路径通过 |
 | Base A + Basis RGBA 五单元契约 | 已实现 | Base A 独立位置、RGBA 四个额外位置；旧重复通道有兼容语义 |
 | 快速局部光 Basis | 已实现但形态被现实参照否决 | Night/Dusk 多视角、时序和编码可用；远场仍像平滑灯罩 |
-| 反向逐纹素 Monte Carlo 参考 | 单代表单元数值门禁通过 | 有限半径、双种子、O24、128²与体积域对照；球面多视角待验收 |
+| 反向逐纹素 Monte Carlo 参考 | 数值门禁通过、首轮球面视觉门禁失败 | 有限半径、双种子、O24、128²与体积域对照曾通过数值检查；投回天空球后暴露径向/竖向条纹、盐粒与锥形亮罩 |
 | 多区域闪烁控制器 | 已实现，自动选择仍需回归 | 单单元、跨区接力、双区同闪和混合模式；72/90 Hz 手动关键帧通过 |
 | 最终五单元高分辨率资产 | 未完成 | 等待代表单元球面视觉通过后再批量生成 |
 | Quest/PCVR 双眼回归 | 未验证 | 需要目标设备、构建变体与 GPU 抓帧 |
@@ -294,13 +294,24 @@ float4 Frag(Varyings input) : SV_Target
 3. 做最大散射阶与求解域 A/B，排除硬截断和体积盒裁切。
 4. 参考图关闭 Tent/降噪；只有原始结构跨种子成立后才允许视觉重建。
 
-##### 阶段 3：天空球多角度门禁（当前阶段）
+##### 阶段 3：天空球多角度门禁（首轮已失败）
 
 1. 将高样本 `Single + Multiple` 临时编码成与正式 Shader 一致的 LogRGBA 标量响应，不带 Direct。
 2. 克隆运行时天空材质，在 `finally`/等价清理路径中恢复相机、天空材质和临时对象。
 3. 至少捕获雷源中心、左右各偏转约 15°、上视约 12°；每个角度同时保留 Idle、峰值和响应调试图。
 4. 检查暗缝、远端分层、无云泄漏、均匀雾罩、半八面体接缝和规则边界。
 5. 只有该门禁通过，才运行第二个 128² 高样本种子、升发布分辨率和批量五单元。
+
+首轮门禁使用排除 Direct 的 `Single + Multiple`，从雷源中心、左右各约 15° 和上视约 12° 四个方向分别保存 Idle、峰值和响应调试图，共 12 图。对应 128² 响应有 `13,020` 个正值纹素，P99.5 为 `0.0005930066`、最大值为 `0.00350952`；相对峰值的 5% / 18% 支撑分别约为 `9.729%` / `3.418%`，仅 2 个编码值发生裁切。这些数字说明响应并非空图，却不能证明视觉结构正确。
+
+视觉上，低分辨率原始高方差被放大成明显径向/竖向条纹和盐粒，并形成宽大的锥形亮罩；四个方向都无法确认云胞暗缝、褶皱和远端分层。因此该门禁判定为失败：不运行第二个 128² 高样本种子，不升发布分辨率，也不批量生成五单元。普通模糊、Tent、增亮曝光或更强 Tone Mapping 都不能把这份失败结果改称参考真值。
+
+##### 阶段 3B：先改源采样估计器，再重做球面门禁
+
+1. 将当前“线段长度 × 局部功率”的源位置提案保留为基线，新增按碰撞点条件化的软逆平方/等角提案，并用完整混合 PDF 重新加权，避免改变期望能量。
+2. 先做单线段 PDF 归一化、无偏均值和方差自检，再以相同种子做 64² A/B；同时比较能量置信区间、RSE、峰值、空间支撑与耗时。
+3. 只有 64² 明显降方差且均值一致，才重做 128² 四方向球面门禁；详细推导与候选算法边界见相关的静态云烘焙记录。
+4. 若局部 NEE 改进仍不足，再评估伴随场体积路径引导或 Beam Radiance；SVGF/à-trous 只能作为原始结构成立后的重建候选，不能替代参考解。
 
 ##### 阶段 4：五单元发布与状态机
 
@@ -364,7 +375,11 @@ float4 Frag(Varyings input) : SV_Target
 - [Unity 2022.3: Single-pass instanced rendering and custom shaders](https://docs.unity3d.com/2022.3/Documentation/Manual/SinglePassInstancing.html) - 自定义 Shader 的 Stereo/Instancing 宏。
 - [Unity 2022.3: Single-pass stereo rendering](https://docs.unity3d.com/2022.3/Documentation/Manual/SinglePassStereoRendering.html) - Unity XR 单通道立体渲染背景。
 - [Dobashi et al. 2007: A fast rendering method for clouds illuminated by lightning taking into account multiple scattering](https://doi.org/10.1007/s00371-007-0146-3) - 离线预计算闪电 Basis Intensities 并在线性运行时组合的公开依据。
+- [Jarosz et al. 2008: The Beam Radiance Estimate for Volumetric Photon Mapping](https://doi.org/10.1111/j.1467-8659.2008.01153.x) - 整条相机束收集光子可降低逐点体积光子估计噪声，但核估计引入空间偏差，只作为后备候选。
 - [Fattal 2009: Participating media illumination using light propagation maps](https://doi.org/10.1145/1477926.1477933) - 保留传播方向的离散方向方法，以及 false scattering/ray effect 边界；用于解释标量扩散的局限。
+- [Kulla & Fajardo 2012: Importance Sampling Techniques for Path Tracing in Participating Media](https://doi.org/10.1111/j.1467-8659.2012.03148.x) - 用等角/Cauchy 提案匹配近光源的 `1/r²` 弱奇异项，并与其他提案通过 MIS 组合；当前线源条件化方案是基于同一数学结构的适配，不是对论文算法的原样复刻。
+- [Schied et al. 2017: Spatiotemporal Variance-Guided Filtering](https://doi.org/10.1145/3105762.3105770) - 依赖时域积累、方差和深度/法线/ID 引导；用于约束降噪的证据边界。
+- [Herholz et al. 2019: Volume Path Guiding Based on Zero-Variance Random Walk Theory](https://doi.org/10.1145/3230635) - 联合指导碰撞距离、散射方向、Russian roulette 与 splitting，说明只优化局部 NEE 仍可能留下高阶残余方差。
 - [NOAA/NSSL Severe Weather 101: Lightning](https://www.nssl.noaa.gov/education/svrwx101/lightning/) - 现实闪电类型和云内放电参照入口。
 
 ### 相关记录
@@ -381,5 +396,6 @@ float4 Frag(Varyings input) : SV_Target
 - [2026-07-29] 实现状态重大更新：完成 Base A + Basis RGBA 五固定单元契约、one-hot 单单元、跨区接力、双区同闪和混合状态机；移除默认 8% 邻路微混合。Night/Dusk 桌面多视角、72/90 Hz 多回击/持续尾迹、Log 编码和 Shader 模块编译已有证据；自动单元冷却、目标构建与真机双眼仍需回归。
 - [2026-07-29] 正确性修正：现实夜间图像表明旧测试主要是中心光团变宽、变糊，不足以证明云内闪真实。规则 RegionMask 会在高亮时暴露原型边缘并切断远端相连云体，正式撤销其默认推荐。补充“无云处没有散射响应、附近零散云仍可受光、可见电弧由 Direct/三维主干负责”的数据职责解释。
 - [2026-07-29] 离线参考验证：三维标量 Jacobi/双边扩散因灯罩化被淘汰；有限半径反向逐纹素 Monte Carlo 的 64² 双种子、O24、128² 高样本与 64/96 km 求解域对照通过数值门禁。最终 128² 天空球多角度、第二高样本种子、五单元发布分辨率和 Quest/PCVR 真机尚未完成，因此状态继续保持“⚠️ 待验证”。
+- [2026-07-29] 球面视觉门禁与论文复核：完成正确 128² `Single + Multiple` 响应的四方向 Idle/峰值/Debug 共 12 图检查。虽然数值响应非空且仅 2 个编码裁切纹素，画面仍出现径向/竖向条纹、盐粒和锥形亮罩，无法确认云胞暗缝、褶皱及远端分层，首轮球面门禁判定失败。依据 Kulla–Fajardo 的等角采样、Herholz 的体积路径引导、Jarosz 的 Beam Radiance 与 SVGF 的引导边界，下一步确定为先验证无偏的源条件化 NEE，不以滤波掩盖 raw 方差。
 
 ---
