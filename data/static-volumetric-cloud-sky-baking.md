@@ -1,17 +1,17 @@
 # 静态体积云天空的高质量离线烘焙
 
 **标签**：#unity #graphics #shader #rendering #experience
-**来源**：项目实现与 Unity 编辑器实测（主体）；Guerrilla Games Horizon/Nubis、EA Frostbite、Dobashi 2007、Jarosz 2008、Fattal 2009、Kulla 2012、SVGF 2017、Herholz 2019 与 NOAA/NSSL 公开资料（理论、求解器和现实视觉参照）
+**来源**：项目实现与 Unity 编辑器实测（主体）；Guerrilla Games Horizon/Nubis、EA Frostbite、Unity Graphics 文档与 Arm ASTC 资料（体积云、编码和平台格式参照）
 **收录日期**：2026-07-27
-**来源日期**：2007 / 2008 / 2009 / 2012 / 2015-08 / 2016-07 / 2017 / 2019 / 2026-07-29（实践验证）
-**更新日期**：2026-07-29
+**来源日期**：2015-08 / 2016-07 / 2026-07-30（实践验证）
+**更新日期**：2026-07-30
 **状态**：✅ 已验证
-**可信度**：⭐⭐⭐⭐（静态云链路已多视角验证；闪电传输参考解曾通过数值收敛，但首轮 128² 球面视觉门禁已失败，源采样改进仍待验证）
-**适用版本**：Unity 2021.3+；Built-in/URP 天空盒路径
+**可信度**：⭐⭐⭐⭐（球壳云、LogRGB、导入、多视角以及旧固定瓦片版本的 512/1024 烘焙已有实践证据；最新动态短瓦片工作副本只完成低负载回归，高质量重验与空白工程完全重写尚未完成）
+**适用版本**：已验证环境为 Unity 2022.3.62f3 / URP 14；其他 Unity、Built-in 或 URP 版本需重新验证 Shader 编译、纹理导入和天空盒路径
 
 ### 概要
 
-当云形、天气和时间段只需要离散预设时，可以把体积云的高成本密度与光照积分完全移到 Editor。静态天空用球壳云层、程序化密度、Beer–Lambert 消光、Henyey–Greenstein 相位、Powder 与多重散射近似生成 HDR 半八面体母图；动态云后闪电则在同一静态密度体上，为若干固定发光路径离线求传输响应。快速标量扩散只能形成低频灯罩，不能作为真实参考；反向逐纹素 Monte Carlo 保留了方向、遮挡、云边界逃逸和散射阶，但当前按发射功率采样线源的 NEE 在首轮 128² 球面门禁中仍暴露高方差。下一步先验证无偏的碰撞点条件化等角提案，再决定是否进入高分辨率与五单元发布。发布契约仍只使用基础 LogRGBA 与第二张 Basis LogRGBA，Player 平静帧一次采样，非零闪电帧两次采样。
+当云形、天气和时间段只需要离散预设时，可以把体积云的高成本密度与光照积分完全移到 Editor。静态天空使用球壳云层、程序化密度、Beer–Lambert 消光、Henyey–Greenstein 相位、Powder 与多重散射近似生成 HDR 半八面体母图，再编码为一张运行时单次采样的 LogRGB 纹理。本文只记录静态体积云烘焙的原理、实现、参数、输出、复现和验收，不承担瞬态照明或动态事件的算法说明。
 
 本文重点记录可复现的原理、实现链路、参数关系、失败模式和验证边界；Horizon/Nubis/Frostbite 是理论与设计参照，不代表当前代码逐行复刻这些引擎。
 
@@ -19,7 +19,15 @@
 
 #### 记录定位与来源边界
 
-本文主体是当前项目实现与 Unity 编辑器实测。公开资料提供了 Perlin–Worley 密度、天气控制、相位函数和多重散射近似等设计依据，但当前实现采用程序化噪声、固定垂直剖面和一组经过项目调试的经验系数。引用这些资料不能等同于“完整复刻 Horizon/Nubis/Frostbite”。
+本文主体是一次 Unity 项目实践及其编辑器证据。公开资料提供了 Perlin–Worley 密度、天气控制、相位函数和多重散射近似等设计依据，但实践实现采用程序化噪声、固定垂直剖面和一组经验系数。引用这些资料不能等同于“完整复刻 Horizon/Nubis/Frostbite”，本次实践中的失败或限制也不能直接推广为同类算法在其他实现中普遍不可用。
+
+阅读本文时应区分三个证据层级：
+
+| 层级 | 含义 | 本文如何表述 |
+|---|---|---|
+| 已验证基线 | 有参数、输出和多视角证据的旧固定瓦片实现 | 可以作为静态云形、HDR、编码和运行时采样的复现起点 |
+| 最新工作副本 | 源码已改为动态短瓦片，但只完成低负载瓦片连续性检查 | 可以说明实现思路，不能借用旧 512/1024 结果宣称当前版本高质量通过 |
+| 候选扩展 | 2048、更高步数、目标设备格式与空白工程移植 | 只记录门禁与风险，不写成已经完成 |
 
 #### 端到端实现链路
 
@@ -27,19 +35,16 @@
 ScriptableObject 烘焙参数
     ↓ 归一化、单位和输出目录检查
 离线烘焙 Material
-    ↓ 每个 128×128 瓦片执行体积积分
+    ↓ 以瓦片执行体积积分；稳定基线使用固定瓦片，最新工作副本尝试 32×32 / 16×16 / 8×8 动态短瓦片
 RGBAHalf 线性 HDR 瓦片
     ↓ 按整图像素位置写回
 完整半八面体 RGBAHalf 母图
     ├─ 可选：导出 EXR 母版
-    ├─ RGB：静态天空 LogRGB
-    └─ A：一个独立固定闪电单元的 LogR 响应
+    └─ RGB：静态天空 LogRGB
             ↓ Unity 导入
        Linear / Mipmap / Clamp / Trilinear / Android ASTC 4×4
             ↓
-       另外四个固定闪电单元离线求解并打包为 LogRGBA Basis
-            ↓
-       运行时天空 Shader：平静一次采样，非零闪电两次采样
+       运行时天空 Shader：上半球一次纹理采样
 ~~~
 
 必须把“体积云求解”“方向到二维布局”“HDR 有限位深编码”“运行时 Tone Mapping”看成四个独立层次。某一层出现接缝、色带或过曝时，应先定位发生阶段，而不是改另一层掩盖问题。
@@ -49,10 +54,308 @@ RGBAHalf 线性 HDR 瓦片
 该方案适合以下目标：
 
 - 云形、天气状态与时间段是离散预设，不要求连续实时演化。
-- 太阳可以作为静态天空的一部分；闪电等瞬态发光单独叠加。
+- 最多一个太阳可以作为静态天空的一部分，并随该天气/时间段固定烘焙。
 - 离线烘焙优先追求画质，运行时优先追求低采样和低带宽。
 
-如果运行时需要连续改变云量、太阳高度、风场或云层自阴影，应改用实时/半实时体积云，而不是把大量状态硬烘焙成纹理集合。
+如果运行时需要连续改变云量、太阳高度、风场或云层自阴影，通常应优先评估实时或半实时体积云；离散状态仍可继续烘焙，但应先计算资产数量、切换方式和内存成本，而不是把这一判断写成对所有项目都成立的绝对规则。
+
+#### 静态体积云烘焙复现 SOP
+
+这一节是本记录的可执行入口，目标是完成“静态云 + 背景天空 + 最多一个太阳”的独立闭环。动态事件不属于本文实现范围；需要时从文末“相关记录”进入对应专题。
+
+##### 复现完成的判定
+
+以下条件必须同时成立，才能称为“静态体积云烘焙已复现”：
+
+1. Unity 脚本与 Shader 编译为 0 error；不能用旧缓存或粉色材质代替。
+2. 能创建一份烘焙参数资产，并明确保存云层、太阳、质量和输出参数。
+3. Editor 能从参数资产生成一张上半球半八面体 LogRGB PNG；选择导出母版时，还应生成线性 HDR EXR。
+4. PNG 的导入设置为 Linear、Clamp、Trilinear、Mip On；运行时解码参数与烘焙时编码参数一致。
+5. 运行时天空 Shader 对上半球只采样这张纹理一次，并能在 Unity 天空盒中正确显示；下半球由单独的地平线/地面颜色处理。
+6. 至少检查迎光、侧光、背光、天顶和四个地平线象限，没有明显映射接缝、瓦片边界、方向翻转、异常纯黑块或 NaN/Inf 造成的彩色坏点。
+7. 使用下方参数快照能够得到非空云层；该快照的高质量证据来自旧固定瓦片实现。若使用最新动态短瓦片工作副本，应先完成本节列出的重新验证，再把差异归因于新参数。
+
+##### 环境与前置条件
+
+- 已实测环境：Unity 2022.3.62f3、URP 14、Linear Color Space、Windows Editor D3D11。
+- 烘焙 Shader 只在 Editor 执行，可以限制到桌面 Editor 图形 API；Android/VR Player 使用另一份轻量天空 Shader，不应编译离线体积积分循环。
+- 项目必须允许 Editor 脚本调用 `AssetDatabase`、`TextureImporter`、`Graphics.Blit`、`ReadPixels` 和 `EncodeToEXR`。
+- 建议先确认当前 GPU/驱动稳定。一次 Draw 过重导致 D3D 设备重置后，不要在同一 Editor 进程内反复重试；先重启 Unity，再降低单次提交负载。
+- 所有颜色都按线性 HDR 值理解。颜色选择器中大于 1 的值不是已经 Tone Map 后的屏幕颜色。
+
+##### 最小文件和职责
+
+目录名可以按项目规范调整，但职责不能缺失：
+
+~~~text
+StaticCloudSkyBaker/
+├─ Editor/
+│  ├─ StaticCloudSkyBakeSettings.cs       # ScriptableObject 参数、单位、范围和归一化
+│  ├─ StaticCloudSkyBakerWindow.cs         # 选择参数资产并触发静态烘焙
+│  ├─ StaticCloudSkyBakeRunner.cs          # 瓦片渲染、HDR 汇总、LogRGB 编码、导入与 metadata
+│  └─ StaticCloudSkyTestSceneBuilder.cs    # 绑定最新纹理并生成验收场景
+└─ Shaders/
+   ├─ StaticCloudSkyBake.shader            # Editor-only 体积积分，输出线性 RGBAHalf
+   └─ HemiOctahedralStaticSky.shader       # Player 天空盒，半八面体采样、LogRGB 解码和 Tone Mapping
+~~~
+
+第一次实现时保持以下依赖方向：参数资产 → Runner → Bake Shader → HDR 母图 → 编码/导入 → Runtime Shader → 测试场景。运行时 Shader 不得反向依赖 Editor 程序集；Bake Shader 不应被加入 Player 的常用材质或运行时资源引用。
+
+##### 参数资产必须包含的静态字段
+
+字段名可按代码风格修改，但必须保存同等语义。所有距离统一用千米：
+
+| 分组 | 字段 | 单位/范围 | 作用与约束 |
+|---|---|---|---|
+| 输出 | `textureResolution` | 16～4096 像素 | 单张正方形半八面体纹理的宽和高 |
+| 输出 | `outputFolder` / `outputName` | 资产相对路径/文件前缀 | 输出必须位于允许的模块目录；同名结果使用唯一文件名，避免静默覆盖对照 |
+| 输出 | `exportHdrExrMaster` | bool | 保留线性 HDR 真值，用于重新编码、调色和定位色带 |
+| 球壳 | `planetRadius` | km，≥1000 | 行星曲率；地球近似值为 6371 |
+| 球壳 | `cameraAltitude` | km，≥0 | 当前简化要求相机低于云底 |
+| 球壳 | `cloudBottomAltitude` | km | 必须高于相机至少约 0.05 km |
+| 球壳 | `cloudTopAltitude` | km | 必须高于云底；差值是云层厚度 |
+| 球壳 | `maximumMarchDistance` | km，≥10 | 只截断积分距离，不会自动增加视线步数 |
+| 造型 | `coverage` | 0～1 | 基础云量，控制“哪些地方有云” |
+| 造型 | `coverageVariation` | 0～1 | 天气噪声对不同方向云量阈值的扰动 |
+| 造型 | `baseNoiseScale` | >0 | 大云团空间频率；越大越碎 |
+| 造型 | `detailNoiseScale` | >0 | 云边侵蚀频率 |
+| 造型 | `detailErosion` | 0～1 | 云边高频侵蚀强度 |
+| 造型 | `densityMultiplier` | >0 | 已有云体的光学厚度，不负责增加覆盖区域 |
+| 造型 | `noiseOffset` | km 空间向量 | 平移同一套程序化噪声，生成另一种固定云形 |
+| 天空 | `sunDirection` | 单位向量 | 从观察点指向太阳；保存前必须归一化 |
+| 天空 | `sunColor` | 线性 HDR | 同时影响太阳圆盘和直射云光 |
+| 天空 | `zenithColor` / `horizonColor` | 线性 HDR | 无云背景的天顶—地平线渐变 |
+| 天空 | `ambientCloudColor` | 线性 HDR | 背光和厚云仍能获得的低频环境能量 |
+| 天空 | `forwardScattering` | 0～0.999 | HG 前向叶；过高会在太阳附近形成尖峰 |
+| 天空 | `backwardScattering` | -0.999～0 | HG 后向叶 |
+| 天空 | `backwardWeight` | 0～1 | 双叶相位函数的后向叶占比 |
+| 天空 | `powderStrength` | 0～2 | 受光边蓬松近似；过高会发白 |
+| 天空 | `multipleScatteringStrength` | 0～2 | 四阶经验多重散射能量；过高会冲淡体积层次 |
+| 天空 | `sunAngularRadiusDegrees` | 0.02°～2° | 太阳角半径；真实太阳约 0.27°，同时缩放外围柔光 |
+| 质量 | `viewSteps` | 8～384 | 每个子样本的视线 Ray March 步数 |
+| 质量 | `lightSteps` | 2～128 | 太阳遮光步数下限，不是固定最终步数 |
+| 质量 | `maximumLightStepLength` | 0.25～8 km | 太阳斜路径的最大物理步长；最终步数取 `max(lightSteps, ceil(distance/maxStep))` |
+| 质量 | `samplesPerPixel` | 1～16 | 每纹素重复整套积分的抖动子样本数 |
+
+保存或开始烘焙前执行归一化：限制分辨率和步数；保证 `cameraAltitude < cloudBottomAltitude < cloudTopAltitude`；把零长度太阳方向恢复为已知默认值，否则归一化；把所有频率、密度和最大距离限制为正数。归一化既应在 `OnValidate` 中执行，也应在 Runner 入口再次执行，避免脚本调用绕过 Inspector。
+
+##### 从零实现顺序
+
+按以下次序实现和单独验证；不要先写完整高质量循环再一次性排错。
+
+1. **半八面体方向逆映射**：让正方形中心得到 `(0,1,0)`，四边中点得到 `±X/±Z` 地平线方向，四角也落在地平线上。使用后文 `HemiOctahedralDirection` 公式。
+2. **纯背景天空**：先关闭云密度，仅输出 `BackgroundSky(direction)`。确认太阳方向、太阳角半径、天顶和四个地平线方向正确，且正方形四边投回天空球时连续。
+3. **球壳求交**：实现 `RaySphereNear`、`RaySphereFar` 和 `GetCloudSegment`。用地面观察者验证天顶、斜上方和地平线方向的 `start < end`；向下方向应先命中行星并拒绝云积分。
+4. **密度函数**：实现 Gradient Noise、4-octave FBM、Worley F1、天气覆盖率、固定高度剖面和高频侵蚀。先输出灰度密度积分，不加光照；确认 `coverage` 改变占地范围，`densityMultiplier` 不改变密度形状。
+5. **视线消光**：加入 `sigmaT = density * densityMultiplier`、`stepT = exp(-sigmaT*ds)` 和前向 alpha 合成。此时可以只用常量白色照明，验证厚云更不透明、薄云仍透出背景。
+6. **太阳遮光**：每个有效视线样本沿 `sunDirection` 积分光学厚度。先检查行星遮挡：太阳在局部地平线以下时必须返回 0，不能穿过行星采到远侧云壳。
+7. **相位与近似多重散射**：加入双叶 HG、Powder、四阶经验能量和环境光。每加入一项都保留开关或数值 0 的回退路径，便于定位过曝或死黑。
+8. **子像素与首步抖动**：随机种子必须来自整图纹素坐标和样本序号。瓦片局部坐标只能负责输出位置，不能改变方向或随机相位。
+9. **瓦片渲染与 HDR 汇总**：Bake Shader 每次只渲染一个短瓦片到 `ARGBHalf` RenderTexture；`ReadPixels` 直接写入整张线性 `RGBAHalf` Texture2D，全部瓦片完成后只 `Apply` 一次。
+10. **LogRGB 编码与导入**：先从完整 HDR 母图测量 RGB 最大值，再拟合编码范围、量化到 8-bit PNG，写入 metadata 并配置 importer。
+11. **运行时天空与测试场景**：运行时按世界/天空方向编码半八面体 UV，采样一次、解码 LogRGB，再执行曝光和 Tone Mapping。最后生成独立场景做球面多视角验收。
+
+每一阶段的最小测试都通过后再进入下一阶段。若密度灰度阶段已经有接缝，不能靠 Tone Mapping 或 Dither 修复；若 EXR 正确而 PNG 有色带，应检查编码/导入，不要重新调云密度。
+
+##### 已知可用的静态基线
+
+下表是白天风暴云的历史可用参数快照。它是实现与排错起点，不是唯一美术答案，也不是对任意后续代码版本的自动背书。第一次运行选择只输出静态 LogRGB 的烘焙模式。
+
+| 参数 | 值 | 参数 | 值 |
+|---|---:|---|---:|
+| `planetRadius` | 6371 | `cameraAltitude` | 0.1 |
+| `cloudBottomAltitude` | 1.3 | `cloudTopAltitude` | 8.2 |
+| `maximumMarchDistance` | 500 | `coverage` | 0.58 |
+| `coverageVariation` | 0.40 | `baseNoiseScale` | 0.075 |
+| `detailNoiseScale` | 0.52 | `detailErosion` | 0.34 |
+| `densityMultiplier` | 1.45 | `noiseOffset` | (17, 5, -23) |
+| `sunDirection` | normalize(0.42124453, 0.5616594, 0.71210384) | `sunColor` | (5.0, 4.45, 3.7) |
+| `zenithColor` | (0.055, 0.14, 0.32) | `horizonColor` | (0.56, 0.67, 0.82) |
+| `ambientCloudColor` | (0.32, 0.42, 0.58) | `forwardScattering` | 0.72 |
+| `backwardScattering` | -0.22 | `backwardWeight` | 0.18 |
+| `powderStrength` | 0.65 | `multipleScatteringStrength` | 0.50 |
+| `sunAngularRadiusDegrees` | 0.27 | `exportHdrExrMaster` | 首次复现开启 |
+
+质量分三个门槛递进，不要直接从最高档开始：
+
+| 阶段 | 分辨率 | 视线步 | 太阳最少步 | 最大太阳步长 | 子样本 | 用途 |
+|---|---:|---:|---:|---:|---:|---|
+| 冒烟 | 128 | 64 | 8 | 4 km | 1 | 验证非空、方向、输出和导入，不评价最终画质 |
+| 构图/回归 | 256 | 96 | 10 | 2 km | 1 | 调覆盖率、噪声尺度、太阳方向与色调 |
+| 最低正式判断 | 512 | 128 | 12 | 2 km | 2 | 多视角、接缝、色带、异常黑块与时间段判断 |
+| 历史高质量实测 | 1024 | 192 | 20 | 2 km | 4 | 旧固定 128×128 瓦片版本曾在实际 Editor 链路完成 |
+
+质量档与当前证据不能混写：
+
+| 实现阶段 | 已有证据 | 仍需验证 |
+|---|---|---|
+| 旧固定 128×128 瓦片 | 512/1024 静态天空和多视角结果 | 不再用于证明后续瓦片改动本身正确 |
+| 最新动态 32/16/8 瓦片工作副本 | `48² / 8` 视线步 / `2` 光照步 / `1 spp` 的低负载跨瓦片检查；四个象限均非空，未发现非有限值 | 先做 128 低质量新旧一致性，再逐级做 512；1024 放在最后 |
+| 2048 与更高步数 | 尚无本次实践证据 | 需要单变量升级、耗时、设备稳定性、输出 hash 和多视角截图 |
+
+因此，2048、384 视线步、64 太阳步和 8 子样本都只是更高成本候选。即使旧版本曾完成 1024，最新动态瓦片工作副本也不能跳过 128/512 回归直接继承“已验证高质量”的结论。
+
+##### 黄昏与夜间复现
+
+保持云几何、噪声和密度不变，只覆盖下列字段，即可验证同一云体在不同时段的离线光照。这样能把“云形变化”和“光照变化”分开：
+
+| 时段 | `sunDirection` | `sunColor` | `zenithColor` | `horizonColor` | `ambientCloudColor` | `maximumLightStepLength` |
+|---|---|---|---|---|---|---:|
+| 白天 | (0.42124453, 0.5616594, 0.71210384) | (5, 4.45, 3.7) | (0.055, 0.14, 0.32) | (0.56, 0.67, 0.82) | (0.32, 0.42, 0.58) | 2.0 |
+| 黄昏 | (0.54961544, 0.09993008, 0.8294196) | (3.2, 1.25, 0.55) | (0.025, 0.055, 0.16) | (0.62, 0.20, 0.09) | (0.18, 0.16, 0.25) | 1.5 |
+| 夜间 | (-0.19950187, -0.24937734, 0.9476339) | (0.015, 0.020, 0.035) | (0.004, 0.010, 0.035) | (0.015, 0.025, 0.060) | (0.05, 0.08, 0.18) | 2.0 |
+
+方向写入前都要归一化。黄昏太阳斜路径更长，因此最大太阳步长收紧到 1.5 km；夜间太阳方向在局部地平线以下时，云的可见层次主要来自 `ambientCloudColor`，不应让直射光穿过行星。夜间或黄昏出现局部纯黑时，按“EXR 线性母版 → LogRGB PNG → Tone Mapping 后画面”的顺序定位，不能直接提高环境光掩盖 NaN、负值或解码错误。
+
+##### Unity 中的实际操作顺序
+
+已有本模块时，按以下步骤操作；从零实现者应先完成上面的文件职责和后文核心函数，再从第 1 步验证：
+
+1. 等待 Unity 完成 Domain Reload，确认 Console 没有 C# 或 Shader error。
+2. 从工具菜单打开“静态体积云天空烘焙器”。若还没有参数资产，点击“创建默认参数资产”；也可以从 Create 菜单创建“静态体积云天空烘焙参数”。
+3. 在窗口中选择参数资产。第一次复现复制“已知可用的静态基线”，不要从其他实验参数开始。
+4. 选择“静态 LogRGB”输出模式，打开“同时导出 HDR EXR 母版”。输出名称使用新的唯一前缀。
+5. 先使用 128 冒烟档，点击“烘焙单张半八面体 LogRGB 天空”。进度条应按瓦片推进，Console 应报告 Base pass 的瓦片尺寸、Draw 数和估算单片元工作量。
+6. 成功后应至少得到 `<name>_HemiOct_LogRGB.png`；打开 EXR 时还得到 `<name>_HemiOct_HDR.exr`。
+7. 选中 PNG 检查 importer 和 `userData` metadata。然后从工具菜单执行“从最新烘焙创建时间戳对照场景”；不要在冒烟阶段覆盖团队使用的固定验收场景。
+8. 打开对照场景，确认 Camera 为 Skybox 清屏，`RenderSettings.skybox` 绑定运行时半八面体天空材质，材质的 `_SkyTexture` 指向刚生成的 PNG。
+9. 检查中心、左右、背面、天顶和四个地平线象限。冒烟档只判断链路。使用旧稳定基线时可以按 256、512、1024 递进；使用最新动态瓦片工作副本时，先补 128 新旧一致性，再到 512，最后才考虑 1024。
+10. 每次提高质量只修改分辨率/步数/子样本，不同时改云形和 Tone Mapping。保留上一级输出与截图，避免“更慢但无法知道改善来自哪里”。
+
+##### 输出、编码与导入契约
+
+静态烘焙的正确数据流是：
+
+~~~text
+Bake Shader 线性 HDR float
+    → ARGBHalf 短瓦片
+    → RGBAHalf 整图母图
+    ├─ 可选 ZIP Float EXR（线性真值）
+    └─ 逐通道 Log 编码 + 8-bit 量化 → PNG
+          → Unity 以数据纹理导入
+          → Runtime Shader 按 metadata 解码
+~~~
+
+天空 RGB 的自动范围：
+
+~~~text
+observedMaximum = max(整图所有 RGB)
+R = clamp(max(0.0625, observedMaximum * 1.10), 0.0625, 32)
+K = 16
+encoded = log2(1 + clamp(linear, 0, R) * K) / log2(1 + R * K)
+quantized = round(saturate(encoded) * 255) / 255
+decoded = (2^(quantized * log2(1 + R*K)) - 1) / K
+~~~
+
+`R` 必须随纹理写入 metadata；运行时不能假定所有白天、黄昏和夜间共用固定范围 8。夜间独立拟合较小范围，能把更多 8-bit 码值分给暗部渐变。若 `observedMaximum > 32`，PNG 会裁切极端值，应降低不合理的 HDR 强度或保留 EXR/改用更高精度发布格式，不能只调曝光隐藏裁切。
+
+PNG 导入断言：
+
+| 项目 | 必须值 | 原因 |
+|---|---|---|
+| Texture Type | Default | 它是自定义数据纹理，不是普通颜色贴图或 Sprite |
+| sRGB | Off | Log 编码必须在线性数值上解码，不能再经过 sRGB 转换 |
+| Alpha Source | From Input | 当前静态发布只读取 RGB；A 保留为未使用数据，不参与天空颜色 |
+| Alpha Is Transparency | Off | 禁止透明边缘颜色处理 |
+| Mip Maps | On | 降低远处/低分辨率采样闪烁 |
+| Wrap Mode | Clamp | 正方形四边是地平线，不允许普通 Repeat 跨边混合 |
+| Filter Mode | Trilinear | 平滑 Mip 过渡 |
+| Editor 压缩 | Uncompressed | 作为编码真值，便于区分 8-bit 量化和平台块压缩 |
+| Android | ASTC 4×4，质量 100 | 当前移动发布约定；仍需目标设备复核 |
+| Read/Write | Off | 写入和 metadata 完成后关闭 CPU 读取 |
+
+metadata 至少保存：schema 版本、`skyHdrRange`、`skyLogCurve`、RGB 线性最大值、地平线颜色和地面颜色。测试场景或材质生成器必须从 importer metadata 读取实际范围；解析失败时可以使用明确的兼容默认值，但要报警，不能静默把夜间纹理按白天范围解码。
+
+##### 动态瓦片策略与 TDR 边界
+
+瓦片大小不是画质参数。最新工作副本按一次片元内部的最坏嵌套工作量选择提交粒度：
+
+~~~text
+solarShadowWork = 128                  # 低太阳角的 Shader 上限
+perViewStep = 7 + solarShadowWork      # 静态 Base：密度/环境近似 + 太阳遮光
+perPixelWork = samplesPerPixel * viewSteps * perViewStep
+
+perPixelWork <= 160000  → 32×32
+perPixelWork <= 640000  → 16×16
+otherwise               → 8×8
+~~~
+
+这只是保守的 TDR 风险分档，不是总耗时预测，也不保证任何极端参数绝不触发设备重置。当前证据只覆盖一次 48² 低负载跨瓦片检查，尚未覆盖动态瓦片版本的 512/1024 高质量烘焙；源码在该检查后若继续变化，还应重新编译并重跑最小受影响门禁。每个瓦片必须使用整图 UV、整图纹素坐标和相同参数；`ReadPixels` 写入整图的指定偏移，全部瓦片完成后统一 `Apply(false, false)`。若瓦片边界可见，优先检查 `_BakeUvScaleOffset`、全局随机种子和最后一行/列的非整瓦片尺寸，不要改云噪声掩盖拼接错误。
+
+##### 运行时天空绑定
+
+运行时 Shader 对方向 `direction` 执行：
+
+1. 若 `direction.y < 0`，直接在地平线色和地面色之间插值，不采上半球纹理。
+2. 否则把方向投影到半八面体 UV，采样 `_SkyTexture` 一次。
+3. 用该纹理 metadata 的 `skyHdrRange` 和 `skyLogCurve` 解码 RGB。
+4. 在解码后的线性 HDR 上执行曝光、Tone Mapping 和低幅度最终输出 Dither。
+
+VR 左右眼共享同一纹理和同一材质参数，但每眼仍通过 Unity stereo 宏得到自己的天空方向。顶点/片元入口至少包含 `UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO` 与 `UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX`；“共享纹理”不等于复用单眼片元结果。
+
+Tone Mapping 不是烘焙正确性的组成部分。先用 None/线性调试查看 EXR/解码真值，再比较 ACES 和风格化映射。只有线性真值正确时，才处理“更卡通”的色调压缩；否则 Tone Mapping 会把错误压暗或把量化台阶变得更显眼。
+
+##### 测试场景与截图矩阵
+
+最小验收场景包含：
+
+- 一台 HDR Camera，Clear Flags/Skybox 正确，初始位置代表烘焙观察点。
+- 一份只引用本次输出的天空材质；不要让旧材质、全局 Volume、Bloom、自动曝光或 TAA 干扰第一次验收。
+- 一个可选的 Directional Light 参考物体，其方向仅用于对照烘焙太阳；运行时云光已经写进纹理，不靠它重新照亮云。
+- 一个地面/标尺参考，帮助判断地平线与旋转，但不能遮住天空主要区域。
+
+建议每个时间段保存以下矩阵：
+
+| 方向 | None/线性 | ACES | 风格化 | 主要观察点 |
+|---|---:|---:|---:|---|
+| 迎光中心 | 必须 | 必须 | 必须 | 太阳尺寸、剪白、云边高光肩部 |
+| 左/右各约 90° | 必须 | 可选 | 必须 | 侧光体积、噪声重复、瓦片缝 |
+| 背光 | 必须 | 可选 | 必须 | 环境光层次、死黑和厚云暗部 |
+| 天顶 | 必须 | 必须 | 必须 | 渐变色带、子样本噪点、映射中心 |
+| 四个地平线象限 | 必须 | 可选 | 必须 | 半八面体四边连续、远端截断、黑块 |
+
+白天通过不能替代黄昏和夜间；不同 Tone Mapping 也不能互相替代。检查“异常黑块”时必须同时看线性/None 与最终映射：线性已经为黑说明烘焙/解码问题，只有最终映射为黑才进入曝光、曲线和颜色分级排查。
+
+##### 复现记录模板
+
+每次声称某个档位“通过”时，至少记录：
+
+~~~text
+Unity / Render Pipeline / Graphics API:
+参数资产或参数快照：
+输出分辨率、viewSteps、lightSteps、maximumLightStepLength、spp：
+实际瓦片大小与 Draw 数：
+烘焙耗时：
+PNG / EXR 文件名与 SHA-256：
+Importer：Linear / Mip / Clamp / Filter / 平台格式：
+metadata：schema / skyHdrRange / skyLogCurve / skyLinearMax：
+截图：迎光 / 左 / 右 / 背光 / 天顶 / 地平线四象限：
+Console 编译错误、警告和设备重置：
+结论：通过 / 失败；失败发生在求解、映射、编码、导入、解码还是 Tone Mapping：
+~~~
+
+该模板的目的不是堆日志，而是保证另一个人能知道“输入是什么、输出是哪一份、经过什么解码、看过哪些角度”。没有参数快照和输出身份的截图，不能作为可复现证据。
+
+##### 常见失败的最短定位路径
+
+| 现象 | 先检查 | 不要先做 |
+|---|---|---|
+| 整张纯黑 | Bake Shader 是否找到、球壳是否有有效区间、HDR 母图最大值 | 提高 Tone Mapping 曝光 |
+| 只有背景无云 | `coverage`、高度剖面、密度灰度调试、相机是否低于云底 | 只提高 `densityMultiplier` |
+| 云覆盖太少 | `coverage` 与 `coverageVariation` | 把云密度调得更黑 |
+| 云像竖墙/条纹 | 局部高度坐标、Y 频率、viewSteps 与首步 jitter | 用屏幕模糊 |
+| 地平线被截断 | `maximumMarchDistance`、球壳求交、方向是否先命中行星 | 只提高分辨率 |
+| 太阳附近过曝 | EXR 峰值、`sunColor`、前向散射、太阳角半径、Tone Mapping 肩部 | 关闭 HDR 或把所有颜色压到 0～1 |
+| 黄昏/夜间黑块 | EXR → PNG → None → 最终映射逐层对照；检查 NaN/负值和 metadata range | 直接抬亮环境光掩盖 |
+| 平滑天空出现色阶 | EXR 是否平滑、Log 范围是否过大、sRGB 是否关闭、最终输出位深/Dither | 增加云光照分层 |
+| 正方形内出现直线缝 | 全局 UV、全局随机种子、最后一块尺寸和纹理写入偏移 | 改噪声 offset 碰运气 |
+| Unity/GPU 无响应 | Console 的实际瓦片、单片元工作量、是否设备已 reset | 在同一故障进程继续最高质量重试 |
+
+##### 文档复现边界
+
+本 SOP 的参数、菜单职责、输出命名、编码范围、导入设置和运行时解码均有实现依据；静态 512/1024 证据来自旧固定瓦片基线，动态 32/16/8 只完成低负载回归，二者不能拼接成“最新版本已完成高质量验证”。本文允许使用现有模块的人建立独立静态烘焙闭环，也给出了从零实现时不可缺失的组件、公式、顺序和验收门禁。
+
+仍需明确：当前没有在一份全新的空白 Unity 工程中，仅凭本文重新手写全部样板代码并做第二次独立验收。因此已验证的是核心链路和已留证的具体实现快照；“最新未提交工作副本整体通过”以及“任意 Unity 版本的空白工程复制后必然一次编译通过”都不在已验证范围。复现到其他版本时，应把编译差异和改动写入验证记录，而不是扩大本文的适用版本声明。
 
 #### 云层几何：使用球壳而不是平面层
 
@@ -282,167 +585,6 @@ sunAngularRadiusDegrees = 0.27° 约等于真实太阳角半径；提高到 0.5�
 
 这不是时序抗锯齿，因为所有样本在同一次离线烘焙中完成；不会引入运行时历史缓冲或运动向量。
 
-#### 静态云体到闪电传输基的离线积分
-
-太阳是远距离定向光；云后闪电是位于介质内部的局部发光路径。两者不能只靠替换光照方向：局部源还需要距离衰减、源到碰撞点的云内透射、观察方向相位函数、云边界逃逸和多次散射。
-
-##### 现实夜间图像给出的视觉门槛
-
-NOAA/NSSL、NWS 与 NASA 夜间图像中，典型云内闪不是一个被高斯模糊放大的中心圆斑，而是同时具有：
-
-1. 小范围高亮核心；若放电通道没有被云完全遮挡，还会出现更细、更硬的可见主干。
-2. 沿相连云体扩展的大片较弱响应，亮度随光学距离分层衰减。
-3. 云褶皱、厚云暗缝和局部遮挡对亮区进行切割；扩大覆盖不能以抹掉这些结构为代价。
-4. 没有云介质的方向不产生“云体散射响应”。附近零散云仍可能被照亮，因为光可以从放电路径传播到这些云胞；若没有单独绘制 Direct/主干，无云间隙中看不到电弧是正确的数据职责结果。
-
-因此视觉验收必须在天空球多视角完成，半八面体展开方图只能用于数值、接缝和方向分布诊断，不能单独证明“像闪电”。
-
-##### 从辐射传输方程理解传输 Basis
-
-稳态参与介质中的方向辐亮度满足：
-
-~~~text
-dL(x, wo) / ds
-  = -sigma_t(x) * L(x, wo)
-    + sigma_s(x) * integral_Omega[p(wi -> wo) * L(x, wi) dwi]
-    + Q(x, wo)
-~~~
-
-固定云密度、消光、散射反照率和相位函数后，方程对发光源项 `Q` 线性。可以分别求若干固定闪电路径 `Q_i` 的响应 `Basis_i(direction)`，运行时再按脉冲强度线性组合；无需保存完整三维动态云，也不需要每帧重走体积。
-
-##### 快速局部光近似的用途与边界
-
-构图阶段可以把弯折折线离散成点源，对观察射线中的每个云样本 `x` 计算：
-
-~~~text
-r_j          = distance(x, p_j)
-T_source_j   = exp(-integral_{p_j -> x}(sigma_t ds))
-source_j     = Energy_j * T_source_j / (r_j^2 + radius^2)
-single_j     = source_j * Phase(view, p_j -> x)
-Basis_i      = integral_view(T_view * sigma_s * sum_j(single_j) ds)
-~~~
-
-它能快速验证放电路径位置、有限半径、第一阶遮挡和视线合成，但经验性的高阶散射项容易退化为各向同性模糊。实践中还测试过三维标量 Jacobi 光场：有限半径源、云内消光、按密度差抑制串光的双边权重确实把 5% 受光面积从约 `3.63%` 扩大到 `22.19%`，但高频结构比从约 `0.0567` 降到 `0.0241`。结果成为更宽、更平的“灯罩”，而不是被云胞暗缝切割的真实响应。
-
-这说明单标量扩散在每次迭代中已经丢失传播方向；继续扫描迭代次数、gain、密度指数或边缘锐度只能改变灯罩宽度，不能恢复被压掉的角向信息。标量 Jacobi 可保留作有意的低频艺术补光或控制变量，不能再承担完整闪电传输参考解。
-
-##### 反向逐纹素 Monte Carlo 参考解
-
-当前参考求解器直接对最终半八面体纹素追踪观察者路径，保留方向、遮挡和散射阶：
-
-1. 用与正式云烘焙一致的程序化密度生成三维体素快照；`sigma_t = density * extinction`。连接透射对该三线性体素表示求解，不冒充对原始连续噪声的解析精确解。
-2. 每个体素 cell 根据局部最大密度建立 majorant，观察者路径用 cell DDA 和 delta/null-collision tracking 采样真实碰撞。
-3. 每个半八面体纹素从观察者沿纹素中心方向发射相同预算的相机路径；纹素立体角单独计算，用于能量统计。
-4. 在每次真实碰撞处，对连续闪电折线执行 next-event estimation。当前基线按“线段长度 × 局部功率”采样源位置，源到碰撞点的透射用 cell DDA 与二点 Gauss–Legendre 积分；该提案不随当前碰撞点重新分配源样本，是首轮球面视觉失败后首先要验证的方差来源。
-5. 后续散射方向按 Henyey–Greenstein 相位函数重要性采样；throughput 累积单散射反照率，高阶路径使用 Russian roulette 保持期望能量。
-6. 另行估计观察者直接看到发光路径的 Direct，输出 Direct、Single、Multiple 和 Combined 四种诊断量。检查“云体被照亮”时应先观察 `Single + Multiple`，把 Direct/可见电弧作为独立职责。
-7. 原始参考探针关闭球面 Tent 重建和引导降噪，避免用空间平滑制造虚假的跨种子一致结构。
-
-有限半径采用稳定参考软核：
-
-~~~text
-geometricTerm = 1 / (distanceSquared + sourceRadiusSquared)
-~~~
-
-它统一用于 Direct 和 NEE，能限制零半径线源附近的重尾方差；它是有限半径的平滑近似，不冒充严格采样发光圆柱。一次对照中 Combined 峰值由 `0.025981` 降至 `0.003668`，约下降 `7.1` 倍，近源孤立火花不再支配自动曝光。
-
-大行星坐标还暴露了一个可复用边界问题：观察者位于约数千千米的坐标值上，而云底只高出约一千米。单精度 AABB 的 `center ± extent / 2` 消减可能把下边界抬高亚米级，使观察者被误判在体积外并得到零碰撞。密度体底部保留约 `0.01 km` 的真空入口余量，并用真实行星尺度回归测试覆盖该条件，比任意上移相机更可靠。
-
-##### 散射阶诊断与正式五单元打包
-
-诊断 EXR 的通道约定是：
-
-~~~text
-R = Direct
-G = Single
-B = Multiple
-A = Combined
-~~~
-
-它不是运行时四位置 Basis。正式输出应对五个固定闪电单元分别求同一种标量响应：一个写入基础 LogRGBA 的 A，另外四个写入 Basis LogRGBA 的 RGBA。固定介质下传输对源功率线性，所以同一通道可以离线叠加多个始终共享时序的源；需要独立时序的区域仍必须占独立通道。
-
-四通道必须共享同一线性、滤波、Mip 和归约语义。把总光学厚度、前表面深度、AO、类别 ID 混装进自动 Mip 的 Basis 纹理会因归约规则不同而失真；二维积分密度也不能恢复任意新光源所需的三维深度顺序。可选 CloudAux 应另设低分辨率纹理，并只保存同类连续量。
-
-##### 当前数值收敛证据与视觉门禁
-
-以下探针保持同一云体、有限半径、确定性连接透射，关闭 Direct 艺术预览、Tent 和降噪：
-
-| 检查 | 结果 | 结论 |
-|---|---|---|
-| 64²、1024 spp、O24、两个独立种子 | Combined 能量差约 `1.20%`；原始像素相关 `0.908`；1 px 统计邻域相关 `0.989` | 广域低频结构跨种子成立 |
-| 两种子 5% 支撑与质心 | `40.77% / 41.50%`；质心差约 `0.23 px` | 不是中心模糊或少量盐粒偶然扩散 |
-| NEE 连接数 `2 -> 8` | 连接数增至四倍，RSE 中位数仅约 `0.634 -> 0.598` | 当前主要瓶颈不是简单增加 NEE 数 |
-| 最大阶 `12 -> 24` | Combined 能量增加约 `1.35%`；硬截断由 `1229` 降至 `8` | 参考探针采用 O24 |
-| 128²、1024 spp、O24 | `16,777,216` 条路径；Combined 能量约 `0.000137781`；RSE 中位数约 `0.2502` | 数值参考已进入可做球面视觉检查的阶段 |
-| 水平半域 `64 km -> 96 km` | Combined 能量差约 `0.33%` | 规则方形观感不是局部密度盒裁切造成 |
-| 128² `Single + Multiple` 球面四方向 | `13,020` 个正值纹素；P99.5 `0.0005930066`；最大值 `0.00350952`；相对峰值 5% / 18% 支撑约 `9.729%` / `3.418%`；2 个编码值裁切 | 响应非空，但视觉门禁失败 |
-
-前六项数据只证明估计器的部分统计量开始收敛，不证明最终画面已经像真实闪电。随后已把正确的 128² `Single + Multiple` 投回测试天空球，从雷源中心、左右各约 15° 和上视约 12° 四个方向分别捕获 Idle、峰值与响应调试图，共 12 图。视觉上，原始响应被放大成明显的径向/竖向条纹和盐粒，并形成宽大的锥形亮罩；无法确认云胞暗缝、褶皱与远端分层。由此首轮球面门禁明确判定为失败。
-
-失败后停止第二个 128² 高样本种子、发布分辨率和五单元批量求解。普通模糊、Tent、提高曝光或 Tone Mapping 只能隐藏噪声或扩大亮罩，不能把欠采样结构变成参考真值；应先修改估计器，再重做同一门禁。
-
-##### 源条件化 NEE：待验证的等角线源提案
-
-Kulla 与 Fajardo 说明，参与介质近光源处的 `1/r²` 弱奇异项会把普通距离采样的方差集中在少量样本上；按该项构造 Cauchy/等角提案，并与其他提案做 MIS，可直接降低这类方差。论文原式是在观察射线上针对点/球光采样距离；这里把同一数学结构适配为“固定碰撞点下，在有限半径线段光源上采样位置”，属于待实践验证的推导，不应写成论文已经验证过本项目线源算法。
-
-设碰撞点为 `x`，第 i 条线段起点为 `y0`、单位方向为 `t`、长度为 `l`、分段常量功率密度为 `q_i`，有限源半径为 `r_s > 0`：
-
-~~~text
-s*       = dot(x - y0, t)
-dPerp²   = lengthSquared(y0 + s* t - x)
-a²       = dPerp² + r_s²
-G(s)     = 1 / (a² + (s - s*)²),       0 <= s <= l
-theta0   = atan((0 - s*) / a)
-theta1   = atan((l - s*) / a)
-I_i      = integral_0^l G(s) ds
-         = (theta1 - theta0) / a
-s(xi)    = s* + a * tan(lerp(theta0, theta1, xi))
-~~~
-
-`I_i` 同时给出该线段软逆平方核的解析积分。条件化提案先按 `q_i * I_i` 选择线段，再用上式在该线段内采样 `s`。若：
-
-~~~text
-Q = sum_i(q_i * l_i)
-C = sum_i(q_i * I_i)
-~~~
-
-则整个折线上的两个 PDF 为：
-
-~~~text
-pEmission(s)    = q_i / Q
-pConditioned(s) = q_i * G(s) / C
-pMix(s)         = (1 - eta) * pEmission(s)
-                + eta * pConditioned(s)
-~~~
-
-新估计器直接使用 `f(s) / pMix(s)`。如果复用旧的 `f(s) / pEmission(s)` 代码路径，就必须额外乘：
-
-~~~text
-weight = pEmission(s) / pMix(s)
-~~~
-
-这样只是改变采样分布，不改变原始线源积分的期望值。保留一部分 `pEmission` 很重要：软逆平方只匹配几何项，源到碰撞点透射、相位函数、可见性和后续路径重要性仍可能把贡献移到其他位置。混合提案比把 `eta` 直接设为 1 更稳健，也为退化段提供完整支撑。
-
-实现时需要同时满足：
-
-- 跳过零长度、零功率线段；`a` 用正源半径和数值下限保护。
-- `C` 或角区间退化时回退到发射提案；不能继续使用无效归一化。
-- 无论样本由哪个分支产生，都在该样本处计算两个 PDF 和完整 `pMix`，禁止只除以被选中分支的 PDF。
-- 当前折线只有约几十至 64 段时，可在每个碰撞点扫描全部线段计算 `q_i I_i`；这是离线质量成本，不增加 Player 采样。段数进一步增长时再考虑层次结构或空间条件化缓存。
-
-验证顺序应固定为：
-
-1. 单线段、无透射/常量相位自检：解析真值是 `q_i I_i`；比较基线与混合提案的均值、置信区间和方差。
-2. 多线段 PDF 归一化、退化段、`eta = 0` 回归和不同源半径测试；确认基线可精确复现。
-3. 同一云体、同一种子和同预算做 64² A/B，同时记录总能量、RSE、峰值、支撑面积、耗时与高方差纹素比例。均值必须在统计置信范围内一致，不能用能量漂移换降噪。
-4. 只有 64² 明显降方差后，才重做 128² 四方向球面视觉门禁；通过后再运行第二种子、升发布分辨率和批量五单元。
-
-##### 若局部 NEE 仍不足：候选方法的证据边界
-
-- Herholz 等人的零方差随机游走理论联合指导碰撞距离、散射方向、Russian roulette 和 splitting。它提示只优化线源 NEE 仍可能留下高阶路径方差；若 64² A/B 只改善 Single、Multiple 仍不稳定，下一候选应是粗伴随场/体积路径引导，而不是继续调滤波。
-- Jarosz 等人的 Beam Radiance Estimate 沿整条相机束一次收集光子，比逐点体积光子估计噪声低；但它通过核估计得到模糊辐亮度，空间核会引入偏差。若采用，必须做核宽收敛和暗缝保真检查。
-- SVGF 依赖时域积累、亮度方差以及深度、法线、对象 ID 和运动矢量。静态单帧烘焙没有论文的时域条件，只有云不透明度与平均深度引导的 à-trous 也明显弱于其 G-buffer；真实的云胞高频可能被误判为噪声。因此它只能作为 raw 结构跨种子成立后的并列重建候选，不能充当参考真值。
-
 #### 瓦片化避免 TDR
 
 ##### 成本为什么会爆炸
@@ -460,7 +602,7 @@ C ≈ texelCount * samplesPerPixel *
 
 Windows TDR 监控的是一次 GPU 工作长时间无响应，而不是整项任务总耗时。一次全图 Draw 可能触发 watchdog；拆成小 Draw 后，总任务仍然很重，但每次提交更容易保持在可接受时长内。
 
-##### 当前瓦片实现
+##### 瓦片实现的时间线与当前边界
 
 - 每块临时 RenderTexture 使用 ARGBHalf、Linear。
 - CPU 汇总纹理使用 RGBAHalf。
@@ -469,7 +611,9 @@ Windows TDR 监控的是一次 GPU 工作长时间无响应，而不是整项任
 - 每块读回后写入完整 HDR 纹理。
 - 所有瓦片共用完全相同的云、太阳和曝光参数。
 
-128×128 是当前机器实测稳定值，不是所有 GPU 的通用常数。如果瓦片使用局部 UV 或局部随机种子，会在边界出现方向断裂、噪声重复或采样相位跳变。
+已留证的高质量版本使用固定 128×128 瓦片。后续工作副本改为按单片元嵌套工作量在 32×32、16×16、8×8 中动态选择，阈值分别为 160000 和 640000；静态 Base 按低太阳角可能达到的 128 遮光步做保守估算。该工作副本目前只完成 48² 低负载跨瓦片回归，不能借用旧版本的 512/1024 结果宣称动态短瓦片已经高质量通过。
+
+短瓦片只降低一次 Draw 触发 Windows TDR 的概率，不保证极端参数永不超时，也不改变总工作量。这个结论只针对一次提交的风险模型，并不否定其他降低 GPU 超时风险的方法。如果瓦片使用局部 UV 或局部随机种子，仍会在边界出现方向断裂、噪声重复或采样相位跳变。
 
 #### 推荐调参顺序
 
@@ -485,9 +629,10 @@ Windows TDR 监控的是一次 GPU 工作长时间无响应，而不是整项任
 
 | 阶段 | 分辨率 | 视线步 | 光照步 | 子样本 | 用途 |
 |---|---:|---:|---:|---:|---|
-| 快速构图 | 512 | 96 | 10 | 1～2 | 云量、噪声、太阳位置 |
-| 质量评估 | 1024 | 192 | 20～24 | 4 | 多视角与事件型 Basis 检查 |
-| 最终候选 | 2048 | 256～384 | 24～32 | 4～8 | 仅在前一级确有不足时使用 |
+| 冒烟/构图 | 128～256 | 64～96 | 8～10 | 1 | 云量、噪声、太阳位置和链路检查 |
+| 正式判断 | 512 | 128 | 12 | 2 | 多视角、接缝、色带与异常黑块；最新动态瓦片仍待跑此档 |
+| 历史高质量档 | 1024 | 192 | 20～24 | 4 | 旧固定瓦片版本已有实践结果；新瓦片实现需要重验 |
+| 更高候选 | 2048 | 256～384 | 24～32 | 4～8 | 仅在前一级确有不足且设备预算允许时评估 |
 
 最终候选不是默认值。先测单瓦片耗时和显存，再决定是否提高。
 
@@ -531,7 +676,7 @@ Windows TDR 监控的是一次 GPU 工作长时间无响应，而不是整项任
 工程侧还需要检查：
 
 - Shader 编译消息为零。
-- 高质量烘焙不再触发 TDR。
+- 在记录的目标机器上，所选正式质量档完成且未发生设备重置；同时记录瓦片尺寸、总耗时和图形 API。旧版本成功不能替代新瓦片代码的回归。
 - 输出纹理尺寸、Linear、Mip、Clamp、平台压缩设置正确。
 - 瓦片边界在颜色和噪声相位上连续。
 - 运行时天空仍保持预期采样次数。
@@ -553,13 +698,190 @@ Windows TDR 监控的是一次 GPU 工作长时间无响应，而不是整项任
 - 没有单独地面反弹光，也没有场景几何参与云层遮挡。
 - 烘焙参数中的 groundColor 当前不影响上半球输出；它不是云底反弹光参数。
 - 噪声坐标适合局部地表观察，不是完整行星球面天气系统。
-- 快速局部光近似已经生成过可运行的 Base A + Basis RGBA 五单元资产；反向 Monte Carlo 目前只完成单个代表单元的数值参考，首轮 128² 天空球视觉门禁已经失败。源条件化 NEE、第二高样本种子、五单元正式打包和发布分辨率终稿均尚未通过。
-- 可见闪电主干、动态云影和任意运行时光源不在本模块范围内；无云方向需要看到电弧时，应由独立三维主干或经过明确权衡的 Direct 层承担。
-- Quest 真机 ASTC 通道误差、双眼画面、构建变体和 1/2 次采样 GPU 成本仍需目标设备验证。
+- 动态云影、场景局部光和任意运行时天气变化不在本记录范围内；需要这些能力时应采用实时或半实时体积云方案。
+- Quest 真机 ASTC RGB 误差、双眼天空方向、构建变体和单次采样 GPU 成本仍需目标设备验证。
 
 ### 关键代码
 
-~~~hlsl
+以下片段是静态-only 最小实现中跨文件最容易不一致的部分。字段、常数和函数名可以重命名，但 CPU 编码与 GPU 解码、Bake 逆映射与 Runtime 正映射、全图 UV 与瓦片 UV 的数学必须成对一致。
+
+#### 半八面体正反映射
+
+```hlsl
+// Bake：正方形 UV -> 上半球方向。中心为天顶，四条边为地平线。
+float3 HemiOctahedralDirection(float2 uv)
+{
+    float2 square = uv * 2.0 - 1.0;
+    float2 diamond = 0.5 * float2(
+        square.x + square.y,
+        square.x - square.y);
+    float y = max(0.0, 1.0 - abs(diamond.x) - abs(diamond.y));
+    return normalize(float3(diamond.x, y, diamond.y));
+}
+
+// Runtime：上半球方向 -> 正方形 UV。与上式互为同一坐标约定。
+float2 EncodeHemiOctahedron(float3 direction)
+{
+    direction.y = max(direction.y, 0.0);
+    float invL1 = rcp(max(
+        abs(direction.x) + direction.y + abs(direction.z),
+        1e-5));
+    float2 diamond = direction.xz * invL1;
+    float2 square = float2(
+        diamond.x + diamond.y,
+        diamond.x - diamond.y);
+    return square * 0.5 + 0.5;
+}
+```
+
+最小单元测试应验证：`uv=(0.5,0.5)` 得到天顶；四边中点分别得到四个水平轴；对一组归一化上半球方向执行 `Direction(Encode(d))`，夹角误差应接近浮点误差。若要旋转天空，应在编码前绕世界 Y 轴旋转方向，不能旋转正方形 UV。
+
+#### 程序化密度参考实现
+
+```hlsl
+float3 Hash33(float3 value)
+{
+    value = frac(value * float3(0.1031, 0.1030, 0.0973));
+    value += dot(value, value.yxz + 33.33);
+    return frac((value.xxy + value.yxx) * value.zyx);
+}
+
+float GradientNoise(float3 position)
+{
+    float3 cell = floor(position);
+    float3 local = frac(position);
+    float3 blend = local * local * local *
+        (local * (local * 6.0 - 15.0) + 10.0);
+    float values[8];
+
+    [unroll]
+    for (int corner = 0; corner < 8; corner++)
+    {
+        float3 offset = float3(
+            corner & 1,
+            (corner >> 1) & 1,
+            (corner >> 2) & 1);
+        float3 gradient = normalize(
+            Hash33(cell + offset) * 2.0 - 1.0 + 1e-4);
+        values[corner] = dot(gradient, local - offset);
+    }
+
+    float x00 = lerp(values[0], values[1], blend.x);
+    float x10 = lerp(values[2], values[3], blend.x);
+    float x01 = lerp(values[4], values[5], blend.x);
+    float x11 = lerp(values[6], values[7], blend.x);
+    float y0 = lerp(x00, x10, blend.y);
+    float y1 = lerp(x01, x11, blend.y);
+    return saturate(lerp(y0, y1, blend.z) * 0.85 + 0.5);
+}
+
+float Fbm(float3 position, int octaveCount)
+{
+    float result = 0.0;
+    float amplitude = 0.5;
+    float totalAmplitude = 0.0;
+    float3 octavePosition = position;
+
+    [unroll]
+    for (int octave = 0; octave < 5; octave++)
+    {
+        if (octave >= octaveCount) break;
+        result += GradientNoise(octavePosition) * amplitude;
+        totalAmplitude += amplitude;
+        octavePosition = octavePosition * 2.03 + float3(13.7, 7.1, 19.3);
+        amplitude *= 0.5;
+    }
+    return result / max(totalAmplitude, 1e-4);
+}
+
+float WorleyF1(float3 position)
+{
+    float3 baseCell = floor(position);
+    float3 local = frac(position);
+    float minimumDistanceSquared = 10.0;
+
+    [unroll]
+    for (int z = -1; z <= 1; z++)
+    [unroll]
+    for (int y = -1; y <= 1; y++)
+    [unroll]
+    for (int x = -1; x <= 1; x++)
+    {
+        float3 neighbor = float3(x, y, z);
+        float3 featurePoint = neighbor + Hash33(baseCell + neighbor);
+        float3 delta = featurePoint - local;
+        minimumDistanceSquared = min(
+            minimumDistanceSquared,
+            dot(delta, delta));
+    }
+    return saturate(sqrt(minimumDistanceSquared));
+}
+
+float HeightProfile(float h)
+{
+    float baseRise = smoothstep(0.0, 0.12, h);
+    float topFalloff = 1.0 - smoothstep(0.62, 1.0, h);
+    return saturate(baseRise * topFalloff);
+}
+
+float SampleDensity(float3 worldPosition, bool includeDetail)
+{
+    float radialHeight = length(worldPosition) -
+        (_PlanetRadius + _CloudBottomAltitude);
+    float thickness = _CloudTopAltitude - _CloudBottomAltitude;
+    float h = radialHeight / max(thickness, 1e-3);
+    if (h <= 0.0 || h >= 1.0) return 0.0;
+
+    // 避免把约 6371 km 的行星半径直接送入噪声。
+    float3 localPosition = float3(
+        worldPosition.x,
+        radialHeight + _CloudBottomAltitude,
+        worldPosition.z) + _NoiseOffset;
+
+    float3 basePosition = localPosition * _BaseNoiseScale;
+    basePosition.y *= 3.25;
+    float perlin = Fbm(basePosition, 4);
+    float worley = 1.0 - WorleyF1(basePosition * 0.72 + 11.7);
+    float perlinWorley = saturate(lerp(
+        perlin,
+        lerp(worley, 1.0, perlin),
+        0.32));
+
+    float weather = Fbm(
+        float3(localPosition.x, 0.0, localPosition.z) * 0.012 + 37.0,
+        3);
+    float localCoverage = saturate(
+        _Coverage + (weather - 0.5) * _CoverageVariation);
+    float density = saturate(
+        (perlinWorley - (1.0 - localCoverage)) /
+        max(localCoverage, 0.04));
+    density *= HeightProfile(h);
+
+    if (includeDetail && density > 0.001)
+    {
+        float3 detailPosition = localPosition * _DetailNoiseScale + 73.1;
+        detailPosition.y *= 1.8;
+        float detail = Fbm(detailPosition, 3);
+        float edgeWeight = saturate(1.0 - density);
+        density = saturate(
+            density - (1.0 - detail) * _DetailErosion *
+            (0.35 + edgeWeight));
+    }
+    return density;
+}
+```
+
+#### 球壳区间与前向积分
+
+```hlsl
+float RaySphereNear(float3 origin, float3 direction, float radius)
+{
+    float b = dot(origin, direction);
+    float c = dot(origin, origin) - radius * radius;
+    float discriminant = b * b - c;
+    return discriminant >= 0.0 ? -b - sqrt(discriminant) : -1.0;
+}
+
 float RaySphereFar(float3 origin, float3 direction, float radius)
 {
     float b = dot(origin, direction);
@@ -567,44 +889,196 @@ float RaySphereFar(float3 origin, float3 direction, float radius)
     float discriminant = b * b - c;
     return discriminant >= 0.0 ? -b + sqrt(discriminant) : -1.0;
 }
-~~~
 
-```hlsl
-// 省略边界检查后的核心前向合成；函数名对应当前实现。
-float stepLength = (endDistance - startDistance) / max((float)viewSteps, 1.0);
-float transmittance = 1.0;
-
-for (int i = 0; i < viewSteps && transmittance > 0.002; i++)
+bool GetCloudSegment(
+    float3 origin,
+    float3 direction,
+    out float startDistance,
+    out float endDistance)
 {
-    float density = SampleDensity(samplePosition, true);
-    if (density > 0.001)
+    float bottomRadius = _PlanetRadius + _CloudBottomAltitude;
+    float topRadius = _PlanetRadius + _CloudTopAltitude;
+    startDistance = RaySphereFar(origin, direction, bottomRadius);
+    endDistance = RaySphereFar(origin, direction, topRadius);
+    if (startDistance < 0.0 || endDistance <= startDistance) return false;
+
+    float planetHit = RaySphereNear(origin, direction, _PlanetRadius);
+    if (planetHit > 0.0 && planetHit < startDistance) return false;
+
+    startDistance = max(0.0, startDistance);
+    endDistance = min(
+        endDistance,
+        startDistance + _MaximumMarchDistance);
+    return endDistance > startDistance;
+}
+
+float3 IntegrateStaticCloud(
+    float3 origin,
+    float3 direction,
+    float jitter,
+    out float transmittance)
+{
+    float startDistance;
+    float endDistance;
+    transmittance = 1.0;
+    if (!GetCloudSegment(
+            origin,
+            direction,
+            startDistance,
+            endDistance))
+        return 0.0;
+
+    float ds = (endDistance - startDistance) /
+        max((float)_ViewSteps, 1.0);
+    float distanceAlongRay = startDistance + ds * jitter;
+    float3 accumulatedLight = 0.0;
+    float cosineTheta = dot(direction, _SunDirection);
+
+    [loop]
+    for (int i = 0; i < MAX_VIEW_STEPS; i++)
     {
-        float sigmaT = density * densityMultiplier;
-        float stepT = exp(-sigmaT * stepLength);
-        float alpha = 1.0 - stepT;
-        float lightT = LightTransmittance(samplePosition);
-        float3 direct = sunColor *
-            MultipleScatteringLighting(lightT, cosineTheta) * 3.5;
-        float3 lighting = direct * powderFactor + ambient;
-        accumulatedLight += transmittance * lighting * alpha;
-        transmittance *= stepT;
+        if (i >= _ViewSteps || transmittance < 0.002) break;
+        float3 position = origin + direction * distanceAlongRay;
+        float density = SampleDensity(position, true);
+        if (density > 0.001)
+        {
+            float sigmaT = density * _DensityMultiplier;
+            float stepT = exp(-sigmaT * ds);
+            float alpha = 1.0 - stepT;
+            float powder = 1.0 - exp(-sigmaT * ds * 2.0);
+            float powderFactor = lerp(
+                1.0,
+                max(0.25, powder * 2.0),
+                _PowderStrength);
+
+            float lightT = LightTransmittance(position);
+            float3 direct = _SunColor.rgb *
+                MultipleScatteringLighting(lightT, cosineTheta) * 3.5;
+
+            float radialHeight = length(position) -
+                (_PlanetRadius + _CloudBottomAltitude);
+            float h = saturate(radialHeight /
+                (_CloudTopAltitude - _CloudBottomAltitude));
+            float ambientVisibility = AmbientSkyVisibility(position);
+            float ambientHeight = lerp(0.32, 0.68, h);
+            float ambientDiffusion = lerp(
+                0.72,
+                1.0,
+                sqrt(saturate(ambientVisibility)));
+            float3 ambient = _AmbientCloudColor.rgb *
+                ambientHeight * ambientDiffusion;
+
+            accumulatedLight += transmittance *
+                (direct * powderFactor + ambient) * alpha;
+            transmittance *= stepT;
+        }
+        distanceAlongRay += ds;
     }
-    samplePosition += rayDirection * stepLength;
+    return accumulatedLight;
 }
 ```
+
+`LightTransmittance`、`AmbientSkyVisibility` 和 `MultipleScatteringLighting` 的完整数学与常数见前文“光照模型”。实现时要保留两个关键边界：太阳射线先命中行星时返回 0；阴影步数按最大物理步长自适应并限制在 Shader 上限内。环境光是独立低频项，不能把被行星遮挡的直射太阳强行设为非零。
+
+#### CPU LogRGB 编码与 GPU 解码
+
+```csharp
+static byte EncodeLogChannel(float linear, float range, float curve)
+{
+    float safe = Mathf.Clamp(linear, 0.0f, range);
+    float logRange = Mathf.Log(1.0f + range * curve, 2.0f);
+    float encoded = Mathf.Log(1.0f + safe * curve, 2.0f) / logRange;
+    return (byte)Mathf.Clamp(
+        Mathf.RoundToInt(Mathf.Clamp01(encoded) * 255.0f),
+        0,
+        255);
+}
+
+static float FitSkyRange(Color[] pixels)
+{
+    float maximum = 0.0f;
+    foreach (Color p in pixels)
+        maximum = Mathf.Max(maximum, p.r, p.g, p.b);
+    return Mathf.Clamp(
+        Mathf.Max(0.0625f, maximum * 1.10f),
+        0.0625f,
+        32.0f);
+}
+```
+
+```hlsl
+float DecodeLogChannel(float encoded, float range, float curve)
+{
+    float logRange = log2(1.0 + range * curve);
+    return (exp2(encoded * logRange) - 1.0) / curve;
+}
+
+float3 DecodeLogRgb(float3 encoded, float range, float curve)
+{
+    return float3(
+        DecodeLogChannel(encoded.r, range, curve),
+        DecodeLogChannel(encoded.g, range, curve),
+        DecodeLogChannel(encoded.b, range, curve));
+}
+```
+
+编码后应在 CPU 立即做一次 8-bit round-trip 测试：对 0、暗部代表值、1、接近范围上限和超过范围的值分别编码/解码，确认单调、非负、上限裁切符合预期。不要用 `Color32` 的 sRGB 语义做额外转换；这里的 byte 是自定义数值编码。
+
+#### 动态瓦片与导入设置
+
+下面的 `ResolveTileSize` 来自最新动态短瓦片工作副本，适合作为实现参考，但截至本次记录只通过 48² 低负载跨瓦片检查；它不是 512/1024 已通过证明。导入设置属于另一条数据契约，应分别验证，不能因为 importer 正确就推导瓦片渲染正确。
+
+```csharp
+static int ResolveTileSize(int samplesPerPixel, int viewSteps)
+{
+    long perPixelWork =
+        (long)Mathf.Max(samplesPerPixel, 1) *
+        Mathf.Max(viewSteps, 1) *
+        (7 + 128); // 静态 Base 的保守最坏太阳遮光预算
+    if (perPixelWork <= 160000) return 32;
+    return perPixelWork <= 640000 ? 16 : 8;
+}
+
+static void ConfigureRuntimeTexture(
+    string assetPath,
+    int resolution,
+    string metadataJson)
+{
+    var importer = (TextureImporter)AssetImporter.GetAtPath(assetPath);
+    importer.textureType = TextureImporterType.Default;
+    importer.sRGBTexture = false;
+    importer.alphaSource = TextureImporterAlphaSource.FromInput;
+    importer.alphaIsTransparency = false;
+    importer.mipmapEnabled = true;
+    importer.streamingMipmaps = false;
+    importer.wrapMode = TextureWrapMode.Clamp;
+    importer.filterMode = FilterMode.Trilinear;
+    importer.textureCompression = TextureImporterCompression.Uncompressed;
+    importer.isReadable = false;
+    importer.maxTextureSize = Mathf.Clamp(
+        Mathf.NextPowerOfTwo(resolution),
+        32,
+        4096);
+
+    var android = importer.GetPlatformTextureSettings("Android");
+    android.name = "Android";
+    android.overridden = true;
+    android.maxTextureSize = importer.maxTextureSize;
+    android.format = TextureImporterFormat.ASTC_4x4;
+    android.compressionQuality = 100;
+    importer.SetPlatformTextureSettings(android);
+    importer.userData = metadataJson;
+    importer.SaveAndReimport();
+}
+```
+
+每个瓦片渲染前设置 `(tileWidth/fullResolution, tileHeight/fullResolution, pixelX/fullResolution, pixelY/fullResolution)` 形式的 `_BakeUvScaleOffset`。Bake Shader 用 `globalUv = input.uv * scale + offset` 求方向和整图随机种子；读回时用 `ReadPixels(sourceRect, pixelX, pixelY, false)` 直接写入整图，所有瓦片结束后再 `Apply(false, false)`。
 
 ### 参考链接
 
 - [The Real-time Volumetric Cloudscapes of Horizon: Zero Dawn](https://advances.realtimerendering.com/s2015/The%20Real-time%20Volumetric%20Cloudscapes%20of%20Horizon%20-%20Zero%20Dawn%20-%20ARTR.pdf) - Perlin–Worley 云密度与实时体积云基础。
 - [Nubis: Authoring Real-Time Volumetric Cloudscapes with the Decima Engine](https://www.guerrilla-games.com/read/nubis-authoring-real-time-volumetric-cloudscapes-with-the-decima-engine) - 云层创作与天气控制。
 - [SIGGRAPH 2016 Course: Physically Based Shading in Theory and Practice](https://blog.selfshadow.com/publications/s2016-shading-course/) - Frostbite《Physically Based Sky, Atmosphere and Cloud Rendering》课程入口及原始演示文稿。
-- [Dobashi et al. 2007: A fast rendering method for clouds illuminated by lightning taking into account multiple scattering](https://doi.org/10.1007/s00371-007-0146-3) - 预计算云体闪电 Basis Intensities，并在运行时线性组合直接光与多重散射响应。
-- [Jarosz et al. 2008: The Beam Radiance Estimate for Volumetric Photon Mapping](https://doi.org/10.1111/j.1467-8659.2008.01153.x) - 沿整条相机束收集光子，比逐点体积光子估计噪声低；核估计偏差要求额外收敛验证。
-- [Fattal 2009: Participating media illumination using light propagation maps](https://doi.org/10.1145/1477926.1477933) - 以 Discrete Ordinates 保留传播方向，并讨论 false scattering 与 ray effect；用于说明标量扩散丢失角向信息的边界，不代表当前实现复刻该算法。
-- [Kulla & Fajardo 2012: Importance Sampling Techniques for Path Tracing in Participating Media](https://doi.org/10.1111/j.1467-8659.2012.03148.x) - 等角/Cauchy 采样匹配近光源 `1/r²` 弱奇异项并与其他提案做 MIS；本文的碰撞点条件化线源公式是基于该结构的适配。
-- [Schied et al. 2017: Spatiotemporal Variance-Guided Filtering](https://doi.org/10.1145/3105762.3105770) - 依赖时域积累、方差与 G-buffer 引导；用于限定静态单帧 à-trous 不能直接等同于 SVGF。
-- [Herholz et al. 2019: Volume Path Guiding Based on Zero-Variance Random Walk Theory](https://doi.org/10.1145/3230635) - 以近似伴随传输联合指导体积路径的距离、方向、终止和分裂决策。
-- [NOAA/NSSL Severe Weather 101: Lightning](https://www.nssl.noaa.gov/education/svrwx101/lightning/) - 闪电类型与现实云内放电参照入口。
 - [Unity Volumetric Clouds Volume Override reference](https://github.com/Unity-Technologies/Graphics/blob/master/Packages/com.unity.render-pipelines.high-definition/Documentation~/volumetric-clouds-volume-override-reference.md) - Cloud Map/LUT 通道打包和数据纹理关闭 sRGB 的官方参考。
 - [Arm ASTC Format Overview](https://github.com/ARM-software/astc-encoder/blob/main/Docs/FormatOverview.md) - 128-bit 固定块、通道共享权重与 dual-plane 边界。
 
@@ -613,7 +1087,7 @@ for (int i = 0; i < viewSteps && transmittance > 0.002; i++)
 - [半八面体单图 HDR 天空的编码、采样与色带治理](./hemi-octahedral-hdr-sky-texture.md) - HDR 母图之后的方向布局、编码、导入和发布链路。
 - [色带（Color Banding）与抖动（Dithering）知识](./color-banding-dither.md) - 静态天空平滑渐变的输出量化问题。
 - [URP 天空盒 Shader 机制与常见问题](./urp-skybox-notes.md) - Unity 天空盒渲染路径注意事项。
-- [VR 静态云天空与动态闪电的分离合成](./vr-static-sky-lightning-compositing.md) - 五单元数据契约、运行时时序、RegionMask 边界与双眼路径。
+- [VR 静态云天空与动态闪电的分离合成](./vr-static-sky-lightning-compositing.md) - 静态天空完成后的瞬态照明、传输响应、运行时时序与双眼路径；相关内容不在本文展开。
 
 ### 验证记录
 
@@ -621,8 +1095,8 @@ for (int i = 0; i < viewSteps && transmittance > 0.002; i++)
 - [2026-07-28] 原理与实现过程扩写：按当前 Shader/C# 实现补齐球壳求交、密度公式、光照积分、多重散射近似、子像素采样、瓦片化、成本模型、参数关系、失败诊断和实现限制。明确公开资料是理论参照，当前程序化噪声与经验常数属于项目实现。
 - [2026-07-28] 参数语义复核：确认固定视线步数下，增大最大步进距离主要会增大单步长度而非循环次数；确认 groundColor 当前不会进入上半球烘焙结果，也不是云底反弹光参数，已在正文标明。
 - [2026-07-28] 来源性复核：原 EA Frostbite PDF 直链返回 404，改用可访问的 SIGGRAPH 2016 课程索引；该页面仍提供 Frostbite 原始演示文稿。
-- [2026-07-28] 1024 与闪电编码闭环更新：完成 1024×1024、192 视线步、20 太阳光步、4 子样本的正式静态云烘焙，并为四条相邻闪电路径生成快速近似 LogRGBA 传输基。四通道编码最大码值均低于 167、没有 255 饱和纹素；基础与 Basis 导入契约均通过 Unity 检查。该结果证明编码和运行时组合可用，不再作为闪电传播形态已经真实的证据。
-- [2026-07-29] 正确性与求解器重大修正：现实夜间图片复核确认旧 16 图主要扩大、模糊中心光团，缺少大片相连云体的分层响应与暗缝切割。三维标量 Jacobi/双边扩散虽扩大 5% 受光面积，却进一步降低高频结构，正式退出完整传输主线。实现有限半径反向逐纹素 Monte Carlo 参考解，并修复大行星坐标下观察者落在密度 Bounds 外的问题。64²/1024 spp 双种子在能量、空间相关、支撑面积与质心上收敛；O24、128²/1024 spp 和 64/96 km 域对照通过数值门禁。最终天空球多视角、第二个 128² 高样本种子、五单元打包与 Quest 真机仍明确列为未验证。
-- [2026-07-29] 球面门禁与外部论文复核：正确 128² `Single + Multiple` 响应完成四方向 Idle/峰值/Debug 共 12 图检查，但径向/竖向条纹、盐粒和锥形亮罩仍明显，无法确认云胞暗缝、褶皱及远端分层，视觉门禁判定失败。根据 Kulla–Fajardo 对近光源弱奇异项的等角采样、Herholz 对全路径决策的指导、Jarosz 的 Beam Radiance 偏差边界和 SVGF 的时域/G-buffer 前提，下一步改为先做源条件化 NEE 的解析自检与 64² 无偏 A/B；不先升分辨率或用滤波掩盖 raw 方差。
+- [2026-07-28] 1024 静态链路闭环：完成 1024×1024、192 视线步、20 太阳光步、4 子样本的正式静态云烘焙；LogRGB 编码、基础纹理导入和运行时解码均通过 Unity 检查。
+- [2026-07-30] 完整性、时效性与结构一致性复核：补入复现完成条件、环境边界、最小文件职责、字段语义、从零实现顺序、白天/黄昏/夜间参数、分级质量门槛、Unity 操作、输出/LogRGB/Importer/metadata 契约、运行时单采样与 VR stereo 要求、截图矩阵、复现记录模板和失败定位；记录边界严格收窄为静态体积云，空白工程完全重写仍列为未独立验证。
+- [2026-07-30] 实现时间线复核：确认 512/1024 实践证据属于旧固定 128×128 瓦片基线；最新 32/16/8 动态短瓦片工作副本只完成 48² 低负载跨瓦片检查，128 新旧一致性、512 与 1024 尚待重验。正文已拆分“已验证基线、最新工作副本、候选扩展”，不再把不同版本证据合并，也不把本次实践限制写成同类方法的普遍结论。
 
 ---
