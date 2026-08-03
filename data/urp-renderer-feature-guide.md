@@ -1,17 +1,18 @@
 # URP Renderer Feature 开发要点
 
 **收录日期**：2026-01-31
-**更新日期**：2026-07-07
+**更新日期**：2026-08-03
 **标签**：#shader #unity #experience #urp #srp-batcher #renderer-feature
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐ (实践验证)
 **来源**：Technical_Artist_Technotes/关于SRP、URP
+**适用版本**：Unity 2022.3 / URP 14 兼容模式；Unity 6 Render Graph 路线请参阅跨版本指南
 
 **问题/场景**：
 
 
 ### 概要
-URP Renderer Feature 开发要点
+URP Renderer Feature 在 Unity 2022.3 / URP 14 兼容模式下的开发要点，重点是 `Execute + CommandBuffer + RTHandle` 路线。Unity 6 仍使用 Renderer Feature 注入 Pass，但 Pass 主体应迁移为 Render Graph 的 `RecordRenderGraph`；两代 API 的完整映射见相关记录中的跨版本指南。
 
 如何在 URP 中自定义 Renderer Feature？有哪些常见的踩坑点？
 
@@ -19,9 +20,11 @@ URP Renderer Feature 开发要点
 
 ### 1. 什么是 Renderer Feature
 
-Renderer Feature 是一系列对 **CommandBuffer 操作的集合**。它允许向 URP Renderer 添加额外的渲染通道，自定义渲染顺序、渲染对象、材质等。
+在本记录对应的 URP 14 兼容模式中，Renderer Feature 通常创建并注入一个或多个围绕 **CommandBuffer 操作**组织的 `ScriptableRenderPass`。它允许向 URP Renderer 添加额外渲染阶段，自定义渲染顺序、渲染对象、材质等。
 
 **本质**：在渲染任务列表中插入、调整渲染任务
+
+> 版本边界：Renderer Feature 是“创建、配置和注入 Pass”的入口，并不等于 CommandBuffer 本身。Unity 6 Render Graph 路线仍可使用同一个 Feature 外壳，但 Pass 内改为声明资源依赖和延迟执行。
 
 ### 2. 为什么需要 Renderer Feature
 
@@ -140,8 +143,10 @@ public class MyRendererFeature : ScriptableRendererFeature
 
 ### 相关记录
 
+- [Unity URP 跨版本渲染扩展：Renderer Feature、兼容模式与 Render Graph](./urp-renderer-feature-render-graph-versioned-guide.md) - 对比 Unity 2022.3 / URP 14 与 Unity 6 的扩展入口、Pass 主体、资源生命周期和迁移方法。
 - [URP RenderFeature 使用 LightMode 筛选额外 Pass 的机制](./urp-renderfeature-lightmode-pass-filtering.md) - 补充说明 `ShaderTagId`、Render Objects `Pass Names` 与 ShaderLab `LightMode` / `Pass Name` 的边界。
 
 ### 验证记录
 - [2026-01-31] 从 Technical_Artist_Technotes 整理提取
 - [2026-07-07] 修正：收窄“URP 不支持传统多 Pass”的旧表述。准确边界是默认主绘制不会自动绘制任意额外 Pass；Render Objects / 自定义 RendererFeature 可通过 Pass 的 `LightMode` tag 额外绘制，从而实现 URP 下的多次绘制。
+- [2026-08-03] 版本收窄：明确本文代码属于 Unity 2022.3 / URP 14 兼容模式；补充 Renderer Feature 与 CommandBuffer、Render Graph 的层级边界，并关联跨版本迁移指南。
