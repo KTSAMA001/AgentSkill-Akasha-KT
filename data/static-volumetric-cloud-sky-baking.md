@@ -4,7 +4,7 @@
 **来源**：项目实现与 Unity 编辑器实测（主体）；Guerrilla Games Horizon/Nubis、EA Frostbite、Unity Graphics 文档与 Arm ASTC 资料（体积云、编码和平台格式参照）
 **收录日期**：2026-07-27
 **来源日期**：2015-08 / 2016-07 / 2026-07-31（实践验证）
-**更新日期**：2026-07-31
+**更新日期**：2026-08-11
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐（球壳云、LogRGB、导入和运行时采样已有实践证据；当前 32/16/8 动态短瓦片、全尺寸 staging、分帧限载与逐项缓存已完成一个 512 厚云配置的实际烘焙和多视角检查，但当前实现尚未重新完成 1024 与目标移动 VR 设备验收，空白工程完全重写也未独立验证）
 **适用版本**：已验证环境为 Unity 2022.3.62f3 / URP 14；其他 Unity、Built-in 或 URP 版本需重新验证 Shader 编译、纹理导入和天空盒路径
@@ -20,6 +20,8 @@
 #### 记录定位与来源边界
 
 本文主体是一次 Unity 项目实践及其编辑器证据。公开资料提供了 Perlin–Worley 密度、天气控制、相位函数和多重散射近似等设计依据，但实践实现采用程序化噪声、固定垂直剖面和一组经验系数。引用这些资料不能等同于“完整复刻 Horizon/Nubis/Frostbite”，本次实践中的失败或限制也不能直接推广为同类算法在其他实现中普遍不可用。
+
+2026-08-11 的 WebGL2 统一后端实践进一步确认：本文的“4 个经验多重散射补偿 lobe”、Unity Runner、动态短瓦片和缓存字段都属于这套 Unity 工具的具体合同，不能直接外推到另一实现。这里的 4 指补偿项数量，并非辐射传输方程严格求解到第四次物理散射。跨实现可以复用球壳、Beer–Lambert、全局像素坐标和质量不降级原则，但必须分别记录经验 lobe 数、源项图、样本序列、Kernel 身份和验证环境。
 
 阅读本文时应区分四个证据层级。文中的操作步骤只以“当前工具合同”为准；历史结果只能说明它实际发生过，不能替代当前源码回归：
 
@@ -140,7 +142,7 @@ StaticCloudSkyBaker/
 | 天空 | `backwardScattering` | -0.999～0 | HG 后向叶 |
 | 天空 | `backwardWeight` | 0～1 | 双叶相位函数的后向叶占比 |
 | 天空 | `powderStrength` | 0～2 | 受光边蓬松近似；过高会发白 |
-| 天空 | `multipleScatteringStrength` | 0～2 | 四阶经验多重散射能量；过高会冲淡体积层次 |
+| 天空 | `multipleScatteringStrength` | 0～2 | 4-lobe 经验多重散射补偿能量；过高会冲淡体积层次 |
 | 天空 | `sunAngularRadiusDegrees` | 0.02°～2° | 太阳圆盘视半径；真实太阳约 0.27°，卡通圆盘可先试 0.5°～0.8° |
 | 天空 | `sunGlowAngularRadiusDegrees` | 0°～20° | 外围光晕角半径；0 关闭光晕，与圆盘大小独立，不能用它代替圆盘尺寸 |
 | 质量 | `viewSteps` | 8～384 | 每个子样本的视线 Ray March 步数 |
@@ -168,9 +170,9 @@ StaticCloudSkyBaker/
 4. **密度函数**：实现 Gradient Noise、4-octave FBM、Worley F1、天气覆盖率、固定高度剖面和高频侵蚀。先输出灰度密度积分，不加光照；确认 `coverage` 改变占地范围，`densityMultiplier` 不改变密度形状。
 5. **视线消光**：加入 `sigmaT = density * densityMultiplier`、`stepT = exp(-sigmaT*ds)` 和前向 alpha 合成。此时可以只用常量白色照明，验证厚云更不透明、薄云仍透出背景。
 6. **太阳遮光**：每个有效视线样本沿 `sunDirection` 积分光学厚度。先检查行星遮挡：太阳在局部地平线以下时必须返回 0，不能穿过行星采到远侧云壳。
-7. **相位与近似多重散射**：加入双叶 HG、Powder、四阶经验能量和环境光。每加入一项都保留开关或数值 0 的回退路径，便于定位过曝或死黑。
+7. **相位与近似多重散射**：加入双叶 HG、Powder、4 个经验补偿 lobe 和环境光。每加入一项都保留开关或数值 0 的回退路径，便于定位过曝或死黑。
 8. **子像素与首步抖动**：随机种子必须来自整图纹素坐标和样本序号。瓦片局部坐标只能负责输出位置，不能改变方向或随机相位。
-9. **瓦片渲染与 HDR 汇总**：Bake Shader 每次只渲染一个短瓦片到 `ARGBHalf` RenderTexture；主路径用 `CopyTexture` 写入全尺寸 staging RT，每个 Pass 结束时只完整 `ReadPixels` 一次。只有平台不支持区域复制或 staging 创建失败时才逐瓦片同步回读，全部数据完成后只 `Apply` 一次。
+9. **瓦片渲染与 HDR 汇总**：Bake Shader 每次只渲染一个短瓦片到 `ARGBHalf` RenderTexture；主路径用 `CopyTexture` 写入全尺寸 staging RT，每个 Pass 结束时只完整 `ReadPixels` 一次。瓦片必须使用 full resolution、global pixel/UV 和全局样本序列，不能在每个局部瓦片重新开始方向或随机相位。只有平台不支持区域复制或 staging 创建失败时才逐瓦片同步回读，全部数据完成后只 `Apply` 一次。
 10. **LogRGB 编码与导入**：先从完整 HDR 母图测量 RGB 最大值，再拟合编码范围、量化到 8-bit PNG，写入 metadata 并配置 importer。
 11. **运行时天空与测试场景**：运行时按世界/天空方向编码半八面体 UV，采样一次、解码 LogRGB，再执行曝光和 Tone Mapping。最后生成独立场景做球面多视角验收。
 
@@ -586,7 +588,7 @@ phase = lerp(
 
 forwardG 越接近 1，太阳附近银边越集中；backwardWeight 用于补充背向太阳观察时的响应。
 
-##### 四阶多重散射近似
+##### 4-lobe 经验多重散射补偿
 
 当前代码不是严格路径追踪，而是累加 4 个逐渐变宽、能量逐渐降低的相位叶：
 
@@ -595,14 +597,14 @@ energy₀ = 1
 transmittance₀ = Tlight
 g₀ = userG
 
-每一阶：
+每个经验 lobe：
 scatter += DualPhase(μ, g) * transmittance * energy
 energy *= 0.52 * multipleScatteringStrength
 transmittance = transmittance^0.62
 g *= 0.55
 ~~~
 
-它能恢复厚云内部被单次散射丢失的柔和能量，但不能当作物理准确的高阶散射解。代码中的 0.52、0.62、0.55 和直射光整体倍率均是经验参数。
+它能恢复厚云内部被单次散射丢失的柔和能量，但不能当作物理准确的第四次散射解。代码中的 0.52、0.62、0.55 和直射光整体倍率均是经验参数。
 
 ##### 环境光与 Powder
 
@@ -1150,6 +1152,7 @@ after all tiles in pass:
 
 ### 相关记录
 
+- [WebGL2 体积云的统一积分后端：从实时预览到渐进收敛与离线烘焙](./webgl2-unified-volumetric-cloud-rendering.md) - 另一套实现中预览/烘焙 KernelSet 统一、3-lobe 经验多重散射补偿、浏览器冷编译、渐进累计和地平线分层的纠错记录。
 - [半八面体单图 HDR 天空的编码、采样与色带治理](./hemi-octahedral-hdr-sky-texture.md) - HDR 母图之后的方向布局、编码、导入和发布链路。
 - [色带（Color Banding）与抖动（Dithering）知识](./color-banding-dither.md) - 静态天空平滑渐变的输出量化问题。
 - [URP 天空盒 Shader 机制与常见问题](./urp-skybox-notes.md) - Unity 天空盒渲染路径注意事项。
@@ -1166,5 +1169,6 @@ after all tiles in pass:
 - [2026-07-30] 当前工具流程复核：以当前 `Settings Inspector → Baker Window → Runner → Bake Shader → LogRGB/EXR → 时间戳对照场景` 为唯一操作主线，校准菜单、开关、按钮、天气/时段预设、太阳方向与角半径、输出命名和动态瓦片职责。32/16/8 动态瓦片目前只有 48² 低负载连续性证据；历史固定瓦片阶段的 512/1024 结果只作参照，不写成当前源码已经通过，也不把当前未验证范围外推为同类算法的普遍限制。
 - [2026-07-31] 正确性、时效性与结构一致性更新：当前 32/16/8 短瓦片已改为全尺寸 staging 主路径，每个 Pass 最终只完整回读一次；编辑器分帧会话支持 Background/Balanced/Full Speed 限载、暂停/恢复/取消，以及 GraphicsFence 或小区域 AsyncGPUReadback 完成信号。一个当前厚云配置完成 512 实际烘焙和多视角检查，证明该配置的 512 提交与回读链路成立，但不外推为 1024 或所有天气已通过。
 - [2026-07-31] 缓存与材质合同更新：新增 Base RGB 与逐单元线性 Half 传输缓存，明确它复用完整三维积分结果而非从二维颜色反推云数据；补充参数级失效、源码依赖指纹、有限值/SHA 校验和原子提交边界。修正基础 Alpha 语义：纯静态 LogRGB 不赋予 A 事件语义，启用瞬态响应时 Base A 保存固定单元标量。记录“只换纹理会保留旧隐藏 Log 解码参数并导致夜景异常过亮”的根因，明确纹理、metadata、配对资源与地平线颜色必须原子同步。当前 1024、目标设备 ASTC、双眼与 GPU 抓帧仍待验证。
+- [2026-08-11] 跨实现边界纠错：新增 WebGL2 统一体积云论文链接，明确本记录使用 4 个经验补偿 lobe，而不是严格第四次物理散射；Unity 动态短瓦片也是具体工具实现，不是通用固定算法。补充瓦片必须保持 full resolution、global pixel/UV 与全局样本序列；性能调度不得通过局部坐标重置或静默降低正式采样预算来换取稳定。
 
 ---
