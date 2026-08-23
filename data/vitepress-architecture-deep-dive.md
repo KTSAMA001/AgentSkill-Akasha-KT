@@ -3,15 +3,17 @@
 **标签**：#web #vitepress #architecture #arknights
 **来源**：[AkashaRecord-Web 项目](https://github.com/KTSAMA001/AkashaRecord-Web) - 架构分析与文档
 **收录日期**：2026-02-16
-**更新日期**：2026-05-25
-**状态**：📘 有效
+**更新日期**：2026-08-23
+**状态**：🔄 待更新
 **可信度**：⭐⭐⭐⭐⭐
-**适用版本**：VitePress v2.2.0
+**适用版本**：历史架构快照（VitePress 1.5.0）；当前部署链路以增量内容平台记录为准
 
 ---
 
 ### 概要
 AkashaRecord-Web 是阿卡西记录知识库的 Web 前端展示平台，采用 VitePress 构建静态站点，辅以 Express Webhook 服务实现自动构建。本文档提供了完整的技术架构、核心流程、组件系统、数据流与部署方案解析。
+
+> **版本边界（2026-08-23）**：本文主体保存的是早期 VitePress 中心架构快照，其中“Webhook 直接执行 sync + VitePress build”、单一 `.vitepress/dist` 发布目录和服务器程序自更新已不代表当前生产链路。当前架构已将程序构建、内容领域层和表现适配器分离，服务器只处理增量内容；部署与内容流程应以[VitePress 文档站的程序构建与增量内容发布分离](./vitepress-incremental-content-release-architecture.md)为准。本文的旧组件与视觉说明仍可作为历史参考，待后续整体重写。
 
 ---
 
@@ -388,6 +390,11 @@ const filteredRecords = computed(() => {
 
 ---
 
+### 相关记录
+
+- [VitePress 文档站的程序构建与增量内容发布分离](./vitepress-incremental-content-release-architecture.md) - 当前生产架构的程序/内容分离、增量编译、候选隔离与内存边界。
+- [Akasha Webhook PM2 守护与 HTTPS 反向代理](./akasha-webhook-pm2-https-proxy.md) - Webhook HTTPS 入口与旧自动构建架构的版本边界。
+
 ### 参考链接
 
 - [VitePress 官方文档](https://vitepress.dev/)
@@ -399,3 +406,4 @@ const filteredRecords = computed(() => {
 ### 验证记录
 - 2026-02-16 初次记录，来源：[架构分析文档]
 - [2026-05-25] 修正：补充 #arknights 标签，便于按明日方舟相关视觉风格检索。
+- [2026-08-23] 时效性复核：确认本文的 Webhook、构建与部署章节已被程序/内容分离架构替代，标记为待更新并添加当前方案入口；未借本次记录流程重写模板或 Web Schema。

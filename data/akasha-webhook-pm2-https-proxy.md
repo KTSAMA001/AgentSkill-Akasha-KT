@@ -4,33 +4,35 @@
 **来源**：KTSAMA 实践经验
 **收录日期**：2026-02-07
 **来源日期**：2026-02-07
-**更新日期**：2026-06-13
+**更新日期**：2026-08-23
 **状态**：✅ 已验证
 **可信度**：⭐⭐⭐⭐ (实践验证)
 **适用版本**：Node.js webhook + pm2 + Nginx 1.26 + GitHub Webhook
 
 ### 概要
 
-Akasha Web webhook 服务可用 pm2 守护在本机端口监听 GitHub push，再由 Nginx 在 HTTPS `/webhook` 路径反向代理到本机服务。启用 SSL 后应关闭公网直连非标端口，并让 GitHub Webhook 使用 HTTPS 标准端口。
+Akasha Web webhook 服务可用 pm2 守护在本机端口监听 GitHub push，再由 Nginx 在 HTTPS `/webhook` 路径反向代理到本机服务。启用 SSL 后应关闭公网直连非标端口，并让 GitHub Webhook 使用 HTTPS 标准端口。本文的 HTTPS 入口和进程守护结论仍有效；webhook 直接执行整站 VitePress 构建属于旧架构，不再推荐用于小内存生产主机。
 
 ### 内容
 
-#### webhook 自动构建
+#### 旧架构：webhook 自动整站构建
 
-webhook 服务使用 express 监听 3721 端口，接收 GitHub push 事件后自动执行 sync + build。
+早期 webhook 服务使用 express 监听本机端口，接收 GitHub push 事件后自动执行 sync + build。该做法保留为历史背景，不应复制为当前生产架构：文档变化会连带重新生成路由、搜索和前端程序，在小内存主机上可能触发 OOM，并把 webhook 自身更新、程序部署和内容发布耦合在一起。
 
-要点：
+当前推荐把程序构建移到本地或 CI，服务器 webhook 只校验签名、收敛到可信内容 revision 并运行有界增量内容工作器，详见[VitePress 文档站的程序构建与增量内容发布分离](./vitepress-incremental-content-release-architecture.md)。
+
+旧方案要点：
 
 - 使用 `pm2 start server/webhook.mjs --name akasha-webhook` 守护运行。
 - `pm2 save && pm2 startup` 实现开机自启。
 - webhook 脚本中使用 `./node_modules/.bin/vitepress build`，避免 `npx` 缓存陷阱。
 - GitHub 两个仓库都需要配置 webhook。
 
-#### webhook 自更新的“鸡蛋问题”
+#### 旧架构的 webhook 自更新“鸡蛋问题”
 
-`webhook.mjs` 接收 push event 后执行 sync + build，但脚本自身的更新也需要 git pull。如果 `webhook.mjs` 代码有变更，旧版本不会自动拉取新代码。
+旧版 `webhook.mjs` 接收 push event 后执行 sync + build，但脚本自身的更新也需要 git pull。如果 `webhook.mjs` 代码有变更，旧版本不会自动拉取新代码。
 
-方案是在 `webhook.mjs` 的 `runBuild()` 开头增加自更新步骤：
+当时的方案是在 `webhook.mjs` 的 `runBuild()` 开头增加自更新步骤：
 
 ```javascript
 // Step 0: 更新 Web 仓库自身代码
@@ -45,7 +47,7 @@ git pull
 pm2 restart akasha-webhook
 ```
 
-之后 webhook 才能自举更新。
+之后 webhook 才能自举更新。当前架构不再让生产 webhook 重置、拉取和构建程序仓库，而是部署经过校验的不可变程序包，因此不再使用这套自举方式。
 
 #### 从 HTTP 直连迁移到 HTTPS 反向代理
 
@@ -85,6 +87,7 @@ location /webhook {
 
 ### 相关记录
 
+- [VitePress 文档站的程序构建与增量内容发布分离](./vitepress-incremental-content-release-architecture.md) - 当前推荐的程序/内容双发布链路、增量编译和内存边界。
 - [Akasha Web 同步脚本与 Git 部署坑](./akasha-web-sync-git-deploy-pitfalls.md) - webhook 调用的 sync/build 过程依赖。
 - [宝塔 Nginx SSL 配置文件冲突处理](./bt-nginx-ssl-config-conflict.md) - HTTPS server 块与宝塔 SSL 面板配置问题。
 - [VitePress 宝塔 Nginx 部署 403/404 与 cleanUrls 刷新修复](./vitepress-nginx-deploy-403-cleanurls.md) - 同站点 Nginx 静态路径配置。
@@ -96,5 +99,6 @@ location /webhook {
 - [2026-02-07] 发现 webhook.mjs 没有 git pull 自身代码，已修复并手动首次部署。
 - [2026-02-07] HTTPS 反向代理验证：GitHub Recent Deliveries 显示 ping 事件返回 200 + `{"message":"pong"}`。
 - [2026-06-13] 结构维护：从旧聚合记录拆分，未重新验证原技术结论。
+- [2026-08-23] 时效性修正：保留 PM2 与 HTTPS 反向代理结论，将 webhook 自更新和服务器整站 VitePress 构建明确标为旧架构，并关联增量内容发布方案。
 
 ---
