@@ -23,7 +23,8 @@ license: MIT
 │   ├── archives/       ← 归档的非 data 层资料（如历史文档）
 │   │   └── ...
 │   └── ...
-└── references/        ← 参考文档（模板、索引、操作指南）
+└── references/        ← 系统规范、索引与审核证据
+    └── reviews/       ← 绑定候选摘要的只读冷读证据，不属于用户知识
 ```
 
 > **重要**：所有路径均为 **相对于 SKILL.md 所在目录** 的相对路径，与用户工作区无关。
@@ -32,7 +33,7 @@ license: MIT
 
 - **数据层（用户知识）**：`data/*.md` 与配套 `assets/<record-name>/*`，用于正式记录与资源承载；这是查找/引用/展示给用户的唯一知识来源。
 - **索引层（运行依赖）**：`references/INDEX.md`、`references/tag-registry.md`，用于索引、标签注册和 Web 侧派生数据同步；不作为用户知识查询结果直接返回。
-- **系统层（操作规范）**：`SKILL.md` 与 `references/workflows/*`、`references/templates/*`、`references/scripts/*`，仅用于指导 AI 如何执行流程，不可作为用户知识查询结果直接返回。
+- **系统层（操作规范与审核证据）**：`SKILL.md` 与 `references/workflows/*`、`references/templates/*`、`references/scripts/*`、`references/reviews/*`，仅用于指导流程或保存审核证据，不可作为用户知识查询结果直接返回。
 
 ## ⛔ 不可违反的执行规则
 
@@ -48,12 +49,13 @@ license: MIT
 7. **查找采用白名单**：可搜索并可返回的路径只有 `data/*.md`。对其他路径即使命中，也必须按“本地未命中”处理，不得直接返回。
 8. **正式记录禁止临时态**：阿卡西正式库不允许草稿态、半结构态、临时占位态或任何会破坏既有 Web 契约的快捷落库方案；写入 `data/` 的内容必须是符合模板的正式记录。
 9. **系统规则变更必须走治理流程**：凡涉及模板、workflow、索引规则、标签注册规则、字段 schema 或其他 Web 契约的调整，必须走 [workflows/governance.md](references/workflows/governance.md)，不得混入普通记录或验证流程处理。
+10. **记录必须能被陌生读者独立理解**：新增记录或正文实质改写在完成前，必须由不继承当前对话历史的只读读者审查冻结候选，并对该候选明确给出“可发布”；候选 SHA-256 与原始审核输出必须留档。审核后若只有不改变语义与渲染结果的机械修正，也必须由非作者保存从旧 SHA 到新 SHA 的继承证据。不得依赖作者和用户共享的隐含上下文，不得用作者自评、结构校验通过或一句“已审阅”代替可读性、完整性与收尾质量判断。具体门禁见 [workflows/record.md](references/workflows/record.md) 与 [workflows/validate.md](references/workflows/validate.md)。
 
 ## 核心规则
 
 **分类方式**：所有记录通过**标签**分类，不使用目录层级。
 
-**标签要求**：每条记录至少 2 个标签，所有标签同级、不分类。新增标签前先查阅 INDEX.md 标签概览，优先复用已有标签。
+**标签要求**：每条记录至少 2 个标签；标签在记录展示中同级，但治理和校验时必须区分 domain、type、specialty、custom 维度，并满足至少 1 个 domain、恰好 1 个 type。新增标签前先查阅 INDEX.md 标签概览，优先复用已有标签。
 
 **写入位置**：所有记录 → `data/*.md`
 
@@ -66,6 +68,7 @@ license: MIT
 | `assets/<record-name>/*` | 读/写/新建（存放记录关联的图片等资源） | 数据层资源文件，与记录配套使用 |
 | `references/INDEX.md`、`references/tag-registry.md` | 读/写（索引需实时更新） | 索引层维护（记录新增/修改时更新），不用于搜索 |
 | `references/scripts/*.py` | 只读/可执行 | 维护脚本（如索引生成），不作为查找流程依赖 |
+| `references/reviews/*` | 读/写（仅冷读流程） | 保存冻结候选摘要、读者输入边界与原始结论，不用于知识检索 |
 | `SKILL.md`、`references/workflows/*`、`references/templates/*` | 只读；仅治理流程可修改 | 系统操作规范，不可直接作为查询结果返回 |
 | 其他位置 | 禁止 | 非技能范围，禁止操作 |
 
@@ -82,6 +85,7 @@ license: MIT
 - ❌ 修改记录后未同步 `references/INDEX.md`，却对用户宣称“已完成”。
 - ❌ 将 `references/` 中的系统操作规范（流程、模板、脚本说明）当作用户知识查询结果返回。
 - ❌ 为了快捷记录在 `data/` 中写入临时文件、待整理片段或非正式结构内容。
+- ❌ 让继承了作者对话的 Agent 假装陌生读者，或只在验证记录中补一句“已通过冷读”而不保存与最终候选绑定的审核证据。
 
 ## 意图识别与路由
 
@@ -155,4 +159,3 @@ license: MIT
 | ❌ 已废弃 | 错误或有风险 |
 | 🔬 实验性 | 非主流/试探性方案 |
 | 💡 构想中 | 创意/灵感阶段 |
-

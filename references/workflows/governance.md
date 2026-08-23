@@ -31,7 +31,9 @@
    - 仅修改必要的系统层文档或索引层规则，避免顺手改动无关内容。
 5. **交叉核对**
    - 检查 SKILL、workflow、模板、INDEX、tag-registry 是否出现互相矛盾。
-6. **说明后续动作**
+6. **审核门禁真实性复审**
+   - 若变更记录、验证或测试门禁，必须由未参与修改的只读审查者检查作者自评、历史上下文继承、弱断言、缺失证据和跳过复审等绕过路径；修改后再次核对最终文本。审查者结论不能由脚本退出码或作者声明替代。
+7. **说明后续动作**
    - 如存在存量数据待整治、Web 侧待同步、脚本待更新，必须明确列出，不得隐含带过。
 
 ## 三、强制测试步骤
@@ -39,9 +41,9 @@
 在治理变更完成后，**必须**执行以下脚本测试：
 
 ```bash
-python references/scripts/validate_records.py
-python references/scripts/regenerate_index.py
-python references/scripts/validate_records.py
+python3 references/scripts/validate_records.py
+python3 references/scripts/regenerate_index.py
+python3 references/scripts/validate_records.py
 ```
 
 - 若 `validate_records.py` 报告的是历史存量问题，必须明确区分“脚本功能正常”与“数据仍待整治”；禁止把历史脏数据误判为脚本失效。
@@ -66,5 +68,6 @@ python references/scripts/validate_records.py
 - [ ] 已确认本次需求属于系统治理，而非普通记录/验证？
 - [ ] 已说明影响范围与兼容策略？
 - [ ] 已检查 SKILL、workflow、模板、INDEX 之间不存在明显冲突？
+- [ ] 若修改了审核门禁，是否完成独立只读的真实性复审并处理绕过路径？
 - [ ] 未把系统层变更伪装成数据层内容修改？
 - [ ] 已明确列出仍需后续处理的存量整治或 Web 同步项？
