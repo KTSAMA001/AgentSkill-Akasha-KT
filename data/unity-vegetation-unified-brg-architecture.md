@@ -3,7 +3,7 @@
 **标签**：#unity #architecture #rendering #editor #performance #culling #scriptable-object
 **来源**：工程实践抽象 - Unity 大规模植被的数据、渲染与编辑架构
 **收录日期**：2026-08-06
-**更新日期**：2026-08-06
+**更新日期**：2026-08-26
 **状态**：📘 有效
 **可信度**：⭐⭐⭐（核心模式有工程实现与自动化测试支撑；高级演进契约未全部落地，多视图、容量与平台边界仍需验证）
 **适用版本**：Unity 2022.3 LTS 的 BatchRendererGroup API 模型；其它版本需复核 API 与图形后端行为
@@ -14,7 +14,9 @@
 
 本文讨论一种面向大规模植被的 Unity 架构：编辑模式与播放模式共享同一套 `BatchRendererGroup` 渲染实现，场景组件只负责数据授权和运行策略，编辑工具只负责数据编辑，空间分区与渲染 Batch 保持解耦。空间分区还可以承担增量编译、流式加载和内容所有权边界，但不自动决定绘制分桶。本文同时区分已经由参考实现和测试支撑的核心模式，以及尚未落地的高级演进契约，避免把架构目标误写成现成功能。
 
-这套架构的核心不是“把所有代码塞进一个管理器”，而是建立清晰的不变量：作者数据只有一个权威来源；同一实例所有权域不能被多个提交者重复绘制；连续预览不等于正式提交；空间分区、GPU 数据布局和绘制分桶是三个相互独立的维度。对普通单场景工作流，可以进一步采用“一个场景上下文只有一个渲染会话”的简化政策。
+这套架构的核心不是“把所有代码塞进一个管理器”，而是建立清晰的不变量：作者数据只有一个权威来源；同一实例所有权域不能被多个提交者重复绘制；连续预览不等于正式提交；空间分区、GPU 数据布局和绘制分桶是三个相互独立的维度。对普通单场景工作流，可以进一步采用“一个 Unity Scene 只有一个渲染会话”的简化政策；2026-08-25 参考实现没有采用该简化政策，而是把每个运行时 Cell 定义为独立所有权域。
+
+长文可按问题阅读：第一至五节建立术语、职责和所有权；第六至九节解释数据、加载、GPU 与剔除；第十至十二节解释编辑事务、缓存和刷新；第十三至十六节用于方案选择、验证与反模式检查。只想理解当前工程快照的读者，可先读“本文与参考实现的关系”、第二节术语、第七节和相关记录。
 
 ## 一、问题定义与适用范围
 
@@ -58,19 +60,88 @@
 
 本文是一篇独立的架构论文，不是某个项目版本的交付报告。下文中的“应”“必须”和“推荐”描述设计约束或演进目标，并不自动表示参考实现已经完整覆盖。当前参考实现仅用来回答两个问题：这些职责边界是否能在真实 Unity 工程中成立，以及哪些简化政策已经得到代码和测试证据支撑。
 
+先说明一个容易造成误读的术语差异：本文历史上把最小空间分区统称为 **Cell**；2026-08-25 的参考实现把这个层级命名为 **Heap**，并把“一个管理器组件 + 一份场景植被资产 + 一套独立运行资源”命名为 **运行时 Cell**。因此，除非段落明确写“运行时 Cell”，本文后续的通用 `Cell` 均应映射为该实现中的 `Heap`，而不是管理器所代表的较大加载单元。
+
+阅读覆盖表前可先记住六个实现词：运行时 Cell 是加载与资源所有权边界；Heap 是其内部空间块；SceneGuid 标识一份场景植被资产；HeapGuid 由 SceneGuid 与 Heap 坐标确定性生成；StableGuid 是实例在该资产内的持久身份；RuntimeIndex 和 HeapBase 只在加载后组合成临时 GPU 地址。QueryWorld 是每运行时 Cell 的解析查询数据，ColliderStreamer 是每运行时 Cell 的 PhysX 代理状态机。
+
+当前作者链中的 Prefab、Prototype 与 SceneAsset 是三层关系，而不是三个并列权威源：普通 Prefab 是原型烘焙的作者输入，烘焙器在隔离的 Prefab Contents 中读取 Authoring、LOD、Renderer 和显式标记的碰撞信息；`PrototypeAsset` 是由该输入生成的静态绘制与碰撞描述，并以 PrototypeGuid 标识；`SceneAsset` 的 PrototypeTable 引用这些 Prototype，实例只保存 PrototypeId、StableGuid 和 Heap 局部 TRS。运行时按 PrototypeTable 和实例记录集中提交 BRG，不会为每株植被实例化原始 Prefab。因而 Prefab 不是运行时实例权威，Prototype 也不拥有场景中的逐株位置。
+
+当前 `HeapMask` 也有单独且有限的语义：每个已加载运行时 Cell 各自持有一份按 SceneAsset 当前 Heap 顺序索引的一字节掩码；管理器把 Heap Bounds 变换到世界空间，再依据兴趣源距离与加载/卸载迟滞更新对应位。`VegetationBrgWorld` 在写入新掩码前等待既有剔除 Job，并把结果交给 Heap 粗筛及后续 Count/Scatter 的 Heap 可见门禁。它只回答“本次剔除是否继续处理这个 Heap”，不表示 Heap 资源已经单独 Loaded 或 Unloaded，也不会触发 Heap 级 Buffer 上传、缩容或释放。
+
+“当前参考实现”主体固定指 2026-08-25 的匿名工程快照：Unity `2022.3.62f3`、URP 14、Android 构建目标配置，证据来自当日源码静态复核与同轮 Unity Test Runner（EditMode `239/239`、PlayMode `11/11`）。2026-08-26 仅叠加物理 QueryWorld 的 Heap/Shape 两级懒建 BVH 增量及其回归（EditMode `244/244`、PlayMode `11/11`）；作者、BRG、Buffer 和卸载章节仍按 2026-08-25 主体快照陈述。阿卡西记录按规则不保存私有仓库路径、提交号和 RunId，因此这些实现行属于有边界的工程快照证据，不是读者仅凭本文即可复跑的公开基准；设备数字与实验条件只在专门性能记录中陈述。
+
+匿名证据索引保留到类与入口粒度：作者分区与身份由 `VegetationSceneAsset`、`VegetationRegionHeap`、`VegetationSceneEditSession.Commit` 和 `VegetationSceneCompiler.RefreshAffected` 复核；加载与槽位由 `VegetationCellManager.LoadCell/UnloadCell`、`VegetationSceneBatch` 和 `VegetationBrgWorld` 复核；剔除由 `CullVegetationHeapsJob`、`CountVegetationInstancesWithLodReferenceJob` 与 `ScatterVegetationVisibleInstancesJob` 复核；物理由 `VegetationCellPhysicsRuntime` 与 `VegetationColliderStreamer` 复核。它能说明结论来自哪些机制，但因不包含可检出的私有快照标识，仍不能让外部读者独立还原该工程版本。
+
 | 覆盖级别 | 当前参考实现的事实边界 | 阅读时应如何理解 |
 |----------|------------------------|------------------|
-| 已覆盖 | 编辑模式和播放模式创建同一种 BRG 后端及数据布局；编辑工具不拥有渲染会话；编辑器中由活动场景的唯一授权组件决定资产，无授权、授权冲突、Prefab Stage 和模式切换具有明确的释放或拒绝路径 | 这些内容是本文核心模式的现实证据；播放模式仍需要独立的场景级所有权门禁，不能只依赖编辑器授权检查 |
-| 已覆盖 | 一个场景资产内保存多个 Cell；全量实例属性驻留一个共享 GPU Buffer，并通过一次 Batch 注册提交；Cell 只影响 CPU 空间数据、激活掩码和粗剔除，不随 Cell 数量增加 Batch | 这是当前实现选择的单 Buffer、单 Batch 政策，不是 BRG 的普遍上限 |
-| 已覆盖 | 每次 BRG 回调执行 Cell 粗剔除、全量实例扫描、实例精细剔除、LOD、绘制桶计数、Prefix Sum 和 Scatter；运行时按主相机及显式参考物体，以时间间隔、移动阈值和半径滞回更新 Cell 激活掩码 | 当前实现对应后文“全量扫描并提前退出”，不是紧凑工作集 |
-| 部分覆盖 | 变换拖动先进入临时预览；点击应用后才修改同一份作者资产。编辑事务只复制触及的 Cell，并在作者校验后形成一个 Undo 边界 | 预览与正式提交分离、局部暂存和单次 Undo 已覆盖；当前局部编译会逐 Cell 写入缓存，没有显式 Stale/Error 状态，也没有完整的两阶段失败回退 |
-| 部分覆盖 | 作者提交后会局部编译、立即保存同一资产，再发布正式变更事件 | 这是当前实现的简化顺序：保存失败时内存作者状态已经变化，但渲染宿主可能收不到正式事件；它不满足后文推荐的“内存提交事件与磁盘保存结果分离”协议 |
-| 已覆盖 | 实例使用高熵或确定性生成的稳定标识；同一资产内检查标识唯一，跨 Cell 移动保留身份；编辑器视图使用场景隔离掩码，进入 Prefab Stage 或播放模式时释放编辑会话 | 身份证据目前只覆盖单资产内部，不覆盖跨资产命名空间迁移 |
+| 已覆盖 | 编辑模式和播放模式创建同一种 BRG 后端与数据布局；编辑器宿主为每个已加载且有效的运行时 Cell 建立独立会话，工具窗口不拥有会话；Prefab Stage、PlayMode 切换和 Scene 卸载都有释放路径 | 统一的是后端协议，不是跨运行时 Cell 共享同一个 BRG 对象 |
+| 已覆盖 | 一个运行时 Cell 绑定一份场景植被资产；资产内含多个 Heap。每个已加载运行时 Cell 独立创建 BRG、GPU Buffer、剔除快照、查询世界和碰撞流送器；多个 Additive Scene 可并存并共享兴趣源 | 当前实现选择“运行时 Cell 作为资源与生命周期隔离边界，Heap 作为其内部空间分区”，不能再把两者写成同一层级 |
+| 已覆盖 | 单个运行时 Cell 的全部 Heap 与实例一次上传到一块 GPU Buffer；固定逐株部分约 128 B，另加 8 B 或 20 B 的稀疏光照记录和每 Heap 128 B 量化参数 | Heap 激活只更新剔除掩码；它不会按 Heap 上传、释放或缩小这块 Buffer。真正释放发生在整个运行时 Cell 卸载时 |
+| 已覆盖 | 每次 BRG 视图回调先做 Heap 粗筛，再对本运行时 Cell 全部实例执行 Count 和 Scatter 两遍 Job；失活 Heap 的实例只在 Job 内提前退出 | 复杂度仍近似 `O(本运行时 Cell 总实例数 × Camera/Light 视图数)`，不能把 Heap 掩码描述成紧凑实例工作集 |
+| 部分覆盖 | Paint/Erase 与 Replace/Reproject/Transform 都先暂存作者数据；变换拖动只修改预览矩阵；正式提交形成一个 Undo 边界并保留跨 Heap 移动实例的 StableGuid | 范围操作会尝试用外层 Undo 回滚作者资产；普通增量编译仍逐 Heap 写回，派生缓存与 BRG 恢复未被证明为完整两阶段事务 |
+| 已覆盖 | Heap 坐标由运行时 Cell 局部位置、分区原点和尺寸计算；HeapGuid 由 SceneGuid 与坐标确定性生成；实例以 Heap 局部 TRS、PrototypeId 和 StableGuid 保存，RuntimeIndex 只在 Heap 内连续 | GPU 全局槽位在加载时由 HeapBase 与 RuntimeIndex 派生，不得把 RuntimeIndex 当作持久身份或跨 Heap 地址 |
+| 部分覆盖 | 统一兴趣源向每个运行时 Cell 广播位置、运动预测和优先级；物理加载/卸载半径、固定步激活预算、QueryWorld 与 ColliderStreamer 归各运行时 Cell 所有；大集合 QueryWorld 使用 Heap/Shape 两级懒建 BVH | 多运行时 Cell 所有权隔离已覆盖，但预算和 `Physics.SyncTransforms` 仍按运行时 Cell 计，尚无全局调度器；少于 64 项仍线性，冷建树/增删重建与最坏全扫未做 Quest 验证，且外层视觉 Heap Bounds 仍可能漏包 Query Shape |
 | 部分覆盖 | 每个视图都有独立 culling callback 和投影参数，阴影视图不写普通相机的 LOD 历史；但多个普通相机仍共享同一份 `PreviousLod` 数组，运行时激活集合也只来自主相机与显式参考物体 | 后文的每视图 LOD 历史、视图淘汰和所有受支持视图保守并集属于待演进契约 |
-| 部分覆盖 | 每次 culling 回调的新 Job 链都以旧最终 Handle 为前置依赖，因此修改和释放前等待的是覆盖旧任务的传递聚合链；互斥锁会串行化回调与主线程修改。预览随后原地更新公开 GPU Buffer 的矩阵和 CPU 包围体 | 当前同步重建路径不等于 Closing/Retiring 热切换协议；CPU Job 完成和原地 Buffer 更新也不等于 GPU 在途使用已经退役，PreviewGeneration、双 Buffer 与 GPU 屏障尚未落地 |
-| 未覆盖 | Buffer Page、多 Batch 注册策略、异步实例属性流式加载、`Desired / Loaded / Active` 状态机、紧凑可见工作集、跨资产世界命名空间、会话世代、视图历史淘汰和 Additive Scene 聚合 | 这些内容是为规模扩大准备的架构契约和验证清单，不能据此声称参考实现已经支持 |
+| 部分覆盖 | 每次 culling 回调的新 Job 链都以旧最终 Handle 为前置依赖，因此修改和释放前等待覆盖旧任务的传递聚合链；预览会原地更新公开 GPU Buffer 的矩阵和 CPU 包围体 | 当前同步重建路径不等于 Closing/Retiring 热切换协议；CPU Job 完成和原地 Buffer 更新也不等于 GPU 在途使用已经退役 |
+| 未覆盖 | Buffer Page、单运行时 Cell 内多 Batch、异步实例属性流式加载、紧凑实例工作集、跨资产世界命名空间、会话世代、视图历史淘汰和跨运行时 Cell 全局加载预算 | 这些内容是为规模扩大准备的架构契约和验证清单，不能据此声称参考实现已经支持 |
 
-现有自动化测试和编辑器内验证覆盖了 BRG Batch 创建与释放、Cell 激活切换、场景授权、基于场景掩码和 Prefab 生命周期的隔离主流程、变换预览不修改作者数据、StableID 跨 Cell 保持以及单次 Undo 边界。它们没有证明所有 Preview Scene 都能正确隔离，也没有覆盖播放模式多管理组件、保存失败、部分缓存编译失败和 GPU 在途工作。其它尚未形成事实证据的部分包括：多普通相机的 LOD 隔离、异步加载发布屏障、分页与多 Batch、会话关闭压力竞态、GPU 在途预览退役、跨资产身份迁移、目标设备容量和长时间视图稳定性。本文的“有效”状态表示架构论证与已覆盖核心模式相符，不表示所有高级扩展均已实现或完成目标设备验收。
+2026-08-25 主体快照的严格自动化门禁为 EditMode `239/239`、PlayMode `11/11`，覆盖 BRG 创建释放、Heap 激活、查询与代理生命周期、场景授权、同场景多运行时 Cell、Additive Scene、变换预览、StableGuid 和 Undo 主流程。2026-08-26 查询增量把 EditMode 提升为 `244/244`，PlayMode 保持 `11/11`；新增用例验证大集合三种解析查询、索引替换/平移/移除、不同身份并列和预热单命中 Overlap 的当前线程托管分配，但不验证冷建树或 Quest 性能。这些结果来自 Unity 2022.3 LTS 的 Windows Editor、Android 构建目标配置，不等于 Quest 当前快照真机性能验收，也没有证明保存失败、部分编译失败、GPU 在途预览退役、多普通相机 LOD 隔离或长时间编辑交互。本文的“有效”状态表示架构论证与已覆盖核心模式相符，不表示所有高级扩展均已实现。
+
+### 当前快照的连续寻址与加载链
+
+下面只描述当前单 Buffer、单 Batch 的事实路径，不包含后文的分页与多 Batch 目标契约：
+
+```text
+Painter 提交运行时 Cell 局部位置
+  → floor((position - partitionOrigin) / heapSize) 得到 HeapCoordinate
+  → 首次触及坐标时，在 Commit 阶段创建内嵌 Heap
+  → SceneGuid + HeapCoordinate 确定性生成 HeapGuid
+  → Compiler 在该 Heap 内按 PrototypeId、Morton、StableGuid 排序
+  → Compiler 分配 Heap 内连续 RuntimeIndex
+  → 运行时 Cell 加载时按 SceneAsset 的 Heap 顺序扫描
+  → 前序 Heap 实例总数形成当前 HeapBase（不序列化）
+  → GPU Slot = HeapBase + RuntimeIndex
+  → 同一个数值写入剔除快照的 GlobalInstanceIndex
+  → 当前仅一个 BRG Batch，因此 BatchLocalIndex = GPU Slot
+  → Count/Scatter 按 RenderBucket 生成 visibleInstances 与 DrawCommand
+```
+
+Heap 在作者 Commit 时成为 SceneAsset 的权威内嵌记录；排序、RuntimeIndex 和光照表在 Compile 时生成；HeapBase、GPU Slot、BatchLocalIndex 只在运行时 Cell 加载并构建当前批次时派生。后文出现的 PageID、多 Batch 或 `BatchRegistrationPolicy` 都是目标契约，不能倒推为当前路径已经存在的额外寻址层。
+
+当前非空运行时 Cell 的 GPU Raw Buffer 可按下式复算：
+
+```text
+N = 实例数，H = Heap 数，C = StaticLightColor 记录数，S = StaticBakerySh 记录数
+bytes = Align16(
+          Align16(96 + 128×max(1,N) + 128×max(1,H) + 8×max(1,C))
+          + 20×max(1,S))
+```
+
+其中 96 B 是 64 B 合法零地址哨兵与两组 16 B 运行时 Cell 风场参数；逐株 128 B 由两张 48 B 矩阵、16 B 实例参数和 16 B 光照地址参数组成；8 B 对应 `StaticLightColor`，20 B 对应 `StaticBakerySh`，每 Heap 128 B 是两种光照的量化参数。`max(1, …)` 和 `Align16` 来自空表合法寻址与 Raw Buffer 对齐。该公式只统计这一块静态 GPU Raw Buffer，不包含 CPU 托管快照、Persistent NativeArray、BRG Metadata、Mesh/Material、每视图 visibleInstances、TempJob 输出或驱动内部副本。
+
+### 当前快照的端到端运行流程
+
+下面把当前已覆盖路径串成一条链；其中“预览”是编辑期旁路，“多运行时 Cell”表示多套相互隔离的同构会话，并不改变单 Cell 内的步骤：
+
+```text
+Prefab 作者输入
+  → 烘焙为 PrototypeAsset
+  → SceneAsset.PrototypeTable 建立 PrototypeId 映射
+  → Painter 取得一个运行时 Cell 的作者 Authority
+  → Stage/Preview 只改内存候选或预览矩阵
+  → Commit 按坐标创建或更新内嵌 Heap，并保存 StableGuid + PrototypeId + Heap 局部 TRS
+  → Compile 对受影响 Heap 排序，生成 RuntimeIndex、Bounds、光照表和 Hash
+  → 运行时 Cell 加载：创建独立 BRG、Raw Buffer、剔除快照、QueryWorld 与 ColliderStreamer
+  → 按 Heap 顺序派生 HeapBase 与 GPU Slot，并一次上传该 Cell 的全部 Heap/实例
+  → 兴趣源与迟滞更新该 Cell 独立的 HeapMask
+  → 每视图回调执行 Heap 粗筛 → 全实例 Count → LOD/RenderBucket → Prefix → 全实例 Scatter
+  → 多运行时 Cell 分别执行同一链路，共享兴趣源但不共享 SceneAsset、BRG、Buffer、HeapMask、查询或代理
+  → 编辑预览可原地修补当前会话；正式提交后再由刷新链重建或更新派生状态
+  → 整个运行时 Cell 越过卸载半径：排空 CPU Job → 移除 BRG 可回调状态 → 释放 NativeArray/Prototype 引用/Batch/Buffer
+  → 物理侧反注册 Heap、归还代理并释放 QueryWorld；外层场景或资源句柄负责资产及 Mesh/Material 的最终卸载
+```
+
+这里的 HeapMask 失活只减少后续细处理和绘制，不减少当前 Count/Scatter 的调度长度；只有最后的整运行时 Cell 卸载才释放其 BRG、Buffer、查询世界和物理代理资源。
 
 ## 二、术语
 
@@ -105,7 +176,7 @@ BRG 不会自动决定场景数据从哪里来，也不会替编辑工具管理 
 
 ### 空间块
 
-**空间块**是植被实例的空间组织单元，常见命名包括 `Cell`、`Chunk` 或 `Region`。本文统一使用 **Cell**。
+**空间块**是植被实例的空间组织单元，常见命名包括 `Cell`、`Chunk`、`Region` 或 `Heap`。为保持本文历史术语稳定，下文仍统一使用 **Cell**；映射到 2026-08-25 的参考实现时，它就是资产内嵌的 **Heap**。
 
 一个 Cell 通常包含：
 
@@ -114,7 +185,7 @@ BRG 不会自动决定场景数据从哪里来，也不会替编辑工具管理 
 - 属于该区域的实例集合。
 - 局部修订号和可再生编译信息。
 
-在本文默认模型中，一个实例在同一编译快照内只属于一个 Cell。Cell 是否来自规则网格、人工划分、四叉树叶节点或其它分区算法，不影响后续职责模型。
+在本文默认模型中，一个实例在同一编译快照内只属于一个空间 Cell。它是否来自规则网格、人工划分、四叉树叶节点或其它分区算法，不影响后续职责模型。参考实现另有一个更大的“运行时 Cell”概念：一个场景管理器绑定一份场景植被资产，资产包含多个 Heap；两种 Cell 不能混称。
 
 ### 原型
 
@@ -283,6 +354,8 @@ ID 生成不能依赖会随 Undo 回退的简单序列化计数器。推荐使�
 - 一个场景资产内部包含多个 Cell。
 
 这些是降低复杂度的工程选择，不是 BRG API 的硬性限制。
+
+2026-08-25 参考实现采用另一条已明确的政策：**每个运行时 Cell 是一个实例与资源所有权域**。同一 Unity Scene 可以有多个运行时 Cell，每个管理器绑定独立 SceneAsset，并由编辑器宿主建立独立 BRG/Buffer 会话；Painter 同一时刻仍只授予其中一个运行时 Cell 作者写权限。因而“多个运行时 Cell 会话并存”与“只有一个当前作者 Authority”不冲突，也不代表多个管理器共享同一个会话。上面的单场景表只适用于选择了简化政策的其它实现，不是当前快照描述。
 
 ### 必须显式定义的可替换政策
 
@@ -486,6 +559,25 @@ ActiveCellSet：Desired ∩ Loaded，并通过当前运行政策
 - 后续 culling callback 能在同一个可见性屏障之后取得这些数据。
 
 异步加载完成到 `Loaded` 状态发布之间应存在明确的提交屏障，防止剔除线程看到“状态已加载，但 Buffer 或 Batch 尚未可用”的半成品。
+
+### Cell 卸载与 Retiring 屏障
+
+分片卸载不能把 `Loaded` 直接改成 false 后立即释放。安全顺序应为：
+
+```text
+停止接受新的 Desired/Active 引用
+  → 从 ActiveCellSet 移除，禁止产生新的精细剔除读取者
+  → 标记 Retiring，但暂时保留在 LoadedCellSet
+  → 排空该 Cell 已发布的 CPU Job 和 callback
+  → 等待或隔离仍可能读取旧 Batch/Buffer 的 GPU 工作
+  → 注销 BRG Batch，释放 Buffer、Native 容器和原型注册引用
+  → 释放 Mesh/Material/资产句柄的本 Cell 引用
+  → 最后从 LoadedCellSet 移除并忘记该世代
+```
+
+这里的关键是先门控新读取者，再排空旧读取者，最后释放资源。整会话 Closing 处理整个渲染域；Cell Retiring 只处理一个流式分片，两者需要同样的“门控—排空—退役”原则，但不能互相替代。
+
+2026-08-25 参考快照没有 Heap 级 GPU 资源卸载；它同步卸载整个运行时 Cell。管理器调用 `SceneBatch.Dispose` 时并非先销毁资源：该入口进入所属 `VegetationBrgWorld` 的互斥销毁路径，先完成覆盖此前剔除链的最终 JobHandle，再把会话从可回调状态移除，释放剔除 NativeArray 与 Prototype 引用，最后 RemoveBatch 并 Dispose GraphicsBuffer。随后 `VegetationBrgWorld.Dispose` 再防御性完成 JobHandle，并释放 PrototypeRegistry 与 BatchRendererGroup；管理器最后清空 HeapMask 和运行引用。物理组件另行按实际注册顺序反注册本运行时 Cell 的 Heap、归还代理并 Dispose QueryWorld。该路径有可确认的 CPU Job 屏障，但没有显式 GPU Fence 或异步 Retiring 世代证据；外层 Additive Scene 或资源句柄仍负责让 SceneAsset、Mesh 和 Material 真正离开内存。
 
 ### 每视图 BRG 剔除
 
@@ -922,6 +1014,10 @@ Unity 大规模植被系统的稳定性首先来自职责、所有权和数据�
 
 ### 相关记录
 
+- [植被 Painter 作者工作流与事务设计](./unity-vegetation-painter-authoring-transaction-workflow.md) - 把 UI 操作、暂存、预览、编译和 Undo 串成可观察的作者闭环。
+- [多运行时 Cell 物理查询与 Collider 流送](./unity-vegetation-multi-cell-physics-streaming.md) - 以运行时 Cell 为所有权层级，解释兴趣源广播、两级懒建 QueryWorld BVH、代理状态机和卸载边界；包含历史与当前 Editor 物理数据，不是 Quest 验收。
+- [Bakery L2 静态光照与投影代理](./unity-vegetation-bakery-static-lighting-pipeline.md) - 解释代理、Probe、稀疏光照记录和运行时解码。
+- [Quest 3S BRG 与普通 GO 性能基线](./quest-vegetation-brg-performance-lighting-validation.md) - 当前实现之外的历史设备 A/B/A 证据与严格适用边界。
 - [大规模渲染相关经验](./gpu-grass-large-scale-rendering.md) - ComputeShader 草渲染、Append Buffer 与 GPU 视锥剔除的相邻方案。
 - [GPU 视锥剔除](./gpu-frustum-culling-compute-shader.md) - ComputeShader 可见集合生成的基础实现。
 - [Unity 性能优化：ECS 与剔除](./unity-performance-ecs-culling.md) - 大规模实体组织和剔除的相邻经验。
@@ -934,3 +1030,5 @@ Unity 大规模植被系统的稳定性首先来自职责、所有权和数据�
 - [2026-08-06] 定义 `(BatchID, RenderBucketKey)` 最终命令分组、Closing 门控、GPU 预览路径、Loaded 就绪屏障和身份冲突修复协议；这些高级协议仍需对应实现与压力测试。
 - [2026-08-06] 定义世界命名空间下的复制/分片政策、多 Batch 兼容选择，以及 PreviewPublication 的 CPU/GPU 发布与退役屏障；不把这些设计要求记为当前参考实现已完成的功能。
 - [2026-08-06] 逐项对照参考实现与现有测试，新增实现覆盖边界：统一后端、单 Buffer/单 Batch、Cell 激活、全量扫描、编辑预览与单次 Undo 已有证据；多视图 LOD 隔离、流式状态、分页、关闭/预览退役协议和跨资产身份迁移明确标为尚未完整落地的演进契约。
+- [2026-08-25] 复核当前源码与自动化证据，明确“运行时 Cell → 多 Heap”的术语映射、每运行时 Cell 独立 BRG/Buffer/物理所有权、Heap 掩码不释放 Buffer、全实例两遍 Job、多运行时 Cell 已落地及其全局预算边界。
+- [2026-08-26] 叠加 QueryWorld 的 Heap/Shape 两级懒建 BVH 状态，更新查询回归为 EditMode `244/244`、PlayMode `11/11`；架构正文的作者、BRG、Buffer 与卸载事实仍固定在 2026-08-25 主体快照。
