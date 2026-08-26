@@ -68,15 +68,15 @@
 
 当前 `HeapMask` 也有单独且有限的语义：每个已加载运行时 Cell 各自持有一份按 SceneAsset 当前 Heap 顺序索引的一字节掩码；管理器把 Heap Bounds 变换到世界空间，再依据兴趣源距离与加载/卸载迟滞更新对应位。`VegetationBrgWorld` 在写入新掩码前等待既有剔除 Job，并把结果交给 Heap 粗筛及后续 Count/Scatter 的 Heap 可见门禁。它只回答“本次剔除是否继续处理这个 Heap”，不表示 Heap 资源已经单独 Loaded 或 Unloaded，也不会触发 Heap 级 Buffer 上传、缩容或释放。
 
-“当前参考实现”主体固定指 2026-08-25 的匿名工程快照：Unity `2022.3.62f3`、URP 14、Android 构建目标配置，证据来自当日源码静态复核与同轮 Unity Test Runner（EditMode `239/239`、PlayMode `11/11`）。2026-08-26 仅叠加物理 QueryWorld 的 Heap/Shape 两级懒建 BVH 增量及其回归（EditMode `244/244`、PlayMode `11/11`）；作者、BRG、Buffer 和卸载章节仍按 2026-08-25 主体快照陈述。阿卡西记录按规则不保存私有仓库路径、提交号和 RunId，因此这些实现行属于有边界的工程快照证据，不是读者仅凭本文即可复跑的公开基准；设备数字与实验条件只在专门性能记录中陈述。
+“当前参考实现”主体固定指 2026-08-25 的匿名工程快照：Unity `2022.3.62f3`、URP 14、Android 构建目标配置，证据来自当日源码静态复核与同轮 Unity Test Runner（EditMode `239/239`、PlayMode `11/11`）。2026-08-26 又叠加两个相互独立的候选增量：物理 QueryWorld 的 Heap/Shape 两级懒建 BVH，以及 BRG 固定逐株区由 `128 B` 收敛到 `32 B` 的量化 ABI；最终严格回归为 EditMode `244/244`、PlayMode `11/11`。作者、编译和完整 Cell 卸载主链仍按 2026-08-25 主体陈述，本文的 Buffer 公式、上传、预览与 CPU/GPU 量化口径则按 2026-08-26 候选陈述。该候选有实际 Buffer 回读和 Editor 渲染证据，但当时没有绑定不可变 VCS 源码摘要。阿卡西记录按规则不保存私有仓库路径、提交号和 RunId，因此这些实现行属于有边界的工程快照证据，不是读者仅凭本文即可复跑的公开基准；设备数字与实验条件只在专门性能记录中陈述。
 
-匿名证据索引保留到类与入口粒度：作者分区与身份由 `VegetationSceneAsset`、`VegetationRegionHeap`、`VegetationSceneEditSession.Commit` 和 `VegetationSceneCompiler.RefreshAffected` 复核；加载与槽位由 `VegetationCellManager.LoadCell/UnloadCell`、`VegetationSceneBatch` 和 `VegetationBrgWorld` 复核；剔除由 `CullVegetationHeapsJob`、`CountVegetationInstancesWithLodReferenceJob` 与 `ScatterVegetationVisibleInstancesJob` 复核；物理由 `VegetationCellPhysicsRuntime` 与 `VegetationColliderStreamer` 复核。它能说明结论来自哪些机制，但因不包含可检出的私有快照标识，仍不能让外部读者独立还原该工程版本。
+匿名证据索引保留到类与入口粒度：作者分区与身份由 `VegetationSceneAsset`、`VegetationRegionHeap`、`VegetationSceneEditSession.Commit` 和 `VegetationSceneCompiler.RefreshAffected` 复核；加载与槽位由 `VegetationCellManager.LoadCell/UnloadCell`、`VegetationSceneBatch` 和 `VegetationBrgWorld` 复核；32 B ABI 与 CPU/GPU 解码口径由 `VegetationRenderDataLayout`、`PackedVegetationInstanceData` 和 BRG Shader 复核；剔除由 `CullVegetationHeapsJob`、`CountVegetationInstancesWithLodReferenceJob` 与 `ScatterVegetationVisibleInstancesJob` 复核；物理由 `VegetationCellPhysicsRuntime` 与 `VegetationColliderStreamer` 复核。它能说明结论来自哪些机制，但因不包含可检出的私有快照标识，仍不能让外部读者独立还原该工程版本。
 
 | 覆盖级别 | 当前参考实现的事实边界 | 阅读时应如何理解 |
 |----------|------------------------|------------------|
 | 已覆盖 | 编辑模式和播放模式创建同一种 BRG 后端与数据布局；编辑器宿主为每个已加载且有效的运行时 Cell 建立独立会话，工具窗口不拥有会话；Prefab Stage、PlayMode 切换和 Scene 卸载都有释放路径 | 统一的是后端协议，不是跨运行时 Cell 共享同一个 BRG 对象 |
 | 已覆盖 | 一个运行时 Cell 绑定一份场景植被资产；资产内含多个 Heap。每个已加载运行时 Cell 独立创建 BRG、GPU Buffer、剔除快照、查询世界和碰撞流送器；多个 Additive Scene 可并存并共享兴趣源 | 当前实现选择“运行时 Cell 作为资源与生命周期隔离边界，Heap 作为其内部空间分区”，不能再把两者写成同一层级 |
-| 已覆盖 | 单个运行时 Cell 的全部 Heap 与实例一次上传到一块 GPU Buffer；固定逐株部分约 128 B，另加 8 B 或 20 B 的稀疏光照记录和每 Heap 128 B 量化参数 | Heap 激活只更新剔除掩码；它不会按 Heap 上传、释放或缩小这块 Buffer。真正释放发生在整个运行时 Cell 卸载时 |
+| 已覆盖 | 单个运行时 Cell 的全部 Heap 与实例一次上传到一块 GPU Buffer；2026-08-26 候选的固定逐株记录为 32 B，另加 8 B 或 20 B 的稀疏光照记录和每 Heap 128 B 量化参数 | 32 B 只接受有限、无剪切、非镜像、正数统一缩放；Heap 激活只更新剔除掩码，不会按 Heap 上传、释放或缩小 Buffer。真正释放发生在整个运行时 Cell 卸载时 |
 | 已覆盖 | 每次 BRG 视图回调先做 Heap 粗筛，再对本运行时 Cell 全部实例执行 Count 和 Scatter 两遍 Job；失活 Heap 的实例只在 Job 内提前退出 | 复杂度仍近似 `O(本运行时 Cell 总实例数 × Camera/Light 视图数)`，不能把 Heap 掩码描述成紧凑实例工作集 |
 | 部分覆盖 | Paint/Erase 与 Replace/Reproject/Transform 都先暂存作者数据；变换拖动只修改预览矩阵；正式提交形成一个 Undo 边界并保留跨 Heap 移动实例的 StableGuid | 范围操作会尝试用外层 Undo 回滚作者资产；普通增量编译仍逐 Heap 写回，派生缓存与 BRG 恢复未被证明为完整两阶段事务 |
 | 已覆盖 | Heap 坐标由运行时 Cell 局部位置、分区原点和尺寸计算；HeapGuid 由 SceneGuid 与坐标确定性生成；实例以 Heap 局部 TRS、PrototypeId 和 StableGuid 保存，RuntimeIndex 只在 Heap 内连续 | GPU 全局槽位在加载时由 HeapBase 与 RuntimeIndex 派生，不得把 RuntimeIndex 当作持久身份或跨 Heap 地址 |
@@ -85,7 +85,7 @@
 | 部分覆盖 | 每次 culling 回调的新 Job 链都以旧最终 Handle 为前置依赖，因此修改和释放前等待覆盖旧任务的传递聚合链；预览会原地更新公开 GPU Buffer 的矩阵和 CPU 包围体 | 当前同步重建路径不等于 Closing/Retiring 热切换协议；CPU Job 完成和原地 Buffer 更新也不等于 GPU 在途使用已经退役 |
 | 未覆盖 | Buffer Page、单运行时 Cell 内多 Batch、异步实例属性流式加载、紧凑实例工作集、跨资产世界命名空间、会话世代、视图历史淘汰和跨运行时 Cell 全局加载预算 | 这些内容是为规模扩大准备的架构契约和验证清单，不能据此声称参考实现已经支持 |
 
-2026-08-25 主体快照的严格自动化门禁为 EditMode `239/239`、PlayMode `11/11`，覆盖 BRG 创建释放、Heap 激活、查询与代理生命周期、场景授权、同场景多运行时 Cell、Additive Scene、变换预览、StableGuid 和 Undo 主流程。2026-08-26 查询增量把 EditMode 提升为 `244/244`，PlayMode 保持 `11/11`；新增用例验证大集合三种解析查询、索引替换/平移/移除、不同身份并列和预热单命中 Overlap 的当前线程托管分配，但不验证冷建树或 Quest 性能。这些结果来自 Unity 2022.3 LTS 的 Windows Editor、Android 构建目标配置，不等于 Quest 当前快照真机性能验收，也没有证明保存失败、部分编译失败、GPU 在途预览退役、多普通相机 LOD 隔离或长时间编辑交互。本文的“有效”状态表示架构论证与已覆盖核心模式相符，不表示所有高级扩展均已实现。
+2026-08-25 主体快照的严格自动化门禁为 EditMode `239/239`、PlayMode `11/11`，覆盖 BRG 创建释放、Heap 激活、查询与代理生命周期、场景授权、同场景多运行时 Cell、Additive Scene、变换预览、StableGuid 和 Undo 主流程。2026-08-26 最终候选为 EditMode `244/244`、PlayMode `11/11`：查询增量新增大集合解析查询与索引同步门禁；Buffer 增量补强 32 B 金样、Half/矩阵范围失败、整段 GPU 回读、预览和 Cell/Origin 失败事务，以及真实 SRP 前景 Mask。它证明逻辑 Buffer 请求与回读长度下降及当前 Editor 闭环，没有证明冷建树、Quest 帧耗、GPU 带宽、物理显存或四个 Shader Pass 的真机视觉等价。这些结果来自 Unity 2022.3 LTS 的 Windows Editor、Android 构建目标配置，也没有证明保存失败、部分编译失败、GPU 在途预览退役、多普通相机 LOD 隔离或长时间编辑交互。本文的“有效”状态表示架构论证与已覆盖核心模式相符，不表示所有高级扩展均已实现。
 
 ### 当前快照的连续寻址与加载链
 
@@ -113,11 +113,11 @@ Heap 在作者 Commit 时成为 SceneAsset 的权威内嵌记录；排序、Runt
 ```text
 N = 实例数，H = Heap 数，C = StaticLightColor 记录数，S = StaticBakerySh 记录数
 bytes = Align16(
-          Align16(96 + 128×max(1,N) + 128×max(1,H) + 8×max(1,C))
+          Align16(96 + 32×max(1,N) + 128×max(1,H) + 8×max(1,C))
           + 20×max(1,S))
 ```
 
-其中 96 B 是 64 B 合法零地址哨兵与两组 16 B 运行时 Cell 风场参数；逐株 128 B 由两张 48 B 矩阵、16 B 实例参数和 16 B 光照地址参数组成；8 B 对应 `StaticLightColor`，20 B 对应 `StaticBakerySh`，每 Heap 128 B 是两种光照的量化参数。`max(1, …)` 和 `Align16` 来自空表合法寻址与 Raw Buffer 对齐。该公式只统计这一块静态 GPU Raw Buffer，不包含 CPU 托管快照、Persistent NativeArray、BRG Metadata、Mesh/Material、每视图 visibleInstances、TempJob 输出或驱动内部副本。
+其中 96 B 是 64 B 合法零地址哨兵与两组 16 B 运行时 Cell 风场参数；逐株 32 B 保存三个 float32 世界位置、smallest-three `10:10:10:2` 旋转、Half/UNorm16 连续参数、UInt16 HeapIndex，以及 1 位光照模式与 31 位稀疏记录索引。它成立的前提是最终矩阵必须有限、无剪切、非镜像且为正数统一缩放；CPU 剔除使用同一量化后 TRS，并对风摆 Half 取原值与恢复值中的较大者扩展 Bounds。8 B 对应 `StaticLightColor`，20 B 对应 `StaticBakerySh`，每 Heap 128 B 是两种光照的量化参数。`max(1, …)` 和 `Align16` 来自空表合法寻址与 Raw Buffer 对齐。该公式只统计这一块静态 GPU Raw Buffer，不包含 CPU 托管快照、Persistent NativeArray、BRG Metadata、Mesh/Material、每视图 visibleInstances、TempJob 输出或驱动内部副本；完整字段和证据边界见专门的 32 B ABI 记录。
 
 ### 当前快照的端到端运行流程
 
@@ -132,16 +132,45 @@ Prefab 作者输入
   → Commit 按坐标创建或更新内嵌 Heap，并保存 StableGuid + PrototypeId + Heap 局部 TRS
   → Compile 对受影响 Heap 排序，生成 RuntimeIndex、Bounds、光照表和 Hash
   → 运行时 Cell 加载：创建独立 BRG、Raw Buffer、剔除快照、QueryWorld 与 ColliderStreamer
-  → 按 Heap 顺序派生 HeapBase 与 GPU Slot，并一次上传该 Cell 的全部 Heap/实例
+  → 按 Heap 顺序派生 HeapBase 与 GPU Slot，把量化后的 32 B 逐株记录及共享光照表一次上传
   → 兴趣源与迟滞更新该 Cell 独立的 HeapMask
   → 每视图回调执行 Heap 粗筛 → 全实例 Count → LOD/RenderBucket → Prefix → 全实例 Scatter
   → 多运行时 Cell 分别执行同一链路，共享兴趣源但不共享 SceneAsset、BRG、Buffer、HeapMask、查询或代理
+  → 外部 Floating Origin 协调器可在运行中触发 Rebase；渲染侧重建完整 32 B 记录与剔除快照，物理侧按同一增量平移查询世界和代理
   → 编辑预览可原地修补当前会话；正式提交后再由刷新链重建或更新派生状态
   → 整个运行时 Cell 越过卸载半径：排空 CPU Job → 移除 BRG 可回调状态 → 释放 NativeArray/Prototype 引用/Batch/Buffer
   → 物理侧反注册 Heap、归还代理并释放 QueryWorld；外层场景或资源句柄负责资产及 Mesh/Material 的最终卸载
 ```
 
 这里的 HeapMask 失活只减少后续细处理和绘制，不减少当前 Count/Scatter 的调度长度；只有最后的整运行时 Cell 卸载才释放其 BRG、Buffer、查询世界和物理代理资源。
+
+### 当前 Rebase、Floating Origin 与 Cell Transform 更新
+
+本文的 **Rebase** 只表示修改累计 Floating Origin 偏移，不表示重新计算 `HeapCoordinate`、重建 Heap 或改写 SceneAsset。渲染坐标的核心关系是：
+
+```text
+renderMatrix = Translate(-absoluteOriginOffset)
+               × CellTransform.LocalToWorld
+               × authoredCellLocalTRS
+```
+
+因此，Rebase 前后保持不变的是 SceneAsset 中的 Heap 局部 TRS、HeapCoordinate、HeapGuid、StableGuid、Compile 得到的 RuntimeIndex，以及由当前 Heap 顺序派生的 HeapBase/GPU Slot；变化的是实例、Heap Bounds、风场空间原点、查询形状和物理代理在当前渲染/物理世界中的坐标。每次编码都从 SceneAsset 的高精度局部 TRS 重新开始，不会把上一次 32 B 量化结果当作下一次输入。
+
+当前渲染入口接收**新的累计绝对偏移**。它先拒绝 NaN/Infinity，再在互斥区完成上一条剔除 Job，并保存现有 HeapMask。若 Cell 尚未加载，只缓存偏移供之后建批使用；若已经加载，则按以下顺序更新：
+
+```text
+旧 CellTransform + 新 absoluteOriginOffset
+  → 构建候选 CPU 剔除 Snapshot
+  → 从权威局部 TRS 编码并全量上传候选 32 B Buffer，同时更新风场空间参数
+  → 两步成功后清理旧预览，发布 SceneBatch 的 Origin、StableGuid→Slot 反查与公开 Snapshot
+  → World 发布同一 Origin，重建 Persistent NativeArray，并按原索引恢复 HeapMask
+```
+
+Half 上溢、最终统一缩放下溢或非有限 Origin 会在相关字段发布前失败；现有回归覆盖这些输入失败时旧 Origin、CellTransform、公开 Snapshot、完整 Buffer 和预览保持不变。该事务证据只覆盖验证、编码与上传失败，不证明后续 Persistent NativeArray 分配失败可以原子回滚，也不提供 GPU 在途读取的 Fence/世代退役。
+
+管理器 Transform 变化不是 Rebase。运行时管理器每帧提取有限、无剪切、非镜像的正数统一缩放 CellTransform；值变化时，以“新 CellTransform + 现有 absoluteOriginOffset”走同一候选 Snapshot、完整 Buffer 上传和成功后发布链。它会改变最终世界 TRS、Bounds、风摆距离和 32 B 量化值，但同样不改 SceneAsset 分桶、StableGuid 或编译顺序。
+
+物理侧使用的是**本次偏移增量**：QueryWorld 把 Heap/Shape 广相位整体平移 `-delta`；ColliderStreamer 同步平移缓存描述和当前代理，并把多次调用合并到下一次物理同步。当前插件提供了渲染绝对偏移、查询增量和平移代理三组入口，但没有内建一个把所有已加载运行时 Cell 与三个子系统原子广播的全局 Floating Origin 协调器；生产接入方必须按同一世代分发 `absoluteOriginOffset` 与 `delta`。现有测试证明各入口的局部坐标和身份保持规则，不证明跨渲染、查询、PhysX 的失败恢复原子性。
 
 ## 二、术语
 
@@ -1015,6 +1044,7 @@ Unity 大规模植被系统的稳定性首先来自职责、所有权和数据�
 ### 相关记录
 
 - [植被 Painter 作者工作流与事务设计](./unity-vegetation-painter-authoring-transaction-workflow.md) - 把 UI 操作、暂存、预览、编译和 Undo 串成可观察的作者闭环。
+- [BRG 逐株 Buffer 的 32 字节压缩与量化 ABI](./unity-brg-packed-instance-buffer-quantization.md) - 32 B 位布局、CPU/GPU 同量化剔除、多 Heap 寻址、失败事务与验证分层。
 - [多运行时 Cell 物理查询与 Collider 流送](./unity-vegetation-multi-cell-physics-streaming.md) - 以运行时 Cell 为所有权层级，解释兴趣源广播、两级懒建 QueryWorld BVH、代理状态机和卸载边界；包含历史与当前 Editor 物理数据，不是 Quest 验收。
 - [Bakery L2 静态光照与投影代理](./unity-vegetation-bakery-static-lighting-pipeline.md) - 解释代理、Probe、稀疏光照记录和运行时解码。
 - [Quest 3S BRG 与普通 GO 性能基线](./quest-vegetation-brg-performance-lighting-validation.md) - 当前实现之外的历史设备 A/B/A 证据与严格适用边界。
@@ -1031,4 +1061,5 @@ Unity 大规模植被系统的稳定性首先来自职责、所有权和数据�
 - [2026-08-06] 定义世界命名空间下的复制/分片政策、多 Batch 兼容选择，以及 PreviewPublication 的 CPU/GPU 发布与退役屏障；不把这些设计要求记为当前参考实现已完成的功能。
 - [2026-08-06] 逐项对照参考实现与现有测试，新增实现覆盖边界：统一后端、单 Buffer/单 Batch、Cell 激活、全量扫描、编辑预览与单次 Undo 已有证据；多视图 LOD 隔离、流式状态、分页、关闭/预览退役协议和跨资产身份迁移明确标为尚未完整落地的演进契约。
 - [2026-08-25] 复核当前源码与自动化证据，明确“运行时 Cell → 多 Heap”的术语映射、每运行时 Cell 独立 BRG/Buffer/物理所有权、Heap 掩码不释放 Buffer、全实例两遍 Job、多运行时 Cell 已落地及其全局预算边界。
-- [2026-08-26] 叠加 QueryWorld 的 Heap/Shape 两级懒建 BVH 状态，更新查询回归为 EditMode `244/244`、PlayMode `11/11`；架构正文的作者、BRG、Buffer 与卸载事实仍固定在 2026-08-25 主体快照。
+- [2026-08-26] 叠加 QueryWorld 的 Heap/Shape 两级懒建 BVH 状态，更新最终回归为 EditMode `244/244`、PlayMode `11/11`；冷建树和 Quest 物理性能仍未验证。
+- [2026-08-26] 审查 BRG 固定逐株区由 128 B 收敛到 32 B 的候选实现，更新 Buffer 公式、上传/预览和 CPU/GPU 同量化口径；实际回读支持逻辑分配下降，但没有把它写成 Quest 帧耗或物理显存收益。

@@ -6,7 +6,7 @@
 **来源日期**：2026-08-19
 **更新日期**：2026-08-26
 **状态**：✅ 已验证
-**可信度**：⭐⭐⭐⭐（四组顺序 A/B/A 实机窗口已逐值复核；同进程证据、跨构建归因、未保存可见数和 2026-08-25 当前快照均按实际证据降级）
+**可信度**：⭐⭐⭐⭐（四组顺序 A/B/A 实机窗口已逐值复核；同进程证据、跨构建归因、未保存可见数和后续 32 B 候选均按实际证据降级）
 **适用版本**：Unity 2022.3 LTS、URP 14、BatchRendererGroup、Bakery 探针、Quest 3S
 
 ---
@@ -25,7 +25,7 @@
 
 本文的数值来自 2026-08-19 的四组 Quest 3S 测试 APK。2026-08-25 的当前实现仍支持三条可复用解释：普通 GO 完整对象路径会增加 CPU 侧压力；BRG 不会自动消除可见几何与 Overdraw；场景逐株光照应归 SceneAsset/Heap 而不是 Prototype。但当前源码已扩展为“一个运行时 Cell 包含多个 Heap、每 Cell 独立 BRG/Buffer/物理工作集”，光照记录也已进入 8 B/20 B 的 v4 布局，**没有用同一测试方案重新采集 Quest 数据**。
 
-2026-08-25 主体快照的严格自动化门禁为 Windows Editor、Android 构建目标配置下 EditMode `239/239`、PlayMode `11/11`。2026-08-26 另有只针对物理 QueryWorld 两级 BVH 的增量，把 EditMode 更新为 `244/244`、PlayMode 保持 `11/11`；它没有改变本文历史 APK、渲染/光照路径或设备证据。两轮 Editor 门禁都只证明各自数据和生命周期主流程，不提供设备 FPS、GPU、PSS、热降频或当前 Shader 变体证据。本文“已验证”只授予原始四组设备观测及其边界，不授予 2026-08-25 主体快照或 2026-08-26 查询增量的 Quest 性能结论。
+2026-08-25 主体快照的严格自动化门禁为 Windows Editor、Android 构建目标配置下 EditMode `239/239`、PlayMode `11/11`。2026-08-26 又叠加 QueryWorld 两级 BVH 与 BRG 32 B 逐株 ABI 两个独立候选，最终为 EditMode `244/244`、PlayMode `11/11`。后者改变了当前运行时 Buffer 与 Shader 取数，但没有进入本文历史 APK；它只有 Editor 实际 Buffer 回读和 SRP 像素门禁，没有 Quest Vulkan 或同协议帧时 A/B。两轮 Editor 门禁都只证明各自数据和生命周期主流程，不提供设备 FPS、GPU、PSS、热降频或当前 Shader 真机证据。本文“已验证”只授予原始四组设备观测及其边界，不把后续候选升级为 Quest 性能结论。
 
 匿名证据索引由四组设备采样报告、对应构建摘要、场景资产统计和设备截图组成，分别标记为“稀疏真实草”“高密度真实草”“大尺寸 Box”“15% Box”。阿卡西正文已保留用于复核结论的逐段样本数、VrApi 指标、PSS、设备档位、场地/模型/相机条件和已知缺失项，但不保存私有 APK 名、RunId、工程路径或提交号。因此读者可以复算表内差值和检查论证边界，却不能仅凭本记录重新安装同一 APK；这些数值是固定历史设备证据，不是持续性能门禁。
 
@@ -95,7 +95,7 @@
 
 逐株场景光照属于 SceneAsset/Heap，不属于可跨场景复用的 Prototype。Prototype 保存 Mesh、材质、LOD、Bounds、碰撞与光照模式声明；SceneAsset 保存实例变换、空间分组和该场景烘焙得到的逐株光照记录。
 
-#### 六、2026-08-25 v4 光照能力与测试 APK 的版本边界
+#### 六、当前 v4 光照与 2026-08-26 32 B 运行时 ABI 的设备边界
 
 当前正式实现只有两种 Prototype 可选 BRG 光照模式，且两者都只在每株 `VisualRootSpaceBounds.center` 采样一次：
 
@@ -104,16 +104,18 @@
 | `StaticLightColor` | 取得完整 L2，以实例局部向上方向求最终 RGB | 8 字节 | 直接读取最终颜色，不按每顶点法线重算 | 静态、数量大、优先降低逐株光照数据带宽与顶点光照计算的植被 |
 | `StaticBakerySh` | 从 L2 来源提取 Bakery Ar/Ag/Ab 表示 | 20 字节 | 按顶点法线执行 Geomerics L1 评估 | 需要保留法线方向变化、但仍希望避免普通 GO 动态探针绑定的植被 |
 
-这里的 8 B/20 B 都只是**每株稀疏光照 payload**，不是一株实例的完整 GPU 成本。当前静态 Raw Buffer 还包含每株固定约 128 B：两张 48 B 矩阵、16 B 实例参数和 16 B 光照寻址参数；每个 Heap 另有 128 B，分别保存两种光照记录的量化参数。再加上 96 B 头部、空表合法寻址和 16 B 对齐后，核心关系是：
+这里的 8 B/20 B 都只是**每株稀疏光照 payload**，不是一株实例的完整 GPU 成本。2026-08-26 候选把固定逐株区从 128 B 收敛为 32 B：世界位置保留 float32，旋转使用 smallest-three `10:10:10:2`，统一缩放与风动/Bounds 连续参数使用 Half 或 UNorm16，HeapIndex、光照模式和稀疏记录索引保持整数位段。每个 Heap 另有 128 B 两种光照量化参数。再加上 96 B 头部、空表合法寻址和 16 B 对齐后，核心关系是：
 
 ```text
-每株固定 128 B
+每株固定 32 B
   + 该株所属模式的 8 B StaticLightColor 或 20 B StaticBakerySh
   + 按 Heap 分摊的 128 B 量化参数
   + Cell Buffer 头、空表哨兵与对齐
 ```
 
-这些数字只统计当前实现的一块静态 GPU Raw Buffer，不包含 CPU 快照、Persistent NativeArray、BRG Metadata、Mesh/Material、每视图可见列表、临时 Job 输出和驱动副本。当前数据版本 v4 已移除 Root/Top 双高度格式；Lightmap 也不是当前枚举选项。`StaticBakerySh` 存在于当前实现，但没有进入本文四组性能 APK；上述 128 B/8 B/20 B 布局同样没有用本文方案在 Quest 上复测。
+这些数字只统计当前实现的一块静态 GPU Raw Buffer，不包含 CPU 快照、Persistent NativeArray、BRG Metadata、Mesh/Material、每视图可见列表、临时 Job 输出和驱动副本。当前数据版本 v4 已移除 Root/Top 双高度格式；Lightmap 也不是当前枚举选项。`StaticBakerySh` 存在于当前实现，但没有进入本文四组性能 APK；上述 32 B/8 B/20 B 布局同样没有用本文方案在 Quest 上复测。
+
+两个匿名 8,192 实例 SceneBatch 的 Editor 整段回读显示：50 Heap、全静态颜色时逻辑 Buffer 从旧公式的 `1,120,640 B` 变为 `334,208 B`，下降 `70.177%`；1,024 Heap 时从 `1,245,312 B` 变为 `458,880 B`，下降 `63.151%`。`Layout.TotalBytes`、底层 `count × stride` 和回读长度一致，只证明逻辑分配与上传载荷，不等于驱动物理显存、整进程 PSS 或 Quest 帧耗按相同比例下降。新 Shader 还增加四元数恢复和向量旋转 ALU，必须在目标设备按相同场景和渲染协议测量净收益。
 
 本文实机数据对应 2026-08-19 的测试 APK，不等同于当前 v4 数据布局的实机验证。至少大尺寸 Box 的历史构建报告明确记录旧格式 Root 静态 RGB 为 `98304 / 8192 = 12 字节/株`，Top 为 0；当前 v4 已改为上表的 8 字节或 20 字节记录。
 
@@ -127,7 +129,7 @@
 
 三个机制解决不同层级的问题：Heap 兴趣范围决定哪些空间区域进入系统更新；视锥剔除排除相机外候选；LOD/Cull 根据屏幕相对高度选择网格或停止绘制。Camera Far 设得很远不会替代兴趣范围与 LOD，缩短 Far 也不能替代相机周围的空间区域管理。
 
-当前内存与执行链可简写为：`Heap 光照 payload 8 B/20 B → 每株固定 GPU 数据 128 B + 每 Heap 量化参数 128 B → Cell GPU Buffer → ActiveHeapMask 只做逻辑停用 → Count/Scatter 仍按 Cell 总实例数调度`。具体地说，ActiveHeapMask 阻止失活 Heap 继续生成可见引用，但不会缩小已经上传的 Cell GPU Buffer。碰撞代理由独立的每 Cell ColliderStreamer、物理半径和状态机管理，不直接读取渲染掩码。只有整个运行时 Cell 卸载时才会释放其 BRG、Buffer 和 NativeArray；SceneAsset、Mesh 与 Material 是否离开内存仍由外层 Scene/资源句柄决定。
+当前内存与执行链可简写为：`Heap 光照 payload 8 B/20 B → 每株固定 GPU 数据 32 B + 每 Heap 量化参数 128 B → Cell GPU Buffer → ActiveHeapMask 只做逻辑停用 → Count/Scatter 仍按 Cell 总实例数调度`。具体地说，ActiveHeapMask 阻止失活 Heap 继续生成可见引用，但不会缩小已经上传的 Cell GPU Buffer。碰撞代理由独立的每 Cell ColliderStreamer、物理半径和状态机管理，不直接读取渲染掩码。只有整个运行时 Cell 卸载时才会释放其 BRG、Buffer 和 NativeArray；SceneAsset、Mesh 与 Material 是否离开内存仍由外层 Scene/资源句柄决定。
 
 此外，当前 BRG Count 与 Scatter 两遍 Job 仍按本 Cell 总实例数调度，失活 Heap 只在 Job 内提前退出。因此减少 Active Heap 可以减少精细剔除和绘制，却不保证 CPU 迭代数与活跃区域同比缩小。本文 2026-08-19 的 VrApi 数据没有拆出这一项，不能用它量化该成本。
 
@@ -142,11 +144,12 @@
 - BRG 与普通 GO 光照路径不同，结果是完整系统路径对比，不是纯 Draw API 微基准。
 - 头显姿态和预热时长没有程序化锁定，窗口平均值可能包含姿态差异与切换残余瞬态。
 - 没有线程与子系统分项，CPU 利用率不能定位唯一子模块。
-- 本文实机数据不是当前 v4 光照记录布局的实机验证。
+- 本文实机数据不是当前 v4 光照记录或 32 B 逐株 ABI 的实机验证；Editor Buffer 回读不能替代 Quest Vulkan 帧时、带宽、ALU 和功耗 A/B。
 
 ### 相关记录
 
 - [统一 BRG 架构](./unity-vegetation-unified-brg-architecture.md) - 当前运行时 Cell、Heap、Buffer 与剔除复杂度的结构边界。
+- [BRG 逐株 Buffer 的 32 字节压缩与量化 ABI](./unity-brg-packed-instance-buffer-quantization.md) - 当前逻辑分配、量化误差、CPU/GPU 一致性与尚缺的 Quest 验证。
 - [多运行时 Cell 物理查询与 Collider 流送](./unity-vegetation-multi-cell-physics-streaming.md) - 物理流送历史 Editor A/B、当前状态机与 Quest 未验证边界。
 - [Bakery L2 静态光照与投影代理](./unity-vegetation-bakery-static-lighting-pipeline.md) - 当前代理、Probe、8 B/20 B 记录与运行时解码全链。
 - [ASE Shader Bakery 集成](./ase-shader-bakery-integration.md)
@@ -158,3 +161,4 @@
 - [2026-08-19] 已复核 App Frame、设备档位与时钟、Box 可见性证据、APK 体积差异、当前 v4 光照模式及测试 APK 版本边界。
 - [2026-08-25] 对照当前源码，补充运行时 Cell/Heap、每 Cell Buffer、独立物理流送和全实例两遍剔除 Job 的关系；保留原始设备数字，不把当前自动化或历史 APK 冒充为当前快照真机复测。
 - [2026-08-26] 复核稀疏名义密度、确定性抖动、Box 静态 XZ 包络及三段会话证据；把 `0.0323` 修正为 `≈0.03225`，并把只有 15% Box 保存同 PID、几何变体属于独立 APK 的边界写入正文。
+- [2026-08-26] 同步 32 B 逐株 ABI 与两个匿名 8,192 实例 Editor Buffer 回读结果；只记录逻辑分配下降和验证方法，不把它并入 2026-08-19 Quest APK 的 FPS、PSS 或 GPU 结论。

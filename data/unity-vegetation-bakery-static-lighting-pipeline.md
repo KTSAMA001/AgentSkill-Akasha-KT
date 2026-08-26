@@ -17,7 +17,7 @@ BRG 植被没有逐株 MeshRenderer，Bakery 在收集静态投影物时看不�
 
 这条链路必须严格区分三类数据：Prototype 保存可跨场景复用的几何与光照模式声明；场景植被资产保存逐株静态光照；代理和合并 Mesh 只是一次烘焙的临时产物。任何一层所有权混淆，都会造成场景光照污染 Prototype、代理残留或运行时重复渲染。
 
-“当前参考实现”在本文中固定指 2026-08-25 的匿名工程快照：Unity `2022.3.62f3`、URP 14、Bakery 1.98，证据来自源码静态复核、同日 Editor/PlayMode 回归摘要和此前保留的 Bakery 金样报告。本次整理没有重新启动 Bakery，也不保存私有工程路径、提交号或 RunId；因此实现事实可用于复用设计与风险判断，但不能替代读者在自己版本上的最小真实 Bake。当前自动生命周期已经实现代理、清理、Probe 恢复与 SceneAsset 编译主链，但尚未实现完整的残留验证、每 Scene Lightmap 输出验证或跨资产事务；下文会把“当前行为”和“采用要求”分开。本文的“运行时 Cell”指一个独立加载、创建 BRG/Buffer/物理资源并独立卸载的场景植被单元；一个 Unity Scene 可以包含多个运行时 Cell。
+“当前参考实现”的 Bakery 作者链固定指 2026-08-25 匿名工程快照：Unity `2022.3.62f3`、URP 14、Bakery 1.98，证据来自源码静态复核、同日 Editor/PlayMode 回归摘要和此前保留的 Bakery 金样报告。2026-08-26 只更新运行时消费端：固定逐株区由 128 B 收敛到 32 B，Heap 量化表和 8 B/20 B 光照 payload 本身没有改变；该增量没有重新启动 Bakery。本记录不保存私有工程路径、提交号或 RunId，因此实现事实可用于复用设计与风险判断，但不能替代读者在自己版本上的最小真实 Bake。当前自动生命周期已经实现代理、清理、Probe 恢复与 SceneAsset 编译主链，但尚未实现完整的残留验证、每 Scene Lightmap 输出验证或跨资产事务；下文会把“当前行为”和“采用要求”分开。本文的“运行时 Cell”指一个独立加载、创建 BRG/Buffer/物理资源并独立卸载的场景植被单元；一个 Unity Scene 可以包含多个运行时 Cell。
 
 匿名证据索引保留到类与报告角色：`VegetationBakeryAutoProxyLifecycle` 编排事件与阶段，`VegetationBakeProxyService` 生成/清理代理，`VegetationBakeryIntegration` 负责 Bakery 1.98 反射和 Probe 恢复，`VegetationSceneCompiler` 采样/压缩逐株记录，BRG Shader 解码两种模式；保留的 `VegetationBakeryLightingModes` 金样报告覆盖“投影代理生成、Storage 清理、无代理 L2 Probe、两种记录编译和 BRG 显示”主链。它没有在本轮复跑，也没有可公开检出的私有快照标识，所以只能视为版本受限的历史金样，而不是读者可独立重现实验。
 
@@ -150,22 +150,20 @@ SceneAsset 只为每株保存其实际模式所需的记录，不为另一种模
 
 #### 七、运行时 Buffer 与 Shader 数据流
 
-单个已加载运行时 Cell 的 GPU Raw Buffer 采用 SoA 布局。与光照相关的完整关系可概括为：
+单个已加载运行时 Cell 的 GPU Raw Buffer 按数据表分段组织；逐株数据段内部采用 32 B AoS Packed Instance Record，其后是每 Heap 量化表和两张稀疏光照表。与光照相关的完整关系可概括为：
 
 ```text
-固定头与风场数据
-  + 48 B × N ObjectToWorld
-  + 48 B × N WorldToObject
-  + 16 B × N Instance Params
-  + 16 B × N Lighting Address Params
+96 B 固定头、合法零地址哨兵与风场数据
+  + 32 B × N Packed Instance Records
   + 128 B × HeapCount Quantization
   + 8 B × StaticLightColorCount
   + 20 B × StaticBakeryShCount
+  + 空表哨兵与 16 B 对齐
 ```
 
-因此固定逐株部分约为 128 B，光照再按真实模式增加 8 B 或 20 B。Heap 激活掩码只控制剔除，不会卸载这些光照记录；整个运行时 Cell 卸载时，BRG、GraphicsBuffer 和 NativeArray 才统一释放。
+32 B 记录保存 float32 世界位置、量化旋转与连续参数、HeapIndex、LightingMode 和稀疏记录索引；它只适用于有限、无剪切、非镜像、正数统一缩放。光照仍按真实模式增加 8 B 或 20 B，每 Heap 128 B 量化坐标系也保持不变。Heap 激活掩码只控制剔除，不会卸载这些光照记录；整个运行时 Cell 卸载时，BRG、GraphicsBuffer 和 NativeArray 才统一释放。
 
-Shader 流程是：由 visible instance 得到 GPU Slot → 读取对象矩阵和实例参数 → 用 HeapIndex/稀疏索引定位光照 → 解量化 Static RGB 或 Bakery SH → 与 BaseMap、颜色、Alpha Clip、雾和顶点风摆组合。StaticBakerySh 的顶点读取与方向评估可能在顶点密集植被上变成移动 GPU 成本，必须与网格密度、双眼和过绘制一起测量。
+Shader 流程是：由 visible instance 得到 GPU Slot → 按 32 B stride 恢复世界 TRS、风动参数和光照地址 → 用 HeapIndex/稀疏索引定位光照 → 解量化 Static RGB 或 Bakery SH → 与 BaseMap、颜色、Alpha Clip、雾和顶点风摆组合。StaticBakerySh 的顶点读取与方向评估，加上旋转解码的额外 ALU，可能在顶点密集植被上变成移动 GPU 成本，必须与网格密度、双眼、过绘制和读带宽一起测量。
 
 #### 八、多运行时 Cell 与多 Unity Scene 的处理
 
@@ -230,6 +228,7 @@ Unity Undo 只在已明确登记且仍处于对应编辑会话时可能帮助恢
 
 - 当前 Bakery 1.98 金样报告支持“代理投影 → 清理 → 无代理 L2 Probe → 逐株压缩 → BRG 显示”的主链；本次知识整理没有重新启动完整 Bakery。
 - 2026-08-25 当前自动化门禁为 EditMode `239/239`、PlayMode `11/11`，可覆盖数据、生命周期和部分场景闭环，但不能替代一次真实第三方 Bake。
+- 2026-08-26 的 32 B 运行时增量在 Windows Editor、Android Build Target 下通过 EditMode `244/244`、PlayMode `11/11`，并有实际 Buffer 回读；它只验证运行时 ABI，没有重新验证 Bakery 作者链或 Quest 性能。
 - 现有 Quest 3S A/B/A 性能 APK 使用的是历史 StaticLightColor 表达，不是当前 8 B/20 B v4 布局的设备验证，也没有覆盖 StaticBakerySh 顶点成本。
 - Lightmap 代理的合并峰值、Bake 内存、多 Scene 队列、Domain Reload、Bakery 升级和 Quest 当前快照仍需专门验收。
 
@@ -261,6 +260,7 @@ Unity Undo 只在已明确登记且仍处于对应编辑会话时可能帮助恢
 ### 相关记录
 
 - [统一 BRG 架构](./unity-vegetation-unified-brg-architecture.md) - SceneAsset、Heap、Buffer、渲染会话和资源释放边界。
+- [BRG 逐株 Buffer 的 32 字节压缩与量化 ABI](./unity-brg-packed-instance-buffer-quantization.md) - 当前运行时如何把模式、HeapIndex 和稀疏记录索引装入 32 B，并维持 CPU/GPU 一致。
 - [植被 Painter 作者工作流与事务设计](./unity-vegetation-painter-authoring-transaction-workflow.md) - Prototype 刷新和 SceneCompiler 如何进入光照重采样。
 - [Quest 3S BRG 与普通 GO 性能基线](./quest-vegetation-brg-performance-lighting-validation.md) - 历史设备数据、光照路径差异和当前 v4 验证边界。
 - [ASE Shader Bakery 集成](./ase-shader-bakery-integration.md) - 常规 Renderer Shader 的 Bakery 集成背景。
@@ -270,5 +270,6 @@ Unity Undo 只在已明确登记且仍处于对应编辑会话时可能帮助恢
 
 - [2026-08-25] 复核 Bakery 可选反射接入、完整 Render 代理、Storage 清理、无代理 Probe、L2 恢复、8 B/20 B 稀疏记录、每 Heap 量化和 BRG Shader 解码链；EditMode `239/239`、PlayMode `11/11` 只作为同日工程回归摘要，不单独证明真实 Bakery 全链。
 - [2026-08-25] 将多 Scene 自动 Probe、反射能力覆盖、未安装负缓存和 Domain Reload 恢复列为明确边界；没有把既有金样升级为本次重跑结论。
+- [2026-08-26] 同步运行时 32 B 逐株 ABI、Shader 寻址和最终 `244/244 + 11/11` Editor 回归边界；Heap 量化表与 8 B/20 B 光照 payload 未改变，本轮仍未重跑 Bakery 或 Quest。
 
 ---
