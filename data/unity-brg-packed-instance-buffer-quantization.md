@@ -1,11 +1,11 @@
 # Unity BRG 逐株 Buffer 的 32 字节压缩与量化 ABI
 
 **标签**：#unity #experience #rendering #performance #memory #hlsl #culling
-**来源**：工程实践抽象 - Unity BRG 逐株数据压缩、运行时回读与回归门禁
+**来源**：工程实践抽象 - Unity BRG 实例数据压缩与 CPU/GPU 协议设计
 **收录日期**：2026-08-26
 **更新日期**：2026-08-26
-**状态**：✅ 已验证
-**可信度**：⭐⭐⭐⭐（32 B ABI、逻辑分配、实际 Buffer 回读和 Editor 渲染闭环已有证据；Quest Vulkan、帧耗与带宽收益尚未验证）
+**状态**：⚠️ 待验证
+**可信度**：⭐⭐⭐（32 B 位级 ABI、逻辑分配、实际 Buffer 回读与有限 Editor 渲染证据充分；最大风摆的最终生产者非负门禁、Quest Vulkan、四 Pass 等价及设备性能收益未验证）
 **适用版本**：Unity 2022.3 LTS、BatchRendererGroup 与 DOTS Instancing；其它 Unity 或图形后端需复核 Raw/Constant Buffer 寻址和 Half 行为
 
 ---
@@ -32,9 +32,9 @@
 
 这条表达能覆盖一般矩阵，但在数据模型已经只允许“旋转 + 正数统一缩放 + 位移”时存在重复信息：逆矩阵可以从同一 TRS 推导，法线只需要旋转，模式和索引也不需要使用浮点向量保存。
 
-本文的参考证据固定为一份 2026-08-26 匿名工程候选：Unity `2022.3.62f3`、Android Build Target、Windows Editor Direct3D11。证据包括源码静态复核、严格 Test Runner 报告、实际 SceneBatch 创建和整段 GraphicsBuffer 回读，以及真实 SRP 前景 Mask 门禁。报告摘要与权威状态文件的长度和 SHA-256 相符，相关源码时间也早于最终测试；但候选当时尚未绑定不可变 VCS 源码摘要，因此它仍是版本受限的工程快照，不是公开可复跑基准。
+参考实现采用 Unity `2022.3.62f3`、Windows Editor Direct3D11，并以 Android 为 Build Target。结构布局、实际 GraphicsBuffer 回读和 Forward 渲染链已经验证；Quest Vulkan、设备帧时、带宽、功耗和物理显存变化尚未验证。
 
-阿卡西正文不保留原始工程路径、资源名、本地快照号、RunId、程序集 MVID 或私有内容 Hash。下文数字只在匿名规模和验证协议层面使用。
+本文中的**运行时 Cell**是一份场景植被资产及其独立运行资源的所有权边界，**Heap** 是 Cell 内的空间分块，**StableGuid** 是实例在所属场景资产内的持久身份；它们只用于解释记录地址与发布边界，不是 32 B 位布局本身的一部分。
 
 ## 二、压缩成立的前置契约
 
@@ -55,15 +55,15 @@
 
 | 数据 | 表达 | 原因 |
 |---|---|---|
-| 世界位置 | `float3` | 大世界坐标对绝对误差敏感；不在本轮量化 |
+| 世界位置 | `float3` | 大世界坐标对绝对误差敏感；不纳入该 ABI 的量化字段 |
 | 世界旋转 | smallest-three `10:10:10:2` | 单个 `uint` 可恢复单位四元数 |
 | 正统一缩放 | IEEE Half | 动态范围足够时以显式上下界换容量 |
 | 随机相位 | UNorm16 | 语义天然位于 `[0,1]` |
-| 风摆与局部 Bounds 连续量 | IEEE Half | 允许有限量化误差，并可对剔除做保守补偿 |
+| 最大风摆幅值与局部 Bounds 连续量 | IEEE Half | 风摆字段是非负世界空间位移幅值；有符号 Bounds 参数另按各自语义校验 |
 | Heap 索引 | UInt16 | 保持整数精确；超出范围时拆分资产 |
 | 光照模式与记录索引 | 1 bit + 31 bit | 不用浮点表达地址；越界明确失败 |
 
-“位置保留 float32”只表示本轮没有新增位置量化误差，不表示突破了 float32 或 Floating Origin 本身的精度上限。
+“位置保留 float32”只表示该 ABI 没有新增位置量化误差，不表示突破了 float32 或 Floating Origin 本身的精度上限。
 
 ## 三、32 字节 ABI
 
@@ -74,11 +74,13 @@
 | 0–11 | 0–2 | 世界位置 `float3`，按位解释为三个 float32 |
 | 12–15 | 3 | smallest-three 旋转：三个 10 位分量 + 2 位省略分量索引 |
 | 16–19 | 4 | 低 16 位正统一缩放 Half；高 16 位随机相位 UNorm16 |
-| 20–23 | 5 | 低 16 位最大风摆 Half；高 16 位 Bounds 最低点 Half |
-| 24–27 | 6 | 低 16 位 Bounds 高度倒数 Half；高 16 位 HeapIndex |
+| 20–23 | 5 | 低 16 位最大风摆 Half，单位为世界空间长度；高 16 位对象空间 Bounds 最低 Y 的 Half |
+| 24–27 | 6 | 低 16 位对象空间 Bounds 高度倒数 Half，单位为对象空间长度的倒数；高 16 位 HeapIndex |
 | 28–31 | 7 | 最高位光照模式；低 31 位对应稀疏光照表的记录索引 |
 
 旋转字的规范位序为：`a = bits[0..9]`、`b = bits[10..19]`、`c = bits[20..29]`、`omitted = bits[30..31]`。`a/b/c` 始终按四元数 `x,y,z,w` 的原顺序保存，跳过 `omitted` 指定的一个分量。
+
+光照模式位的规范映射是 `0 = StaticLightColor`、`1 = StaticBakerySh`。低 31 位索引总是解释为当前模式对应稀疏表中的记录号，不能跨表复用。
 
 下面的固定输入与 8 个期望 uint 是当前 ABI 的最小金样；其它语言或工具链只有逐字得到同一输出，才算字节兼容：
 
@@ -134,8 +136,8 @@ missing = sqrt(max(0, 1 - a² - b² - c²))
 
 - Half 合法输入必须是 binary32 有限值且绝对值不超过 `65504`；NaN、Infinity 和超界值在转换前失败。
 - 语义上必须大于零的缩放和 Bounds 高度倒数会先拒绝 `value <= 0`，因此正负零都不合法；在 Half 舍入后若变成零也必须失败。
-- 最大风摆和 Bounds 最低点允许零与负值；一般 Half 字段保留 binary16 符号位，包括 `-0 → 0x8000`。
-- 随机相位的合法输入域是有限 binary32。先钳制到 `[0,1]`，再以 binary32 计算 `value × 65535`，最后用 round-to-nearest、ties-to-even 编为 UNorm16；解码为 `q / 65535.0f`。NaN/Infinity 不属于 ABI 合法输入，必须由调用方拒绝。当前内部调用由稳定身份生成有限 `[0,1]` 值，但打包帮助函数本身没有独立非有限门禁，抽取为公共库时应补上。
+- 最大风摆字段表示**非负世界空间位移幅值**：零合法，负值不属于 ABI 输入域。最终 ABI 生产者必须在打包前显式拒绝负值，不能只依赖 Inspector 的最小值提示或上游资产构造时的钳制。Bounds 最低点则允许有限负值；一般有符号 Half 字段保留 binary16 符号位，包括 `-0 → 0x8000`。
+- 随机相位的合法输入域是有限 binary32。先钳制到 `[0,1]`，再以 binary32 计算 `value × 65535`，最后用 round-to-nearest、ties-to-even 编为 UNorm16；解码为 `q / 65535.0f`。对有限超界值进行饱和是此字段有意定义的例外，不适用其它字段“非法输入应失败”的一般政策。NaN/Infinity 不属于 ABI 合法输入，必须由调用方拒绝。当前内部调用由稳定身份生成有限 `[0,1]` 值，但打包帮助函数本身没有独立非有限门禁，抽取为公共库时应补上。
 - GPU 解码一个 `uint` 中的两个 Half 时，必须分别读取低 16 位和右移后的高 16 位；不能假设一次转换会自动得到两个值。
 
 Half 转换固定使用 Unity.Mathematics 1.3.2 `math.f32tof16` 的位算法，而不是泛指任意“IEEE Half 转换”。对上述合法有限输入，兼容实现按以下 binary32/uint 步骤产生低 16 位：
@@ -148,7 +150,7 @@ h   = (asuint(min(asfloat(mag) * asfloat(0x07800000),
 halfBits = (h | ((ux & 0x80000FFF) >> 16)) & 0xFFFF
 ```
 
-这条规则保留 signed zero 与 binary16 次正规数；例如 `+0 → 0000`、`-0 → 8000`、`5.96046448e-08f → 0001`、`123.4f → 57B6`、`65504f → 7BFF`。CPU 参考解码固定使用同版本 `math.f16tof32`；HLSL 使用 `f16tof32` 解释低 16 位。不同移动 GPU 是否把次正规数 flush-to-zero 仍需真机验证；生产采用可以把允许下界提高到最小正常 Half，或为目标设备增加边界测试。
+这条位算法而不是泛化的“IEEE 默认舍入”是规范源。它保留 signed zero 与 binary16 次正规数；兼容向量包括 `+0 → 0000`、`-0 → 8000`、`5.96046448e-08f → 0001`、最大次正规数 `0.000060975552f → 03FF`、最小正常数 `0.00006103515625f → 0400`、`123.4f → 57B6`、`65504f → 7BFF`。在 `1.0` 与下一 Half `1.0009765625` 的精确 binary32 中点，`1.00048828125f → 3C01`；这里不能擅自替换为 ties-to-even 的 `3C00`。CPU 参考解码固定使用同版本 `math.f16tof32`；HLSL 使用 `f16tof32` 解释低 16 位。不同移动 GPU 是否把次正规数 flush-to-zero 仍需真机验证；生产采用可以把允许下界提高到最小正常 Half，或为目标设备增加边界测试。
 
 ### 4.3 整数索引
 
@@ -242,8 +244,6 @@ bytes = A16(
 
 HeapBase 不需要序列化；它是当前加载快照的派生量。`StableGuid` 才是持久实例身份，GlobalSlot、HeapBase 和 RuntimeIndex 都不能跨重编译或重装载保存为外部引用。
 
-Heap 量化表和两张光照表的 Metadata 不带 PerInstanceDataBit。Shader 从共享基址显式追加 HeapIndex 或 LightingRecordIndex；否则 BRG 会自动按实例步长偏移，共享数据会错误退化为逐株寻址。
-
 ## 七、CPU 剔除必须使用量化后的真值
 
 若 GPU 使用量化后旋转和缩放，而 CPU 仍用原始矩阵计算包围球与 LOD，实例在视锥或阈值边缘可能出现单帧消失。参考策略是：
@@ -251,86 +251,44 @@ Heap 量化表和两张光照表的 Metadata 不带 PerInstanceDataBit。Shader 
 1. 每次都从权威高精度矩阵重新编码，禁止对已经量化的结果反复往返。
 2. CPU 立即用同一编码规则恢复旋转和缩放。
 3. 剔除中心、半径、LOD 中心和 LOD 尺寸都使用恢复后的 TRS。
-4. 对影响顶点最大位移的 Half 字段，剔除余量取 `max(source, decoded)`。
+4. 对合法的非负最大风摆幅值，剔除余量取 `max(source, decoded)`；该公式不能套用于允许负值的 Bounds 参数。
 5. Heap Bounds 保留编译结果，并把量化后实例球并入，只允许保守扩展，不允许缩小工作集。
+
+风摆余量成立还依赖 Shader 形变契约。风向必须归一化，`heightMask` 必须限制在 `[0,1]`，Cell 请求幅值也只能与实例上限取最小值；于是每个顶点的风摆满足：
+
+```text
+|deltaWorld(vertex)|
+  = |sin(phase)| × min(max(cellAmplitude, 0), decodedMaxWind) × heightMask
+  <= decodedMaxWind
+```
+
+`BoundsMinimumY` 与 `BoundsInverseHeight` 只负责产生高度权重，不能让权重超过 1。若 Shader 新增其它顶点位移，它必须获得独立保守余量，不能借用 `maximumWindDisplacement` 的结论。
 
 这套做法会在全量上传与剔除快照构建时重复提取和量化 TRS，换来两端一致和失败事务。它属于加载/Rebase 的低频 CPU 成本；当前没有 Profile 数据证明其尖峰可以忽略。
 
-## 八、预览、Rebase 与卸载事务
+## 八、事务式 ABI 发布接口
 
-### 8.1 初次加载
+32 B ABI 不规定编辑器预览、Cell 管理或资源卸载的完整生命周期，但所有生产者必须遵守同一最小发布协议：
 
-```text
-验证 SceneAsset / Prototype 版本与内容摘要
-  → 统计两张稀疏光照表的实际记录数
-  → 计算唯一 Layout
-  → 分配临时清零 uint 数组和 GraphicsBuffer
-  → 按 Heap 顺序写风场、32 B 记录、量化表和光照表
-  → 一次 SetData 上传完整候选
-  → 注册 Metadata 与 Batch
-  → 构建 CPU 剔除快照和 StableGuid→当前 Slot 反查
-```
+1. 始终从权威高精度 TRS 构建完整候选，禁止读取旧 GPU 记录后二次量化。
+2. 单株更新覆写完整 32 B；批量更新先验证全部记录和对应 CPU 剔除数据，任一记录失败时不触碰已发布 Buffer。
+3. Cell Transform 或 Floating Origin 改变时，先完成量化候选 CPU Snapshot 和完整候选 Buffer，二者成功后再切换公开状态。
+4. 原地 Patch 需要额外处理在途 GPU 工作；严格一致性场景使用 GPU Fence、双 Buffer/世代切换或独立预览 Batch。
 
-完整候选在一次上传前位于临时数组中，因此编码失败不会把半条记录发布到 GPU。
+StableGuid 是持久身份，GPU Slot 只是当前加载快照中的地址。Heap 失活也不代表其记录已经紧凑或释放，因此本文的字节收益只描述已分配 Cell Buffer 和全量上传载荷。运行时 Cell/Heap 的完整生命周期见[统一 BRG 架构](./unity-vegetation-unified-brg-architecture.md)，编辑预览和作者提交事务见[植被 Painter 作者工作流与事务设计](./unity-vegetation-painter-authoring-transaction-workflow.md)。
 
-### 8.2 编辑预览
+## 九、实验方法、观察与边界
 
-- 单株预览始终覆写该株完整的 32 B，避免字段级撕裂。
-- 批量预览先为全部目标构建紧凑记录和剔除数据；任一目标失败时不开始 GPU 写入。
-- 取消预览时从权威 SceneAsset 的高精度数据重新编码，而不是读取并二次量化 GPU 结果。
-- 反查表以 StableGuid 找到当前 Slot；Slot 仍只是当前会话地址。
+| 主张 | 方法 | 观察 | 边界 |
+|---|---|---|---|
+| 固定逐株记录从 128 B 降为 32 B | 冻结字段偏移和 8 个 `uint` 金样，比较相同实例/Heap/光照计数下的布局公式 | 单株固定区减少 96 B；金样逐字匹配 | 只证明 ABI 与逻辑字节，不证明设备帧耗 |
+| 总 Buffer 字节随实例段缩小 | 比较逻辑分配、底层 `count×stride` 与完整 GraphicsBuffer 回读长度 | 8,192 实例 / 50 Heap 样本由 1,120,640 B 降为 334,208 B；8,192 实例 / 1,024 Heap 样本由 1,245,312 B 降为 458,880 B | 两组绝对总量还依赖未在本记录展开的 `C/S` 逻辑计数；正文可独立复算同计数下固定实例段均减少 786,432 B。回读长度不等于驱动物理显存、分配器保留或整进程 PSS |
+| 旋转量化误差受当前门限约束 | 用固定种子均匀覆盖 SO(3) 的 10,000 个样本，编码后按规范解码并比较角误差 | 观测最大角误差 `0.197823°`，低于 `0.25°` 门限 | 样本最大值不是数学最坏误差证明 |
+| 已覆盖的非法输入不会静默进入 GPU | 对 Half 上溢、正值字段下溢、非统一缩放、镜像、剪切和索引越界分别构造失败输入 | 这些已覆盖类别在 Buffer 写入前被拒绝，已发布候选保持不变 | 不包含负风摆及其它未覆盖生产入口，不能替代所有调用入口和并发时序的故障注入 |
+| 最大风摆保持非负幅值语义 | 对照作者输入、Prototype 构造和最终 Packed Record 入口的门禁 | 上游作者输入与 Prototype 初始化会钳制为非负；最终通用 Half 打包入口目前只检查有限值与范围 | 迁移或损坏的序列化值仍可能绕过上游约束；补齐最终生产者门禁前，本项不构成闭环 |
+| Shader 能观察到 ABI 破坏 | 冻结风场、相机、曝光和渲染设置，对 Forward 路径进行正常解码与受控错误解码对照 | 正常解码保持前景一致；错误解码稳定击穿像素门禁 | Shadow、Depth、DepthNormals 尚无同等级视觉等价 A/B |
 
-CPU Job 完成和原地 Buffer Patch 不自动证明先前提交的 GPU 工作已经退役。高风险编辑器或运行时热更新若需要严格在途一致性，仍应使用 GPU Fence、双 Buffer/世代切换或独立预览 Batch。
-
-### 8.3 Cell Transform 与 Floating Origin
-
-候选更新顺序应为：
-
-```text
-构建量化后的候选 CPU Snapshot
-  → 构建并上传完整候选 Buffer
-  → 两者成功后才提交 CellTransform / Origin
-  → 替换 StableGuid→Slot 反查和公开 Snapshot
-  → 清理旧预览
-```
-
-这样 Half 上溢、最终缩放下溢或 NaN Origin 被拒绝时，管理字段、GPU Buffer、预览 Bounds 和作者资产仍保持调用前状态。
-
-### 8.4 HeapMask 与卸载
-
-HeapMask 只门控剔除。Heap 失活不会重传、缩容或释放该 Heap 的 32 B 记录和光照表；Count/Scatter 仍可能按运行时 Cell 总实例长度调度。只有整个运行时 Cell 卸载时，系统才等待最后的 CPU 剔除 Job、移除 Batch、释放 GraphicsBuffer 与 NativeArray，并释放 Prototype 注册引用。
-
-因此，32 B 压缩减少的是常驻 Cell Buffer 与全量上传载荷，不会自动把失活 Heap 变成紧凑运行工作集。
-
-## 九、已验证结果
-
-### 9.1 布局与实际回读
-
-| 匿名场景规模 | 旧布局 | 新布局 | 降幅 | 证据强度 |
-|---|---:|---:|---:|---|
-| 288 实例 / 40 Heap / 两种光照各 144 | 46,112 B | 18,464 B | 59.958% | 精确公式与布局门禁；无独立结构化整段回读 |
-| 8,192 实例 / 50 Heap / 8,192 静态颜色 / 0 Bakery SH | 1,120,640 B | 334,208 B | 70.177% | 实际 SceneBatch、逻辑分配、底层 count×stride 与整段回读长度一致 |
-| 8,192 实例 / 1,024 Heap / 8,192 静态颜色 / 0 Bakery SH | 1,245,312 B | 458,880 B | 63.151% | 实际 SceneBatch、逻辑分配、底层 count×stride 与整段回读长度一致 |
-
-两个回读样本在释放后均确认 GraphicsBuffer 不再有效。这里证明的是 Unity 逻辑分配请求和可回读长度，不等于驱动最终物理显存、分配器保留或整进程 PSS。
-
-### 9.2 正确性与失败门禁
-
-- 结构尺寸、字段位序和 8 个 `uint` 金样通过。
-- 世界位置编解码逐位一致。
-- 10,000 个固定种子 SO(3) 样本的观测最大旋转误差为 `0.197823°`。
-- Half 上溢、正值下溢、非统一缩放、镜像、剪切和 Heap 索引越界会显式失败。
-- GPU 整段回读证明单株预览只改变目标 32 B，取消后全 Buffer 逐字恢复。
-- 批量预览第二个候选失败时，完整 Buffer、预览 Heap 和作者资产保持不变。
-- Cell 或 Origin 候选失败时，公开字段、完整 Buffer 与已有预览保持不变。
-- 真实 SRP Forward 门禁在冻结非零风时记录 BRG/普通 GO 前景均为 192 像素、差异 2，门限为 10；一次受控错误解码故障注入曾把差异扩大到 22 并让门禁失败。
-- 同轮严格结果为 EditMode `244/244`、PlayMode `11/11`，失败、跳过和不确定均为 0。
-
-Test Runner 总数是带日期的候选快照，不是长期必须维持的用例数量合同。Shader Importer 和文本关系门禁支持四个 Pass 复用同一解码链，但 Forward 之外的 Shadow、Depth 与 DepthNormals 尚没有同等级视觉等价 A/B。
-
-### 9.3 有限视觉观察
-
-一组同机位前后截图未见明显实例位置、光照分区或阴影外观回归；但截图时非零风没有冻结，不能把逐像素差异全部归因于量化，也不能把它升级为像素等价证明。正式可信视觉门禁以上述冻结风的合成 SRP Mask 测试为准。
+未冻结动态输入的同机位截图只能发现明显外观回归，不能证明像素等价。视觉门禁必须固定动态输入，并证明受控错误能够被观察到。
 
 ## 十、不能从当前证据推出什么
 
@@ -342,41 +300,34 @@ Test Runner 总数是带日期的候选快照，不是长期必须维持的用�
 - ConstantBuffer 后端没有独立设备闭环。
 - 高频 Rebase/Cell Transform 的重复编码、托管 Dictionary 和全量上传峰值尚未测量。
 - 位置仍是 float32，大世界精度问题仍需 Floating Origin。
+- 最大风摆的非负语义目前依赖上游作者/资产钳制；最终 Packed Record 入口尚未形成独立硬门禁。
 
 ## 十一、采用检查清单
 
 - [ ] 数据模型是否真的只允许有限、无剪切、非镜像、正数统一缩放？
-- [ ] 是否先冻结字段表、尺寸、字节偏移、位段和 HLSL stride？
-- [ ] 是否为固定输入保存 8 个 `uint` 金样，而不只测试 round-trip？
-- [ ] CPU 剔除是否使用 GPU 实际恢复后的 TRS？
-- [ ] 影响最大位移的量化值是否保守扩展 Bounds？
-- [ ] 空实例、空 Heap 和空稀疏表的 Metadata 是否仍指向合法哨兵？
-- [ ] HeapIndex 与记录索引是否在写入前做整数范围门禁？
-- [ ] 批量预览和全量重建是否先验证完整候选再发布？
-- [ ] 是否把 StableGuid 与当前 GPU Slot 分开建模？
+- [ ] 最大风摆是否在最终 ABI 生产者入口按非负幅值校验，而不是只依赖 Inspector 或上游钳制？
+- [ ] 是否共同冻结字段表、8 个 `uint` 金样、C#/HLSL stride、位序、舍入和 Metadata 寻址？
+- [ ] CPU 剔除是否使用解码后的 TRS，并对量化位移保守扩展 Bounds？
+- [ ] 空表哨兵、HeapIndex、光照索引和总地址计算是否在上传前完成整数门禁？
+- [ ] 批量更新和 Rebase 是否先构建完整 CPU/GPU 候选再发布，且不从旧量化结果反复往返？
 - [ ] 是否分别验证逻辑分配、实际回读、上传耗时、GPU 时间和物理显存，而不混成一个“性能提升”？
 - [ ] 是否在目标图形 API 和移动设备上验证 Half 边界、四个 Pass 和带宽/ALU取舍？
 - [ ] ABI 变化时是否有版本、重建和旧候选拒绝策略？
 
 ## 十二、可复用结论
 
-1. 先收紧可表达语义，再压缩数据；任意矩阵不能靠 Shader 静默近似成紧凑 TRS。
-2. 高动态范围位置、连续标量和离散身份应使用不同表达：float32、Half/UNorm 与整数位段各司其职。
-3. GPU 数据量化会改变运行时真值；CPU 剔除、LOD 和 Bounds 必须消费同一真值或使用保守上界。
-4. ABI 验证要同时覆盖尺寸、金样位序、范围失败、实际 Buffer 回读、真实 Shader 像素和故障注入。
-5. 记录压缩、全量上传、稳定帧带宽和最终帧耗是四个不同结论；当前证据只支持前两项中的字节规模。
-6. 多 Heap 共享 Buffer 时，HeapBase 是加载快照派生地址，StableGuid 才是持久身份；HeapMask 不等于数据卸载。
-7. 事务性发布与压缩同等重要。缩小记录不能以半应用预览、CPU/GPU 剔除漂移或失败后状态污染为代价。
+1. 先收紧可表达语义，再压缩数据；不可表达矩阵必须在 CPU 侧失败。
+2. ABI 必须冻结字节、数值和寻址三层协议，不能只依赖 round-trip。
+3. GPU 解码结果是运行时真值；CPU 剔除、LOD、Bounds 和事务发布必须与其一致。
+4. 记录字节、全量上传、稳定帧带宽、物理显存和最终帧耗是不同结论，必须分别测量。
 
 ### 相关记录
 
 - [统一 BRG 架构](./unity-vegetation-unified-brg-architecture.md) - 数据权威、运行时 Cell/Heap、单 Buffer、剔除和卸载的大结构。
 - [Bakery L2 静态光照与投影代理](./unity-vegetation-bakery-static-lighting-pipeline.md) - 每 Heap 量化表与 8 B/20 B 稀疏光照记录的生成和消费。
-- [Quest 3S BRG 与普通 GO 性能基线](./quest-vegetation-brg-performance-lighting-validation.md) - 历史真机 A/B/A；不等于本文 32 B ABI 的设备验证。
+- [历史 Quest 3S BRG 与普通 GO 系统观察](./quest-vegetation-brg-performance-lighting-validation.md) - 历史真机 A/B/A；不等于本文 32 B ABI 的设备验证。
 - [植被 Painter 作者工作流与事务设计](./unity-vegetation-painter-authoring-transaction-workflow.md) - StableGuid、变换预览和正式提交如何进入运行时 Patch。
 
 ### 验证记录
 
-- [2026-08-26] 审查 128 B 到 32 B 的逐株 ABI、C#/HLSL 位序、CPU 同量化剔除、多 Heap/稀疏光照寻址、预览/Rebase 事务和卸载链；未发现阻断实现问题。
-- [2026-08-26] 复核两个匿名 8,192 实例 SceneBatch 的完整 GraphicsBuffer 回读，以及 EditMode `244/244`、PlayMode `11/11`、旋转误差和真实 SRP Mask 门禁；明确这些证据不包含 Quest Vulkan 或帧耗 A/B。
-- [2026-08-26] 完成语义脱敏：删除本机路径、真实资源名、本地快照号、RunId、程序集 MVID 和私有内容 Hash，只保留可复用机制、匿名规模与验证边界。
+- [2026-08-26] 32 B 位级金样、逻辑分配、完整 Buffer 回读、量化误差样本与有限 Forward 故障注入构成当前主题证据；最大风摆最终生产者非负门禁、Quest Vulkan、四 Pass 等价、物理显存及帧耗收益仍未验证。

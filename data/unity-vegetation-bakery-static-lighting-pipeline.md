@@ -1,12 +1,12 @@
 # Unity BRG 植被的 Bakery L2 静态光照与投影代理流程
 
 **标签**：#unity #graphics #architecture #rendering #shader #editor
-**来源**：工程实践抽象 - Unity 2022.3 LTS、Bakery 集成源码、当前金样报告与 BRG 光照数据审查
+**来源**：工程实践抽象 - BRG 植被静态光照、烘焙代理与运行时解码
 **收录日期**：2026-08-25
 **来源日期**：2026-08-25
 **更新日期**：2026-08-26
-**状态**：📘 有效
-**可信度**：⭐⭐⭐⭐（当前 Bakery 版本的代理、Probe、压缩和 Shader 链有实现与既有金样支撑；本次未重新执行完整烘焙，升级与 Domain Reload 分支仍有风险）
+**状态**：⚠️ 待验证
+**可信度**：⭐⭐⭐（Bakery 1.98 的历史 Bake 支持代理、Probe、逐株编译与 Shader 消费主链；零残留硬门禁、失败恢复、Domain Reload 和升级闭环尚未完成）
 **适用版本**：Unity 2022.3 LTS、URP 14、BatchRendererGroup、Bakery 1.98；升级 Bakery 时必须重验反射契约
 
 ---
@@ -15,11 +15,11 @@
 
 BRG 植被没有逐株 MeshRenderer，Bakery 在收集静态投影物时看不到它们。生产级目标链是：完整 Lightmap 烘焙前临时生成只投影、不接收 Lightmap 的合并代理；Bakery 报告结束后验证输出并彻底清理代理；需要静态 Probe 的场景再在无代理状态下烘焙并验证 L2；最后按实例采样并压缩到场景植被资产，运行时由 BRG Shader 读取。投影贡献和 Probe 接收是两个独立开关：不投影的运行时 Cell 仍可能需要从静态 Probe 编译逐株光照。
 
+> **生产采用警告**：参考实现会尝试清理代理对象、临时 Mesh 和 Bakery Storage 引用，但尚无“代理根、生成目录和 Storage 引用全部为零”的可执行残留门禁；受保护区之前异常、目标丢失或 Domain Reload 仍可能留下不一致状态。完整 Bake 结束不能被当成自动验证和原子发布。
+
 这条链路必须严格区分三类数据：Prototype 保存可跨场景复用的几何与光照模式声明；场景植被资产保存逐株静态光照；代理和合并 Mesh 只是一次烘焙的临时产物。任何一层所有权混淆，都会造成场景光照污染 Prototype、代理残留或运行时重复渲染。
 
-“当前参考实现”的 Bakery 作者链固定指 2026-08-25 匿名工程快照：Unity `2022.3.62f3`、URP 14、Bakery 1.98，证据来自源码静态复核、同日 Editor/PlayMode 回归摘要和此前保留的 Bakery 金样报告。2026-08-26 只更新运行时消费端：固定逐株区由 128 B 收敛到 32 B，Heap 量化表和 8 B/20 B 光照 payload 本身没有改变；该增量没有重新启动 Bakery。本记录不保存私有工程路径、提交号或 RunId，因此实现事实可用于复用设计与风险判断，但不能替代读者在自己版本上的最小真实 Bake。当前自动生命周期已经实现代理、清理、Probe 恢复与 SceneAsset 编译主链，但尚未实现完整的残留验证、每 Scene Lightmap 输出验证或跨资产事务；下文会把“当前行为”和“采用要求”分开。本文的“运行时 Cell”指一个独立加载、创建 BRG/Buffer/物理资源并独立卸载的场景植被单元；一个 Unity Scene 可以包含多个运行时 Cell。
-
-匿名证据索引保留到类与报告角色：`VegetationBakeryAutoProxyLifecycle` 编排事件与阶段，`VegetationBakeProxyService` 生成/清理代理，`VegetationBakeryIntegration` 负责 Bakery 1.98 反射和 Probe 恢复，`VegetationSceneCompiler` 采样/压缩逐株记录，BRG Shader 解码两种模式；保留的 `VegetationBakeryLightingModes` 金样报告覆盖“投影代理生成、Storage 清理、无代理 L2 Probe、两种记录编译和 BRG 显示”主链。它没有在本轮复跑，也没有可公开检出的私有快照标识，所以只能视为版本受限的历史金样，而不是读者可独立重现实验。
+参考实现采用 Unity `2022.3.62f3`、URP 14 与 Bakery 1.98。代理、清理、Probe 恢复、SceneAsset 编译和 Shader 消费主链已有实现与历史真实 Bake 证据；当前 32 B 运行时记录只改变消费端寻址，没有重新验证 Bakery 作者链。升级 Unity 或 Bakery 时仍需执行最小真实 Bake，并验证残留、每 Scene 输出和失败恢复。
 
 本文术语：**Heap** 是 SceneAsset 内部空间块；**authored Probe** 是目标 Unity Scene 中作者实际放置的 Light Probe；**无代理 Probe** 是在投影代理清理尝试之后启动的 Bakery Probe；**Bakery Storage** 是第三方插件保存 Renderer、Lightmap 与 Probe 中间/结果引用的数据；**Bake 世代**表示一次具体 Bake 的目标与输出身份，当前实现没有持久世代账本；**PublishNotification** 是 SceneAsset 保存后的编辑器变更通知，不是文件提交事务。
 
@@ -148,22 +148,11 @@ SceneAsset 只为每株保存其实际模式所需的记录，不为另一种模
 
 `StaticLightColor` 的带宽和顶点 ALU 更低，但丢失随法线方向变化的明暗；`StaticBakerySh` 保留更多方向性，每个顶点要读取压缩数据并执行评估。选择应依据植物形态和真机测量，而不是把“来源是 L2”误写成“两种模式都在 GPU 完整计算 L2”。
 
-#### 七、运行时 Buffer 与 Shader 数据流
+#### 七、运行时消费接口
 
-单个已加载运行时 Cell 的 GPU Raw Buffer 按数据表分段组织；逐株数据段内部采用 32 B AoS Packed Instance Record，其后是每 Heap 量化表和两张稀疏光照表。与光照相关的完整关系可概括为：
+运行时逐株记录只向光照系统提供三个地址字段：`HeapIndex`、`LightingMode` 和对应模式的稀疏记录索引。光照数据本身仍由每 Heap 128 B 量化参数、每株 8 B `StaticLightColor` 或每株 20 B `StaticBakerySh` 组成；空表需要合法哨兵和对齐，但不能生成可绘制记录。32 B 逐株记录的变换量化、位段和 Metadata 寻址见[BRG 逐株 Buffer 的 32 字节压缩与量化 ABI](./unity-brg-packed-instance-buffer-quantization.md)。
 
-```text
-96 B 固定头、合法零地址哨兵与风场数据
-  + 32 B × N Packed Instance Records
-  + 128 B × HeapCount Quantization
-  + 8 B × StaticLightColorCount
-  + 20 B × StaticBakeryShCount
-  + 空表哨兵与 16 B 对齐
-```
-
-32 B 记录保存 float32 世界位置、量化旋转与连续参数、HeapIndex、LightingMode 和稀疏记录索引；它只适用于有限、无剪切、非镜像、正数统一缩放。光照仍按真实模式增加 8 B 或 20 B，每 Heap 128 B 量化坐标系也保持不变。Heap 激活掩码只控制剔除，不会卸载这些光照记录；整个运行时 Cell 卸载时，BRG、GraphicsBuffer 和 NativeArray 才统一释放。
-
-Shader 流程是：由 visible instance 得到 GPU Slot → 按 32 B stride 恢复世界 TRS、风动参数和光照地址 → 用 HeapIndex/稀疏索引定位光照 → 解量化 Static RGB 或 Bakery SH → 与 BaseMap、颜色、Alpha Clip、雾和顶点风摆组合。StaticBakerySh 的顶点读取与方向评估，加上旋转解码的额外 ALU，可能在顶点密集植被上变成移动 GPU 成本，必须与网格密度、双眼、过绘制和读带宽一起测量。
+Shader 从可见实例取得光照地址，按 Heap 参数解量化静态 RGB 或 Bakery SH，再与 BaseMap、颜色、Alpha Clip、雾和顶点风摆组合。`StaticBakerySh` 还需要按顶点法线执行方向评估，其移动 GPU 成本必须与网格密度、双眼、过绘制和读带宽共同测量；历史 `StaticLightColor` 设备数据不能代替这项验证。
 
 #### 八、多运行时 Cell 与多 Unity Scene 的处理
 
@@ -188,10 +177,10 @@ Additive Scene 同时加载时，当前 Full Render 没有预先执行“只允�
 
 | 失败点 | 当前可确认状态 | 不能推定 | 恢复动作 |
 |---|---|---|---|
-| Full Render 异常、未见 Finished 或用户取消 | 只有已经进入受保护生命周期且结束时仍能重新定位的目标才会尝试清理；不会启动自动 Probe/SceneCompiler；已经成功的其它目标不回滚。若 Full Render 前的刷新先抛错或目标丢失，可能根本没有进入清理 | Bakery 的 Storage.maps、LightmapSettings.lightmaps、LightingDataAsset 或其它部分输出仍是旧值、完整新值还是部分新值；代理已零残留 | 先执行独立残留扫描和每 Scene 输出核对；有任何不确定即从已知良好备份/版本控制恢复光照资产，或对该 Scene 重跑完整链 |
+| Full Render 异常、未见 Finished 或用户取消 | 只有已经进入受保护生命周期且结束时仍能重新定位的目标才会尝试清理；不会启动自动 Probe/SceneCompiler；已经成功的其它目标不回滚。若 Full Render 前的刷新先抛错或目标丢失，可能根本没有进入清理 | Bakery 的 Storage.maps、LightmapSettings.lightmaps、LightingDataAsset 或其它部分输出仍是旧值、完整新值还是部分新值；代理已零残留 | 先执行独立残留扫描和每 Scene 输出核对；有任何不确定即从已知良好备份恢复光照资产，或对该 Scene 重跑完整链 |
 | 清理抛错、删除失败或目标无法重新定位 | 后续目标可能继续，失败目标可能残留 Storage 引用、根对象或 Mesh | “Cleanup 已调用”代表无代理 | 禁止进入自动 Probe；按世代/确定性标识清理并复查所有残留，无法证明归属时停止并人工核对 |
-| 第一次 Probe 恢复或随后 L2/数量/位置/系数校验失败 | LightingDataAsset 可能已在校验前保存新 SH；SceneCompiler 尚未开始 | LightingDataAsset 仍是上一份有效值 | 以已知良好 LightingDataAsset 备份/版本控制为恢复源，或重新烘焙并完整校验；不要用 Undo 代替磁盘恢复 |
-| 第二次恢复、逐 Heap 编译或 SceneAsset Save 失败 | LightingDataAsset 已保存；SceneAsset 内存可能部分更新，磁盘结果需核对；PublishNotification 尚未完成 | 重新加载必然恢复到有效配对；Save 抛错等于零写入 | 比较 LightingDataAsset、SceneAsset 与已知良好候选/版本；必要时从备份/VCS 恢复两者，再重跑整份 SceneAsset |
+| 第一次 Probe 恢复或随后 L2/数量/位置/系数校验失败 | LightingDataAsset 可能已在校验前保存新 SH；SceneCompiler 尚未开始 | LightingDataAsset 仍是上一份有效值 | 以已知良好 LightingDataAsset 备份为恢复源，或重新烘焙并完整校验；不要用 Undo 代替磁盘恢复 |
+| 第二次恢复、逐 Heap 编译或 SceneAsset Save 失败 | LightingDataAsset 已保存；SceneAsset 内存可能部分更新，磁盘结果需核对；PublishNotification 尚未完成 | 重新加载必然恢复到有效配对；Save 抛错等于零写入 | 比较 LightingDataAsset、SceneAsset 与已知良好候选；必要时从成对备份恢复两者，再重跑整份 SceneAsset |
 | SceneAsset Save 成功后 PublishNotification 或宿主刷新失败 | 已保存 SceneAsset 是默认权威，BRG 可能仍显示旧内容 | 重新提交作者数据能安全修复 | 以已保存资产强制重建宿主并重试通知；若要回退，必须成对恢复已知良好的 LightingDataAsset 与 SceneAsset |
 
 Unity Undo 只在已明确登记且仍处于对应编辑会话时可能帮助恢复内存对象；它不是 LightingDataAsset、Bakery Storage 或文件保存失败的备份协议。`reload` 也只有在磁盘版本已经被独立确认良好时才安全。生产采用应保存已知良好版本或生成候选副本，并让 LightingDataAsset、整份 SceneAsset 和发布世代具有可核对的共同标识。
@@ -226,50 +215,33 @@ Unity Undo 只在已明确登记且仍处于对应编辑会话时可能帮助恢
 
 #### 十二、验证与性能边界
 
-- 当前 Bakery 1.98 金样报告支持“代理投影 → 清理 → 无代理 L2 Probe → 逐株压缩 → BRG 显示”的主链；本次知识整理没有重新启动完整 Bakery。
-- 2026-08-25 当前自动化门禁为 EditMode `239/239`、PlayMode `11/11`，可覆盖数据、生命周期和部分场景闭环，但不能替代一次真实第三方 Bake。
-- 2026-08-26 的 32 B 运行时增量在 Windows Editor、Android Build Target 下通过 EditMode `244/244`、PlayMode `11/11`，并有实际 Buffer 回读；它只验证运行时 ABI，没有重新验证 Bakery 作者链或 Quest 性能。
-- 现有 Quest 3S A/B/A 性能 APK 使用的是历史 StaticLightColor 表达，不是当前 8 B/20 B v4 布局的设备验证，也没有覆盖 StaticBakerySh 顶点成本。
-- Lightmap 代理的合并峰值、Bake 内存、多 Scene 队列、Domain Reload、Bakery 升级和 Quest 当前快照仍需专门验收。
+- Bakery 1.98 的历史真实 Bake 支持“代理投影 → 清理 → 无代理 L2 Probe → 逐株压缩 → BRG 显示”主链；它不能替代升级后的重新验证。
+- Windows Editor 的 32 B Buffer 回读只验证运行时 ABI，没有重新验证 Bakery 作者链或 Quest 性能。
+- 历史 Quest 性能构建使用旧版 StaticLightColor 表达，不是当前 8 B/20 B 光照布局的设备验证，也没有覆盖 StaticBakerySh 顶点成本。
+- Lightmap 代理合并峰值、Bake 内存、多 Scene 队列、Domain Reload、Bakery 升级和目标设备表现仍需专门验收。
 
-#### 十三、当前状态与采用检查清单
+#### 十三、生产采用门禁
 
-源码静态证据显示当前实现已具备：
+当前首先缺少以下硬门禁；任一项未满足，都不能把流程标记为生产可用：
 
-- [x] Prototype 只保存可复用声明；逐株场景光照写入 SceneAsset/Heap；两种模式分别使用 8 B 与 20 B 稀疏 payload，并共享每 Heap 128 B 量化参数。
-- [x] Full Render 阶段只为启用投影的 Cell 生成代理；已进入受保护生命周期且结束时可重新定位的目标在正常结束、失败或取消时会尝试清理 Storage 引用、Renderer、根对象与临时 Mesh。受保护区前异常或目标丢失仍可能跳过清理；关闭投影的 Cell 仍可作为 Probe/SceneAsset 编译目标。
-- [x] 代理按 Heap、Material 和顶点容量护栏分块，使用 ShadowsOnly、LightProbeUsage.Off 与 ScaleInLightmap=0；代理根和生成目录按源 Scene/SceneAsset 隔离。
-- [x] 需要代理清理后自动 Probe 且目标 Scene 不唯一时拒绝启动；Probe 第一次恢复后执行 L2 模式和 SH 一致性校验，通过后才进入 SceneCompiler。LightingDataAsset 已在该校验前保存，不能与 SceneAsset 更新混为一个提交点。
+- [ ] Cleanup 后逐目标证明代理根、生成目录和受检查 Bakery Storage 引用全部为零；删除失败、目标丢失或归属不明必须阻止自动 Probe。
+- [ ] 将恢复的 L2 数据绑定到唯一目标 Scene 与 Bake 世代，不能只校验数量、位置和系数内容。
+- [ ] 为 Bake 中 Domain Reload 持久化最小恢复状态，并证明新域能够接管或安全清理同一世代。
+- [ ] 对 LightingDataAsset、整份 SceneAsset 和 BRG 发布执行失败注入，并提供成对恢复或候选发布协议。
 
-本轮真实运行验证边界：
-
-- [x] 历史 Bakery 1.98 金样覆盖代理投影、清理、无代理 L2 Probe、两种记录编译和 BRG 显示主链。
-- [ ] 本轮知识整理没有重新执行真实 Bakery Bake；当前 EditMode/PlayMode 回归不能替代该步骤。
-
-当前已知缺口与采用要求：
-
-- [ ] Bakery 未安装时的反射类型负结果没有稳定缓存；初始能力门禁也没有覆盖清理与 Probe 恢复使用的全部反射成员。
-- [ ] Bake 中 Domain Reload 的受管运行时 Cell、Bake 世代与代理工作集没有持久恢复协议，不能声称 Reload 分支已经进入完整幂等清理。
-- [ ] Cleanup 后没有代理根、生成目录与 Bakery Storage 引用的可执行残留门禁；删除失败或目标丢失也未统一阻止自动 Probe。
-- [ ] Finished Full Render 不是逐 Scene Lightmap 输出验证；取消或失败后的部分 Bakery Storage、Lightmap 与 LightingDataAsset 输出没有自动回滚。
-- [ ] LightingDataAsset、整份 SceneAsset 与 BRG 尚无跨资产两阶段发布；采用前要做 Probe 恢复、逐 Heap 编译、Save 和 PublishNotification 的失败注入。
-- [ ] Prototype 引用刷新只会重编译或标记待采样，不会自动重跑 Lightmap/Probe；必须把“依赖已刷新”与“静态光照已重烘焙”分开验收。
-- [ ] 光照模式、每株字节数、每 Heap 量化数据与 C#/HLSL ABI 使用共同版本门禁；升级 Bakery 或 Unity 后先做能力自检和最小真实 Bake。
-- [ ] 代理合并峰值、Bake 内存、多 Scene 队列、Domain Reload 故障恢复，以及 StaticBakerySh 在目标移动设备上的顶点带宽与 ALU 仍未验证。
+在补齐硬门禁后，还要确认：代理按 Heap、Material 和容量护栏分块；关闭投影的 Cell 仍可进入 Probe/编译目标；多 Scene 时逐 Scene 验证输出；反射能力在 Bake 前覆盖启动、结束、清理和 Probe 恢复；Prototype 刷新与重新烘焙分开验收；升级 Unity/Bakery 后执行能力自检和最小真实 Bake。代理合并峰值、Bake 内存及 `StaticBakerySh` 的目标设备成本仍需单独测量。
 
 ### 相关记录
 
 - [统一 BRG 架构](./unity-vegetation-unified-brg-architecture.md) - SceneAsset、Heap、Buffer、渲染会话和资源释放边界。
 - [BRG 逐株 Buffer 的 32 字节压缩与量化 ABI](./unity-brg-packed-instance-buffer-quantization.md) - 当前运行时如何把模式、HeapIndex 和稀疏记录索引装入 32 B，并维持 CPU/GPU 一致。
 - [植被 Painter 作者工作流与事务设计](./unity-vegetation-painter-authoring-transaction-workflow.md) - Prototype 刷新和 SceneCompiler 如何进入光照重采样。
-- [Quest 3S BRG 与普通 GO 性能基线](./quest-vegetation-brg-performance-lighting-validation.md) - 历史设备数据、光照路径差异和当前 v4 验证边界。
+- [历史 Quest 3S BRG 与普通 GO 系统观察](./quest-vegetation-brg-performance-lighting-validation.md) - 历史设备数据、光照路径差异和当前光照布局验证边界。
 - [ASE Shader Bakery 集成](./ase-shader-bakery-integration.md) - 常规 Renderer Shader 的 Bakery 集成背景。
 - [Bakery SH 与 Toon 光照对齐](./bakery-sh-toon-lighting-liltoon-alignment.md) - Ar/Ag/Ab 与方向性光照计算的相邻经验。
 
 ### 验证记录
 
-- [2026-08-25] 复核 Bakery 可选反射接入、完整 Render 代理、Storage 清理、无代理 Probe、L2 恢复、8 B/20 B 稀疏记录、每 Heap 量化和 BRG Shader 解码链；EditMode `239/239`、PlayMode `11/11` 只作为同日工程回归摘要，不单独证明真实 Bakery 全链。
-- [2026-08-25] 将多 Scene 自动 Probe、反射能力覆盖、未安装负缓存和 Domain Reload 恢复列为明确边界；没有把既有金样升级为本次重跑结论。
-- [2026-08-26] 同步运行时 32 B 逐株 ABI、Shader 寻址和最终 `244/244 + 11/11` Editor 回归边界；Heap 量化表与 8 B/20 B 光照 payload 未改变，本轮仍未重跑 Bakery 或 Quest。
+- [2026-08-26] Bakery 1.98 的历史 Bake 支持“投影代理→清理尝试→L2 Probe→8/20 B 逐株编译→BRG 消费”主链；零残留硬门禁、Bake 世代绑定、失败恢复、Domain Reload、升级兼容和目标设备表现仍未验证。
 
 ---
