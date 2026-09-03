@@ -1,247 +1,241 @@
-# Unity BRG 植被的 Bakery L2 静态光照与投影代理流程
+# Unity BatchRendererGroup（BRG）植被接入 Bakery L2（二阶球谐 SH）静态光照：投影、采样与生产边界
 
 **标签**：#unity #graphics #architecture #rendering #shader #editor
-**来源**：工程实践抽象 - BRG 植被静态光照、烘焙代理与运行时解码
+**来源**：冻结工程实现分析与内部历史观察 - BRG 植被静态光照、烘焙代理与运行时解码
 **收录日期**：2026-08-25
 **来源日期**：2026-08-25
-**更新日期**：2026-08-26
-**状态**：⚠️ 待验证
-**可信度**：⭐⭐⭐（Bakery 1.98 的历史 Bake 支持代理、Probe、逐株编译与 Shader 消费主链；零残留硬门禁、失败恢复、Domain Reload 和升级闭环尚未完成）
+**更新日期**：2026-09-03
+**状态**：📘 有效
+**可信度**：⭐⭐⭐（核心机制已由冻结源码静态核对；历史真实 Bake 缺少可公开复跑的证据包，生产故障门禁和目标设备成本尚未验证）
 **适用版本**：Unity 2022.3 LTS、URP 14、BatchRendererGroup、Bakery 1.98；升级 Bakery 时必须重验反射契约
 
 ---
 
 ### 概要
 
-BRG 植被没有逐株 MeshRenderer，Bakery 在收集静态投影物时看不到它们。生产级目标链是：完整 Lightmap 烘焙前临时生成只投影、不接收 Lightmap 的合并代理；Bakery 报告结束后验证输出并彻底清理代理；需要静态 Probe 的场景再在无代理状态下烘焙并验证 L2；最后按实例采样并压缩到场景植被资产，运行时由 BRG Shader 读取。投影贡献和 Probe 接收是两个独立开关：不投影的运行时 Cell 仍可能需要从静态 Probe 编译逐株光照。
+Unity `BatchRendererGroup`（BRG）是一套由程序提交批量实例、而不是为每株植物保留 `MeshRenderer` 的渲染接口。Bakery L2 是 Bakery 烘焙出的二阶球谐光照探针；球谐函数（Spherical Harmonics，SH）用每个颜色通道九个系数近似记录一个位置从各方向收到的低频间接光。两者直接组合时存在断层：BRG 植被没有可供 Bakery 收集的逐株 Renderer，也不能自动获得普通 Renderer 的 Probe 数据。
 
-> **生产采用警告**：参考实现会尝试清理代理对象、临时 Mesh 和 Bakery Storage 引用，但尚无“代理根、生成目录和 Storage 引用全部为零”的可执行残留门禁；受保护区之前异常、目标丢失或 Domain Reload 仍可能留下不一致状态。完整 Bake 结束不能被当成自动验证和原子发布。
+本文分析的实现用两条彼此独立的路径弥合断层：完整 Lightmap 烘焙前，临时生成只投射阴影、不占 Lightmap 图集的合并代理；Probe 烘焙完成后，在编辑器中为每株实例采样一次 Bakery L2，再保存为“最终静态 RGB”或“可按顶点法线求值的紧凑方向参数”。运行时不再查询 Unity Probe 系统，只从 BRG Buffer 读取已编译结果。
 
-这条链路必须严格区分三类数据：Prototype 保存可跨场景复用的几何与光照模式声明；场景植被资产保存逐株静态光照；代理和合并 Mesh 只是一次烘焙的临时产物。任何一层所有权混淆，都会造成场景光照污染 Prototype、代理残留或运行时重复渲染。
+运行时数据按 `Cell → SceneAsset → Heap` 理解：Cell 是场景中的一个植被管理单元，并引用一份 SceneAsset；SceneAsset 是该区域全部植被实例和场景专属光照的权威资产；Heap 是 SceneAsset 内按空间划分的实例块，也是光照量化和粗粒度运行处理的单位。Prototype 只保存跨场景复用的网格、材质、Bounds 和光照模式声明，不保存某个场景的逐株光照。
 
-参考实现采用 Unity `2022.3.62f3`、URP 14 与 Bakery 1.98。代理、清理、Probe 恢复、SceneAsset 编译和 Shader 消费主链已有实现与历史真实 Bake 证据；当前 32 B 运行时记录只改变消费端寻址，没有重新验证 Bakery 作者链。升级 Unity 或 Bakery 时仍需执行最小真实 Bake，并验证残留、每 Scene 输出和失败恢复。
-
-本文术语：**Heap** 是 SceneAsset 内部空间块；**authored Probe** 是目标 Unity Scene 中作者实际放置的 Light Probe；**无代理 Probe** 是在投影代理清理尝试之后启动的 Bakery Probe；**Bakery Storage** 是第三方插件保存 Renderer、Lightmap 与 Probe 中间/结果引用的数据；**Bake 世代**表示一次具体 Bake 的目标与输出身份，当前实现没有持久世代账本；**PublishNotification** 是 SceneAsset 保存后的编辑器变更通知，不是文件提交事务。
+冻结源码足以证明上述数据流和当前失败边界，但不能单独证明一次真实 Bake 的画面正确或生产恢复能力。历史案例曾观察到正常 Bake、代理清理和两种 Shader 输出差异，但缺少公开证据包，因此本文将其列为不可独立复核的内部观察，不据此标记“已验证”。
 
 ### 内容
 
-#### 一、先明确目标与非目标
+#### 一、问题、目标与非目标
 
-目标是让无 GameObject 的 BRG 植被：
+目标是让没有逐株 GameObject 的 BRG 植被同时具备：
 
-- 对 Lightmap 场景产生静态阴影；
-- 从 Bakery L2 Probe 获得与位置相关的静态照明；
-- 不为每株植物常驻 MeshRenderer、LightProbeProxyVolume 或动态 BlendProbes 绑定；
-- 保持场景光照数据随 SceneAsset/Heap 分区，而不是写回 Prototype。
+- 对静态场景的 Lightmap 产生植被阴影；
+- 从 Bakery Probe 获得随实例位置变化的间接光；
+- 不为每株植物常驻 Renderer、动态 Probe 绑定或 Lightmap UV；
+- 把场景光照保存在对应 SceneAsset/Heap，而不是污染可跨场景复用的 Prototype。
 
-该流程不是逐株 Lightmap 贴图方案。代理 Renderer 使用 `ShadowsOnly` 且 `ScaleInLightmap = 0`，它们的任务是让 Bakery 收集投影几何，不是给每株植被生成 Lightmap UV 和纹理映射。
+投影贡献和 Probe 接收是两个不同问题。关闭某个 Cell 的投影，只表示完整 Lightmap 阶段不为它生成代理；如果它的 Prototype 选择静态 Probe 光照，仍需要把最新 Probe 编译进 SceneAsset。
 
-#### 二、数据所有权
+该方案也不是逐株 Lightmap 方案。代理使用 `ShadowsOnly` 且 `ScaleInLightmap = 0`，作用是让 Bakery 看见投影几何；运行时植被不会读取代理的 Lightmap UV 或纹理区域。
 
-| 数据 | 所有者 | 是否可跨场景复用 | 生命周期 |
-|---|---|---:|---|
-| Mesh、Material、LOD0、视觉 Bounds、风摆上限、光照模式声明 | Prototype | 是 | 资源生命周期 |
-| 实例 TRS、Heap、逐株静态颜色或方向性 SH 记录 | SceneAsset | 否 | 场景内容生命周期 |
-| 合并投影 Mesh、代理 Renderer、代理根对象 | Bakery 临时工作集 | 否 | 一次完整 Bake；结束或失败必须清理 |
-| BRG GPU Buffer 与量化参数 | 已加载运行时 Cell | 否 | 运行时 Cell 加载到卸载 |
+#### 二、数据所有权与失效条件
 
-逐株光照与实例位置、场景灯、遮挡关系直接相关，因此不能存到 Prototype。Prototype 刷新若改变视觉 Bounds 中心或光照模式，会改变采样位置或记录格式，必须要求受影响 SceneAsset 重新采样。若 Mesh、LOD0、Material、Alpha Clip、Cull 或其它投影 Shader 语义变化，代理投影也随之失效；所有引用该 Prototype 的目标 Scene 都必须重跑完整 Lightmap 链，存在 authored Probe 时还要在代理清理后重跑无代理 Probe，再重新编译逐株记录。只刷新 Prototype 文件或 SceneAsset 的依赖 Hash 不能替代重新烘焙。
-
-这里必须区分“当前刷新器会做什么”和“光照正确性还要求什么”：
-
-| Prototype 变化 | 当前刷新器行为 | 光照采用要求 |
+| 数据 | 所有者 | 生命周期 |
 |---|---|---|
-| 光照模式或视觉 Bounds 中心 | 只报告/累计待重新采样引用，不直接写回 SceneAsset | 若投影几何、材质、场景照明与已验证 L2 Probe 均未变，可复用该 Scene/世代已验证的 Probe，只重新采样并编译 SceneAsset；只有投影语义、场景照明或 Probe 场也失效时才重跑 Full Render、清理与无代理 Probe |
-| 仅视觉 Bounds 尺寸 | 自动重编译引用 SceneAsset，并保留原逐株光照记录 | 若只影响剔除而投影几何、材质和采样中心不变，可保留；否则按实际变化升级为重烘焙 |
-| Mesh、LOD、Material、碰撞或依赖 Hash | 显式执行 Prototype 刷新时扫描引用；采样中心未变时可保留旧逐株记录 | Mesh/LOD/Material/Alpha/Cull 改变静态投影时仍须逐 Scene 重跑 Full Render，旧记录“被保留”不等于 Bakery 输出仍有效；碰撞单独变化则不要求光照 Bake |
+| Mesh、Material、LOD0、视觉 Bounds、风摆上限、光照模式声明 | Prototype | 跨场景资源生命周期 |
+| 实例变换、Heap、逐株静态 RGB 或方向参数 | SceneAsset | 对应场景内容生命周期 |
+| 合并投影 Mesh、代理 Renderer、代理根 | Bakery 临时工作集 | 一次完整 Bake；结束或失败后应清理 |
+| BRG Buffer 与每 Heap 量化参数 | 已加载的运行时 Cell | Cell 加载至卸载 |
 
-当前没有资产导入后自动遍历全部引用的可靠后台协议；Material 的 Alpha/Cull 等属性也主要依赖整体依赖 Hash，而非逐字段缓存。因此发布 Prototype 前应显式执行刷新扫描，并把“引用已重编译”和“目标 Scene 已重新烘焙验证”作为两个独立状态。
+逐株光照依赖实例位置、场景灯光、遮挡和 Probe 布局，所以不能写入 Prototype。以下变化需要分别判断：
 
-#### 三、当前实现的 Full Render 与 Probe 流程
+- 只改视觉 Bounds 尺寸而不改中心、投影几何和材质时，可重建剔除数据并保留光照。
+- 改视觉 Bounds 中心会改变采样点，必须重新采样 SceneAsset。
+- 改 Mesh、LOD0、Material、Alpha Clip 或 Cull 会改变静态投影，必须对引用它的场景重跑完整 Lightmap；存在 Probe 时还要重跑无代理 Probe，再编译逐株光照。
+- 只改碰撞形状不影响本文光照链。
 
-下面画的是当前行为，不是理想化的原子事务：
+当前刷新器能够扫描 Prototype 依赖并重编译引用，但“引用资产已重编译”和“目标场景已经重新烘焙并验证”是两个状态，不能用依赖 Hash 代替真实光照结果。
+
+#### 三、正常路径：先投影，再在无代理状态下取 Probe
+
+下面区分当前实现和生产要求。实线节点来自冻结源码；标为“生产门禁”的节点尚未接入 Bakery 原生面板的自动生命周期。
 
 ```mermaid
 flowchart TD
-    A[Bakery Full Render 前事件] --> B[检查反射能力并纳管全部有效运行时 Cell]
-    B --> C{该 Cell 启用投影?}
-    C -- 否 --> D[不生成代理；仍保留为 Probe/编译目标]
-    C -- 是 --> E[按 Heap → Material → 顶点上限合并 LOD0]
-    E --> F[创建 ShadowsOnly 临时 Renderer]
-    D --> G[Bakery 执行 Full Render]
-    F --> G
-    G --> H[Finished 事件或异常/取消边沿]
-    H --> I[尝试移除 Storage 引用并销毁代理/临时 Mesh]
-    I --> J{收到 Finished 且 userCanceled=false?}
-    J -- 否 --> K[停止；不启动自动 Probe/SceneCompiler；部分 Bakery 输出未验证也未回滚]
-    J -- 是 --> L0{存在受管 Probe/SceneAsset 刷新目标?}
-    L0 -- 否 --> Z[结束]
-    L0 -- 是 --> L{本次曾生成代理?}
-    L -- 是 --> L2{目标 Scene 存在 authored Probe?}
-    L2 -- 是 --> M{全部已加载 Scene 是否只剩唯一目标 Scene?}
-    M -- 否 --> N[拒绝自动 Probe；要求逐 Scene 重跑完整链]
-    M -- 是 --> O[Cleanup 返回后启动 Bakery Probe；当前未证明零残留，自动入口要求 L2]
-    L2 -- 否 --> P[不启动自动无代理 Probe]
-    L -- 否 --> P
-    O --> Q[Finished Probes]
-    P --> R[逐目标尝试从当前 Bakery Storage 恢复 Probe]
-    Q --> R
-    R --> RS{恢复成功?}
-    RS -- 否 --> X1[报告目标失败或保留旧 SceneAsset；不进入 SceneCompiler]
-    RS -- 是 --> S[先保存 LightingDataAsset，再校验 L2/数量/位置/系数]
-    S --> SX{恢复与校验通过?}
-    SX -- 否 --> X2[报告目标失败；不进入 SceneCompiler]
-    SX -- 是 --> T[RefreshProbeLighting 再次恢复并保存 LightingDataAsset；异常见第九节]
-    T --> U[SceneCompiler RefreshAll：采样、压缩、Save SceneAsset；异常见第九节]
-    U --> V[PublishNotification 后刷新已加载 BRG；异常见第九节]
+    A[Bakery 完整 Lightmap 开始] --> B[枚举有效 Cell]
+    B --> C{Cell 开启投影?}
+    C -- 是 --> D[按 Heap、Material 和顶点上限合并 LOD0 代理]
+    C -- 否 --> E[不生成代理，但保留为后续 Probe/编译目标]
+    D --> F[Bakery Full Render]
+    E --> F
+    F --> G[结束事件且未取消]
+    G --> H[生产门禁：逐 Scene 验证本次 Full Render 输出身份与完整性]
+    H -->|失败| X[停止后续阶段，检查部分写入或恢复已知良好资产]
+    H -->|通过| I[移除 Bakery 引用并清理代理与临时 Mesh]
+    I --> J[生产门禁：证明零残留]
+    J -->|失败| X
+    J -->|通过且本次用过代理、场景有 Probe| K[仅在唯一目标 Scene 下启动无代理 Bakery L2 Probe]
+    J -->|通过且无需追加 Probe| L[验证当前 Probe]
+    K --> M[验证 L2、数量、位置、系数及 Scene/Bake 身份]
+    L --> M
+    M -->|失败| X
+    M -->|通过| N[逐株采样、压缩并保存 SceneAsset]
+    N --> O[发布变更并刷新已加载 BRG]
 ```
 
-这里的 `Finished` 只表示观察到 Bakery 结束事件，`userCanceled=false` 只表示没有读到用户取消；当前集成没有据此逐 Scene 验证 Lightmap、Storage、LightmapSettings 或 LightingDataAsset 的完整性。因此不能把该节点写成“Lightmap 已验证完成”。某个运行时 Cell 关闭投影只会跳过代理生成，不会把它从受管 Probe/SceneAsset 刷新目标中移除。若没有 authored Probe，当前链不会启动自动无代理 Probe；后续只能尝试恢复当前 Storage，失败时保留旧 SceneAsset 或报告错误，不能假设存在可用新 Probe。
+当前自动生命周期已经实现 A 至 G、代理清理尝试、唯一 Scene 条件下的自动无代理 Probe，以及 Probe 验证后的 SceneAsset 刷新；但它没有把 H 和 J 作为硬门禁。换言之，观察到 Bakery 的 Finished 事件且没有取消，只能说明流程抵达结束边沿，不能证明新 Lightmap 已完整应用，也不能证明清理后零残留。
 
-生产采用必须在 I 与 O 之间另加硬门禁：代理根不存在、生成目录已删除、受检查 Storage 集合无本世代引用，并且要能确认将要恢复的 L2 数据属于当前目标 Scene 与 Bake 世代。当前代码没有这两个门禁，所以图中的 O 特意写成“Cleanup 返回后”，而不是“已经无代理”；内容校验也不能单独证明数据时效与场景归属。
+Probe 阶段必须没有投影代理。代理虽然关闭了自身 Probe 接收，却仍是 Bakery 可见的静态投影/遮挡几何；若它留在 Probe Bake 中，高密度植被可能遮挡自己的采样环境，使运行时不存在的辅助对象改变最终 Probe。
 
-Probe 的精确持久化顺序也很重要：第一次 `TryRestoreLightProbeResultFromStorage` 会先把 SH 写入全局 `LightmapSettings.lightProbes` 并立即保存 LightingDataAsset，随后才做 L2、数量、位置与系数校验；`RefreshProbeLighting` 又执行一次恢复/保存，之后才调用 SceneCompiler、保存 SceneAsset、发布通知并刷新宿主。LightingDataAsset、SceneAsset 与 BRG 因而不是一个事务。
+#### 四、投影代理的生成与成本
 
-自动 clean Probe 入口和显式验证入口会要求 Bakery L2；用户直接从 Bakery 原生面板发起 Full Render 时，当前植被集成不会预先强制修改其 Probe 模式，只会在恢复/校验阶段拒绝不符合 L2 的结果。因此发布流程仍要把“Bake 前模式门禁”作为显式步骤，不能只依赖结束时报错。
+代理以 Heap 为第一层边界，再按 Material 分组，并按约 400k 顶点的实现上限继续分块。这个数是防止单 Mesh 无界增长的容量护栏，不是跨机器验证过的通用峰值。代理使用 LOD0，使静态投影接近近景主形态，也因此增加临时合并内存和 Bakery 追踪成本。
 
-为什么 Probe 阶段必须无代理：Probe 在 LightProbeGroup 的探针位置采样，代理本身因 `LightProbeUsage.Off` 不是额外探针采样目标；风险在于残留代理仍可能被 Bakery 当作额外投影/遮挡几何参与 Probe Bake，或留下错误的场景与 Storage 引用。运行时实际只有 BRG 植被，不应让一次烘焙辅助对象改变最终 Probe 结果或进入场景保存。当前清理函数会尝试做到这一点，但尚无清理后的可执行残留门禁，因此“无代理”仍需验证，不能只由 Cleanup 返回推定。
+每个代理 Renderer 的关键语义是：
 
-#### 四、投影代理如何生成
+- `ShadowCastingMode.ShadowsOnly`：只贡献阴影，不显示代理表面；
+- `LightProbeUsage.Off`：代理自身不接收 Probe；
+- `ContributeGI`：让 Bakery 把它当作静态 GI 几何；
+- `ScaleInLightmap = 0`：参与追踪但不占用 Lightmap 图集；
+- 保留原 Material，以维持 Alpha Clip、Cull 等投影轮廓；
+- 按源 Unity Scene 与 SceneAsset GUID 命名和归属，避免同一场景多个 Cell 互相清理。
 
-代理生成以 Heap 为首层边界，再按 Material 分组，并把单个合并 Mesh 限制在可控顶点数内。当前参考实现把每块上限设为约 400k 顶点；它是防止无界合并的容量护栏，不是经过跨机器验证的通用安全峰值。使用 LOD0 是为了让静态阴影与近景主形态一致，但这会增加烘焙内存和临时合并成本，必须分块而不能把整个世界合成一张 Mesh；具体上限仍要按编辑器内存与 Bake 峰值测量。
+按 Heap 分组只是控制生成、清理与失败影响范围，不意味着一个 Heap 等于一个运行时 Draw Call。
 
-每个代理 Renderer 的关键配置是：
+#### 五、Probe 插值与唯一采样点
 
-- `ShadowCastingMode.ShadowsOnly`；
-- `LightProbeUsage.Off`；
-- 标记为静态 GI 贡献者；
-- `ScaleInLightmap = 0`；
-- 保持可被 Bakery 正常收集的对象可见性，不使用会让第三方收集器忽略它的隐藏标记；
-- 代理根、Renderer 和合并 Mesh 都记录到本次受管工作集，禁止靠名称模糊扫描清理。
+正式刷新入口先要求存在非空 `LightmapSettings.lightProbes`，且 `bakedProbes` 数量与 Probe 数量一致；否则拒绝覆盖 SceneAsset。通过后，每株实例只生成一个采样请求：
 
-按 Material 分组可保持 Alpha Clip、Cull 和投影 Shader 语义。按 Heap 分组则限制失败影响和单块合并规模；它不意味着运行时一个 Heap 对应一个 Draw Call。
+1. 由 Heap 原点、Cell 变换和实例变换组成该实例的世界矩阵。
+2. `VisualRootSpaceBounds.center` 表示 Prototype 可见几何在自身根坐标中的包围盒中心；世界矩阵把这个中心变成该株的世界采样位置。
+3. 同一世界矩阵把实例局部 `Vector3.up` 转为世界方向并归一化；退化为零向量时回退到世界向上。该方向仅供“最终静态 RGB”模式预先评估一次光照。
+4. Unity 的 `LightProbes.CalculateInterpolatedLightAndOcclusionProbes` 为全部位置批量返回插值后的 `SphericalHarmonicsL2` 和遮挡值。
 
-#### 五、清理必须同时覆盖 Unity 对象和 Bakery Storage
+当前编译器使用返回的 SH，却不保存返回的 Occlusion Probe 值。这意味着本文两种记录都不包含 Unity Occlusion Probe 通道。
 
-只销毁代理 GameObject 不够。Bakery 会在自身 Storage 中保存 Renderer、Object 和场景索引引用；残留引用可能在后续 Bake 中指向 Missing 对象，或让旧代理再次被处理。目标清理顺序是：
+冻结源码没有实现“采样点是否位于有效 Probe 四面体覆盖内”的显式检测，也没有定义覆盖范围外的自有回退；它把空间插值行为交给 Unity API。因此本文不能声称范围外一定取最近 Probe、环境色或黑色。生产场景必须让 Probe 体覆盖所有实例采样点，并用边界夹具验证结果；若需要严格拒绝范围外样本，应另加覆盖判定。没有有效 Probe 集时，正式刷新入口会拒绝继续，而不是生成一份已知的默认颜色。
 
-1. 从 Bakery Storage 的所有相关集合移除本次代理 Renderer/Object。
-2. 标记受影响 Storage 资产已修改，并在安全时保存。
-3. 销毁代理根和 Renderer。
-4. 销毁本次生成的临时合并 Mesh 资产或内存对象。
-5. 清空受管目标、Bake 状态和事件边沿标记。
+#### 六、两种逐株表示保留了什么
 
-失败、用户取消、脚本异常和正常完成都应进入同一个幂等清理函数。再次调用清理不应抛出异常或删除非本次创建的对象。清理后还应执行可证伪门禁：逐目标确认确定性代理根不存在、生成目录已删除、受检查的 Storage 集合不再引用本世代 Renderer/Object；任何一项残留都必须阻止自动 Probe。
+Bakery 恢复出的输入是 Unity `SphericalHarmonicsL2`：每个 RGB 通道九个系数，共 27 个浮点数。两种模式都以这个完整 L2 结果为源，但输出不同。
 
-当前实现只完成了前半段：会尝试从若干 Bakery Storage 集合删除引用、销毁根与生成 Mesh 目录，但没有上述 post-clean 残留扫描，资源删除返回失败也没有成为硬错误。若 Full Render 前的全量刷新在进入受保护区前抛错，或结束时无法重新定位某个运行时 Cell，对应目标的清理还可能被跳过。因而“调用过 Cleanup”不等于“已经证明无代理”；这是当前最高优先级的采用缺口。
+##### 6.1 StaticLightColor：把一个方向的完整 L2 固化成 RGB
 
-#### 六、从 Bakery L2 到两种逐株记录
+编译器用实例的局部向上方向，计算完整 L0/L1/L2 多项式并把负辐照度钳到零，得到一个 RGB。随后在每个 Heap 的最小值/步长范围内把三个通道量化为 12 bit，并以 8 B 对齐记录保存。
 
-Probe Bake 完成后，集成层从 Bakery Storage 恢复探针位置和 SH 数据，先写回并保存 Unity LightingDataAsset，再校验，刷新入口中还会重复一次恢复/保存；SceneCompiler 随后以每株 `VisualRootSpaceBounds.center` 作为单一采样点。当前有两种互斥的 Prototype 光照模式：
+输入是“该位置的 27 个 SH 系数 + 一个固定世界方向”，输出是“三通道最终辐照度”。它保留该位置、该方向上的完整 L2 评估结果，但丢失：换一个法线方向重新求值的能力、同一株不同顶点的位置差异、Occlusion Probe，以及量化精度之外的细节。运行时只解量化 RGB，不再读取顶点法线计算 SH。
 
-| 模式 | 编译阶段 | 每株稀疏记录 | 运行时 |
-|---|---|---:|---|
-| StaticLightColor | 从完整 L2 探针按实例局部向上方向求最终 RGB | 8 B | 直接读取最终颜色；不按顶点法线重算 |
-| StaticBakerySh | 从 L2 来源提取 Bakery Ar/Ag/Ab 方向性表示并量化 | 20 B | Shader 按顶点法线执行 Geomerics 方向评估 |
+##### 6.2 StaticBakerySh：从 L2 源提取紧凑方向参数
 
-SceneAsset 只为每株保存其实际模式所需的记录，不为另一种模式预留空间。表中的 8 B/20 B 都只是稀疏光照 payload，不包含矩阵、实例参数、光照寻址、Buffer 头和底层分配对齐。每个 Heap 另保存 128 B 量化参数，用来把压缩整数恢复到该 Heap 的浮点范围；这是每 Heap 开销，不是每株第三种记录。实例记录携带 LightingMode、HeapIndex 和稀疏记录索引，使两种模式可以在同一个运行时 Cell Buffer 中寻址。
+`Ar/Ag/Ab` 是红、绿、蓝三个通道各自的一组四维参数：`w` 保存平均/常量项，`xyz` 保存一阶方向项。源码从每通道九个 L2 系数构造这四个值，其中系数 6 会折入常量项；系数 4、5、7、8 不进入记录，系数 0 与 6 也不能从折叠后的常量中分别恢复。因此 20 B 记录不是“运行时保存完整 Bakery L2”，而是“由 Bakery L2 来源派生的三组方向参数”。
 
-`StaticLightColor` 的带宽和顶点 ALU 更低，但丢失随法线方向变化的明暗；`StaticBakerySh` 保留更多方向性，每个顶点要读取压缩数据并执行评估。选择应依据植物形态和真机测量，而不是把“来源是 L2”误写成“两种模式都在 GPU 完整计算 L2”。
+每株共 12 个参数，以每 Heap 最小值/步长做 12 bit 量化：理论载荷 144 bit，最终按五个 `uint` 对齐为 20 B。运行时解量化后，按每个顶点旋转到世界空间的法线调用 Geomerics 方向评估。Geomerics 在这里指一种由平均能量和一阶主方向重建非线性漫反射瓣的近似；输出仍是顶点 RGB，而不是恢复 27 个 L2 系数。
 
-#### 七、运行时消费接口
+该模式保留了随顶点法线改变明暗的能力，比固定 RGB 更适合立体叶片；它丢失完整二阶角向信息、Occlusion Probe、同株空间变化和量化精度。它的运行时成本还包括每顶点读取 20 B 稀疏记录、解量化和三通道方向评估，不能由静态 RGB 的旧设备数据代替。
 
-运行时逐株记录只向光照系统提供三个地址字段：`HeapIndex`、`LightingMode` 和对应模式的稀疏记录索引。光照数据本身仍由每 Heap 128 B 量化参数、每株 8 B `StaticLightColor` 或每株 20 B `StaticBakerySh` 组成；空表需要合法哨兵和对齐，但不能生成可绘制记录。32 B 逐株记录的变换量化、位段和 Metadata 寻址见[BRG 逐株 Buffer 的 32 字节压缩与量化 ABI](./unity-brg-packed-instance-buffer-quantization.md)。
+| 模式 | 编译输入 | 每株稀疏记录 | 运行时输入 | 主要损失 |
+|---|---|---:|---|---|
+| StaticLightColor | 完整 L2 + 实例局部向上方向 | 8 B | 已固化 RGB | 所有其它法线方向和 Occlusion |
+| StaticBakerySh | 完整 L2 | 20 B | 紧凑 Ar/Ag/Ab + 顶点世界法线 | 不可恢复完整 L2，且不含 Occlusion |
 
-Shader 从可见实例取得光照地址，按 Heap 参数解量化静态 RGB 或 Bakery SH，再与 BaseMap、颜色、Alpha Clip、雾和顶点风摆组合。`StaticBakerySh` 还需要按顶点法线执行方向评估，其移动 GPU 成本必须与网格密度、双眼、过绘制和读带宽共同测量；历史 `StaticLightColor` 设备数据不能代替这项验证。
+SceneAsset 只为实际使用某模式的实例分配对应稀疏记录。每个 Heap 另保存 128 B 的最小值/步长参数，供两张表解量化；这 128 B 是每 Heap 固定开销，不是第三种逐株记录。逐株 32 B 主记录只保存光照模式、Heap 索引和稀疏记录索引，用来寻址真正的光照载荷。
 
-#### 八、多运行时 Cell 与多 Unity Scene 的处理
+#### 七、Full Render 输出完整性的可执行定义
 
-同一 Unity Scene 可以有多个运行时 Cell，每个运行时 Cell 保存自己的 SceneAsset 和光照记录；完整 Bake 前可一起生成投影代理。当前参考实现对每个代理采用下面的确定性归属，不把 Additive Scene 中的临时对象都塞入 Active Scene：
+冻结实现已有一个结构检查函数。它检查目标 Scene 能否找到 Bakery Storage，并检查 `Storage.maps`——即 Bakery 在该场景记录的已导入 Lightmap 纹理列表——是否非空、每项是否为持久化 `Texture2D`；还检查 Unity `LightmapSettings.lightmaps` 非空、Bakery 的 Renderer/Map ID/ScaleOffset 三张并行表数量一致、Renderer 未丢失、Map ID 不越界、接收 Renderer 的 Unity LightmapIndex 有有效纹理，并要求至少一个接收 Renderer 已应用 Lightmap。这能识别空列表、空纹理、非持久纹理、并行表断裂、Missing Renderer、越界 ID 和未应用到 Unity 等明显部分写入。
 
-| 临时或跟踪对象 | 当前归属键 | 清理如何命中 |
-|---|---|---|
-| 代理根与 Renderer | 管理器所在源 Unity Scene + SceneAsset GUID | 根对象先移动到源 Scene；只在该 Scene 根节点中按该 SceneAsset 的固定根名查找 |
-| 临时合并 Mesh 目录 | 源 Scene GUID + SceneAsset GUID | 只删除该 Cell 对应的生成目录 |
-| Bakery Storage 引用 | 代理所在源 Unity Scene | 把该 Scene 和本次根下 Renderer/Object 集合传给 Storage 清理，不扫描其它 Scene |
-| 当前受管目标 | Scene 路径 + SceneAsset 路径 | Full Render 结束时重新定位同一 Cell，避免仅靠对象 InstanceID |
+但该检查只在专用验证工具中使用；Bakery 原生面板触发的植被自动生命周期没有在启动无代理 Probe 前强制调用它。它也没有 Bake 世代：不能证明当前非空列表是本次 Bake 产生的，不能排除旧完整数据与新部分数据混合，也不能证明全局 Unity Lightmap 数组属于正在核对的 Additive Scene。
 
-这个映射能隔离同一 Scene 的多个 Cell，也能隔离多个已加载 Scene；但“本次 Bake 世代”仍只存在于非持久 static 状态，没有写入代理根或磁盘清单。Domain Reload 后虽然可按确定性根名发现残留，不能证明它属于哪一次 Bake，也不能恢复准确的阶段进度。这是恢复协议缺口，不应被“路径已隔离”掩盖。
+因此生产门禁应采用下面的可执行定义；这是**生产要求，不是当前已经完整实现的行为**：
 
-Additive Scene 同时加载时，当前 Full Render 没有预先执行“只允许一个 Scene”的门禁：它会遍历全部有效运行时 Cell，并按上述源 Scene 归属生成/尝试清理代理。这只证明临时资源按 Scene 定位，不证明 Bakery 已为每个已加载 Scene 产生并验证了正确输出。若随后需要代理清理后的自动 Probe，只要加载 Scene 不满足唯一目标条件就会拒绝；即使另一个加载 Scene 没有植被目标，也可能触发该门禁。此时准确状态只能写成“Bakery 报告 Full Render 结束，代理清理已尝试，但每 Scene Lightmap 输出和清理残留尚未验证”，不能写成“Lightmap 已完成”。
+1. **Bake 前冻结身份**：生成持久 Bake ID，记录目标 Scene 的 GUID/路径、LightingDataAsset、Bakery Storage、受管 Cell/SceneAsset、预期代理和应接收 Lightmap 的 Renderer 集合，并保存旧有效输出指纹。
+2. **结束边沿有效**：必须收到对应 Full Render 完成事件、`userCanceled=false`，且目标 Scene 仍与清单身份一致；仅观察到 `bakeInProgress` 下降不算成功。
+3. **逐 Scene 结构完整**：对清单中的每个 Scene 执行现有结构检查，并要求所有预期接收 Renderer 都出现在一致的 Renderer/Map ID/ScaleOffset 映射中。
+4. **本次输出身份**：Lightmap 纹理、Storage 和 LightingDataAsset 的资产身份/内容指纹必须与 Bake ID、目标 Scene 和开始前快照形成可解释的新世代；“仍是旧完整值”或“新旧混合”都判失败。
+5. **识别部分写入**：任一空/丢失纹理、非持久纹理、列表数量不等、Missing Renderer、越界或未应用 Map ID、预期 Renderer 缺席、输出世代不一致、保存失败，都判为部分或不可归属输出。
+6. **后续阶段条件**：只有全部目标 Scene 的 Full Render 检查通过，并且代理根、生成目录和 Bakery Storage 中的本世代代理引用都已证明为零，才允许启动无代理 Probe。Probe 也必须通过 L2、数量、位置、全部系数以及相同 Scene/Bake ID 校验，才允许编译并发布 SceneAsset。
 
-如果不需要自动 clean Probe，当前代码会尝试逐目标恢复 Probe/编译 SceneAsset；但它读写的是全局 `LightmapSettings.lightProbes` 与 LightingDataAsset 状态，不足以证明多个 Unity Scene 之间的 Probe 数据隔离。安全操作不是只补跑一次 Probe，而是每次只加载一个目标 Scene，按该 Scene 重跑 Full Render 输出核对 → 残留验证 → 必要的无代理 L2 Probe → LightingDataAsset/SceneAsset 编译与发布整条链。一个完整的世界级方案仍需要显式 Scene 队列、每 Scene LightingDataAsset 句柄、Bake 世代和可恢复进度，而不是调用一次单场景 API。
+若任何检查失败，自动链必须停止，不得用“已有非空 Lightmap”继续，也不得覆盖旧 SceneAsset 光照。由于 Bakery 资产可能已被部分写入，恢复动作应是还原成对的已知良好 LightingDataAsset、Storage/Lightmap 和 SceneAsset 候选，或在单一目标 Scene 中重跑整条链，而不是依赖 Unity Undo。
 
-#### 九、失败状态与权威恢复
+#### 八、清理、失败与权威恢复
 
-“上一份有效光照仍在”不能作为通用口号。当前行为按失败点分层如下：
+只销毁代理 GameObject 不够。Bakery Storage 仍可能保存 Renderer/Object 引用，使后续 Bake 命中 Missing 对象或旧代理。目标清理应同时移除 Storage 引用、销毁代理根和临时 Mesh、删除本次生成目录，并清空受管状态；重复调用应安全且不能误删其它世代对象。
 
-| 失败点 | 当前可确认状态 | 不能推定 | 恢复动作 |
+当前实现会尝试这些动作，但没有清理后的零残留扫描，资源删除失败也不是硬错误；在进入受保护区之前抛错，或 Bake 结束时无法重新定位某个 Cell，也可能跳过对应清理。所以“Cleanup 返回”不等于“零残留已证明”。
+
+| 失败点 | 当前能确认 | 不能推定 | 安全恢复方向 |
 |---|---|---|---|
-| Full Render 异常、未见 Finished 或用户取消 | 只有已经进入受保护生命周期且结束时仍能重新定位的目标才会尝试清理；不会启动自动 Probe/SceneCompiler；已经成功的其它目标不回滚。若 Full Render 前的刷新先抛错或目标丢失，可能根本没有进入清理 | Bakery 的 Storage.maps、LightmapSettings.lightmaps、LightingDataAsset 或其它部分输出仍是旧值、完整新值还是部分新值；代理已零残留 | 先执行独立残留扫描和每 Scene 输出核对；有任何不确定即从已知良好备份恢复光照资产，或对该 Scene 重跑完整链 |
-| 清理抛错、删除失败或目标无法重新定位 | 后续目标可能继续，失败目标可能残留 Storage 引用、根对象或 Mesh | “Cleanup 已调用”代表无代理 | 禁止进入自动 Probe；按世代/确定性标识清理并复查所有残留，无法证明归属时停止并人工核对 |
-| 第一次 Probe 恢复或随后 L2/数量/位置/系数校验失败 | LightingDataAsset 可能已在校验前保存新 SH；SceneCompiler 尚未开始 | LightingDataAsset 仍是上一份有效值 | 以已知良好 LightingDataAsset 备份为恢复源，或重新烘焙并完整校验；不要用 Undo 代替磁盘恢复 |
-| 第二次恢复、逐 Heap 编译或 SceneAsset Save 失败 | LightingDataAsset 已保存；SceneAsset 内存可能部分更新，磁盘结果需核对；PublishNotification 尚未完成 | 重新加载必然恢复到有效配对；Save 抛错等于零写入 | 比较 LightingDataAsset、SceneAsset 与已知良好候选；必要时从成对备份恢复两者，再重跑整份 SceneAsset |
-| SceneAsset Save 成功后 PublishNotification 或宿主刷新失败 | 已保存 SceneAsset 是默认权威，BRG 可能仍显示旧内容 | 重新提交作者数据能安全修复 | 以已保存资产强制重建宿主并重试通知；若要回退，必须成对恢复已知良好的 LightingDataAsset 与 SceneAsset |
+| Full Render 异常、取消或无完成事件 | 不启动自动 Probe/SceneCompiler；部分目标会尝试清理 | Lightmap 是旧值、完整新值还是部分新值 | 执行独立输出/残留检查；无法归属时还原已知良好资产或重跑 |
+| 清理失败或目标 Cell 丢失 | 其它目标可能继续 | 代理、临时 Mesh 与 Storage 引用已清零 | 阻止 Probe；按持久世代清单清理并复查 |
+| Probe 恢复或 L2/数量/位置/系数校验失败 | SceneCompiler 不应开始 | LightingDataAsset 一定仍是旧值；恢复函数可能已先保存新 SH | 成对还原已知良好 LightingDataAsset 与 SceneAsset，或重烘焙 |
+| SceneAsset 保存后发布通知/BRG 刷新失败 | 磁盘 SceneAsset 默认已成为新权威 | 屏幕正在显示新 Buffer | 从已保存资产强制重建 BRG；回退时还原成对资产 |
 
-Unity Undo 只在已明确登记且仍处于对应编辑会话时可能帮助恢复内存对象；它不是 LightingDataAsset、Bakery Storage 或文件保存失败的备份协议。`reload` 也只有在磁盘版本已经被独立确认良好时才安全。生产采用应保存已知良好版本或生成候选副本，并让 LightingDataAsset、整份 SceneAsset 和发布世代具有可核对的共同标识。
+#### 九、多 Cell、多 Scene 与 Domain Reload
 
-#### 十、可选第三方集成的反射边界
+同一 Unity Scene 可以包含多个 Cell，每个 Cell 各持有一份 SceneAsset。代理根用“源 Scene + SceneAsset GUID”区分，临时 Mesh 目录用“源 Scene GUID + SceneAsset GUID”区分，结束时用“Scene 路径 + SceneAsset 路径”重新定位管理器。这能隔离同一 Scene 内多个 Cell，也能避免把 Additive Scene 的代理都放进 Active Scene。
 
-正式 Editor 程序集可以通过反射保持 Bakery 可选，但反射不是“没有编译依赖就无需治理”。能力门禁至少要覆盖：
+它仍不等于多 Scene Bake 已闭环。当前 Full Render 可以同时枚举多个已加载 Scene，但自动无代理 Probe 要求唯一目标 Scene；全局 `LightmapSettings.lightProbes` 和 `LightmapSettings.lightmaps` 也不能单凭非空证明逐 Scene 归属。生产上应把每个 Scene 作为独立 Bake 单元，逐 Scene 完成输出身份、零残留、L2 Probe 与 SceneAsset 发布检查。
 
-- 完整 Bake 的启动入口和当前 `bakeInProgress` 状态；
-- Full Render、Finished Full Render 与 Finished Probes 事件；
-- 代理清理实际使用的 Storage 集合；
-- 探针恢复使用的前次 Probe 数组、位置和 SH 读取入口。
+Domain Reload（Unity 重新加载脚本域）后，事件会重新绑定；若 Bakery 已空闲，实现会按确定性根名尽力清理残留。但一次 Bake 的目标、阶段和代理工作集主要保存在易失的静态内存。源码中的 `_managedBakeActive` 就是“当前脚本域正在纳管一次 Bakery Bake”的布尔标记，而不是持久事务记录。若 Reload 发生在 Bake 中，新域无法恢复旧标记所代表的世代，也不会可靠续接旧世代收尾。
 
-已确认的维护风险包括：
+生产恢复需要把 Bake ID、目标 Scene、代理清单和阶段写入 `SessionState` 或磁盘清单；新域必须先验证所有权，再接管或清理同一世代，并以零残留门禁决定能否继续 Probe。
 
-1. Bakery 未安装时若不缓存“类型不存在”的负结果，Editor Update 可能反复遍历全部程序集。
-2. 初始能力检查若只覆盖启动和事件，而未覆盖清理/Probe 恢复字段，升级后可能“能开始、不能收尾”。
-3. Bakery 版本改变字段名、类型或事件签名时，反射失败必须在 Bake 前阻断，不能等到代理已经创建后才报错。
+#### 十、可选 Bakery 集成的反射边界
 
-应把第三方版本与已验证反射契约一起记录；升级 Bakery 后先执行能力自检和最小场景 Bake，再允许生产场景使用。
+编辑器程序集通过反射访问 Bakery，可以避免未安装 Bakery 时产生编译依赖，但会把风险转移到运行时能力检查。Bake 前至少要确认：启动方法、进行中状态、Full Render/Probe 完成事件、清理所需的 Storage 集合，以及 L2 Probe 恢复入口都仍符合 Bakery 1.98 契约。
 
-#### 十一、Domain Reload 与恢复风险
+版本升级后可能出现“能启动却不能收尾”。因此反射失败必须在创建代理之前阻断，并先在最小场景执行能力自检和真实 Bake；不能等到代理已经生成或资产已经写入后才发现字段/事件变化。
 
-受管运行时 Cell 列表、当前 Bake 标记和代理工作集若只保存在非持久 static 字段，脚本重编译或 Domain Reload 会丢失它们。若 Reload 发生在 Bake 中：
+#### 十一、成本与证据边界
 
-- 新域可能只观察到 `bakeInProgress = true`，却不知道哪些代理由旧域创建；
-- Bake 结束下降沿无法对应旧受管状态；
-- 自动无代理 Probe、SceneAsset 刷新或清理可能漏执行；
-- 场景中可能留下代理根或 Bakery Storage 悬空引用。
+- 作者阶段成本包括 LOD0 合并 Mesh、代理资产、Bakery 追踪和每株一次 Probe 插值；400k 顶点分块上限没有跨机器峰值数据。
+- 运行时每 Heap 增加 128 B 量化参数；每株按模式增加 8 B 或 20 B 稀疏光照载荷，另有主实例记录和 Buffer 对齐成本。
+- `StaticBakerySh` 有每顶点解码与 Geomerics 评估成本；其真机代价需结合双眼、网格顶点数、过绘制和带宽测量。
+- 一次内部历史场景曾记录 288 株、40 Heap、752 个 Probe，并将两种模式各用于 144 株；还观察到代理清理和 Shader 输出差异。由于没有随本文提供完整输入资产、操作脚本、原始输出、截图哈希和环境清单，这只是不可公开复核的历史观察，不能支撑“端到端已验证”或性能结论。
+- 32 B 主实例 Buffer 的回读验证只覆盖 CPU/GPU ABI；旧 Quest 数据使用过不同光照布局，不能证明当前 8 B/20 B 路径的设备表现。
 
-稳妥策略是使用 SessionState 或显式磁盘标记保存最小恢复信息，包括 Bake 世代、目标 Scene、代理根标识和当前阶段；Reload 前要么安全取消并清理，要么让新域能重新发现并接管同一世代。恢复逻辑必须先验证对象和 Storage 所有权，再执行删除。
+#### 十二、生产采用门禁
 
-#### 十二、验证与性能边界
+以下任一项缺失，都不能把这条 Bakery 链标记为生产可用：
 
-- Bakery 1.98 的历史真实 Bake 支持“代理投影 → 清理 → 无代理 L2 Probe → 逐株压缩 → BRG 显示”主链；它不能替代升级后的重新验证。
-- Windows Editor 的 32 B Buffer 回读只验证运行时 ABI，没有重新验证 Bakery 作者链或 Quest 性能。
-- 历史 Quest 性能构建使用旧版 StaticLightColor 表达，不是当前 8 B/20 B 光照布局的设备验证，也没有覆盖 StaticBakerySh 顶点成本。
-- Lightmap 代理合并峰值、Bake 内存、多 Scene 队列、Domain Reload、Bakery 升级和目标设备表现仍需专门验收。
+- [ ] 把第七节定义的逐 Scene Full Render 身份与完整性检查接入 Bakery 原生面板自动生命周期，并用完整、旧值未变、新旧混合和部分写入夹具验证。
+- [ ] Cleanup 后逐目标证明代理根、生成目录和 Bakery Storage 的本世代引用全部为零。
+- [ ] 将恢复的 L2 绑定到唯一 Scene 与 Bake ID，而不只比较数量、位置和系数。
+- [ ] 持久化 Bake 中 Domain Reload 的最小恢复状态，并证明新域可安全接管或清理。
+- [ ] 对 LightingDataAsset、Storage/Lightmap、整份 SceneAsset 和 BRG 发布执行失败注入，并验证成对恢复。
+- [ ] 在目标设备测量 `StaticBakerySh` 顶点成本、代理合并峰值和 Bakery 峰值内存。
 
-#### 十三、生产采用门禁
+### 结论
 
-当前首先缺少以下硬门禁；任一项未满足，都不能把流程标记为生产可用：
+冻结源码表明，这套实现已经形成一条结构完整的正常路径：用临时 Renderer 让 BRG 植被参与静态投影；清理代理后恢复 Bakery L2；以 Bounds 中心为每株唯一位置，编译为固定静态 RGB 或 20 B 紧凑方向参数；运行时从 SceneAsset/Heap 对应的 Buffer 读取，而不动态采样 Probe。
 
-- [ ] Cleanup 后逐目标证明代理根、生成目录和受检查 Bakery Storage 引用全部为零；删除失败、目标丢失或归属不明必须阻止自动 Probe。
-- [ ] 将恢复的 L2 数据绑定到唯一目标 Scene 与 Bake 世代，不能只校验数量、位置和系数内容。
-- [ ] 为 Bake 中 Domain Reload 持久化最小恢复状态，并证明新域能够接管或安全清理同一世代。
-- [ ] 对 LightingDataAsset、整份 SceneAsset 和 BRG 发布执行失败注入，并提供成对恢复或候选发布协议。
+必须同时保留两个限制。第一，20 B 模式来源于完整 L2，却只保留 Ar/Ag/Ab 方向参数，运行时不能恢复完整二阶 SH；8 B 模式则只保留一个固定方向上的最终颜色。第二，当前自动链缺少 Full Render 世代身份、零残留和 Domain Reload 事务门禁。历史画面观察没有公开复现包，因此本文可以作为机制说明和生产改造依据，不能作为“当前端到端已经生产验证”的证明。
 
-在补齐硬门禁后，还要确认：代理按 Heap、Material 和容量护栏分块；关闭投影的 Cell 仍可进入 Probe/编译目标；多 Scene 时逐 Scene 验证输出；反射能力在 Bake 前覆盖启动、结束、清理和 Probe 恢复；Prototype 刷新与重新烘焙分开验收；升级 Unity/Bakery 后执行能力自检和最小真实 Bake。代理合并峰值、Bake 内存及 `StaticBakerySh` 的目标设备成本仍需单独测量。
+### 实现证据索引
+
+本文绑定到匿名工程快照：Git 提交 `f0fef16849cfb8945e9928e5219a140ee250fcf4`，植被模块 tree `4700f76e0b087fe3935c06e660ee732bbf55c87a`。持有该快照的读者可按下表复核；没有源码访问权时，这些条目是具名案例证据，不是公开可复跑实验。
+
+| 主张 | 模块内相对入口 | 证据类型 |
+|---|---|---|
+| Bakery 事件绑定、阶段判断、易失纳管状态 `_managedBakeActive` | `Editor/Lighting/VegetationBakeryAutoProxyLifecycle.cs` | 冻结源码静态核对 |
+| 代理创建、按 Scene/SceneAsset 清理、Probe 刷新 | `Editor/Lighting/VegetationBakeProxyService.cs` | 冻结源码静态核对 |
+| 结构性 Lightmap 检查、Bakery 私有 Storage、L2 恢复 | `Editor/Lighting/VegetationBakeryIntegration.cs` | 冻结源码静态核对 |
+| Probe 采样点、局部向上方向、完整 L2 静态 RGB 与 Ar/Ag/Ab 提取 | `Editor/Compiler/VegetationCompilerCommon.cs`：`VegetationProbeLightingCompiler` | 冻结源码静态核对 |
+| 8 B/20 B Q12 压缩与每 Heap 128 B 参数 | `Runtime/Core/VegetationLightingCompression.cs` | 冻结源码静态核对 |
+| BRG 解码、顶点法线与 Geomerics 求值 | `Shaders/MiniatureWorldVegetationInput.hlsl`、`Shaders/Includes/BakeryDecodeLightmap.hlsl` | 冻结源码静态核对 |
+
+私有 Bakery 字段只用于说明当前适配证据，不应成为通用设计接口：`Storage.maps` 对应场景的已导入 Lightmap 纹理列表；`prevBakedProbes` 与 `prevBakedProbePos` 是该版本用于恢复 Probe 系数和位置的缓存。Bakery 升级后必须重新做能力探测，不能假定字段名和语义稳定。
 
 ### 相关记录
 
-- [统一 BRG 架构](./unity-vegetation-unified-brg-architecture.md) - SceneAsset、Heap、Buffer、渲染会话和资源释放边界。
-- [BRG 逐株 Buffer 的 32 字节压缩与量化 ABI](./unity-brg-packed-instance-buffer-quantization.md) - 当前运行时如何把模式、HeapIndex 和稀疏记录索引装入 32 B，并维持 CPU/GPU 一致。
-- [植被 Painter 作者工作流与事务设计](./unity-vegetation-painter-authoring-transaction-workflow.md) - Prototype 刷新和 SceneCompiler 如何进入光照重采样。
-- [历史 Quest 3S BRG 与普通 GO 系统观察](./quest-vegetation-brg-performance-lighting-validation.md) - 历史设备数据、光照路径差异和当前光照布局验证边界。
-- [ASE Shader Bakery 集成](./ase-shader-bakery-integration.md) - 常规 Renderer Shader 的 Bakery 集成背景。
-- [Bakery SH 与 Toon 光照对齐](./bakery-sh-toon-lighting-liltoon-alignment.md) - Ar/Ag/Ab 与方向性光照计算的相邻经验。
+- [统一 BRG 架构](./unity-vegetation-unified-brg-architecture.md) - Cell、SceneAsset、Heap、Buffer 与资源释放边界。
+- [BRG 逐株 Buffer 的 32 字节压缩与量化 ABI](./unity-brg-packed-instance-buffer-quantization.md) - 主实例记录如何寻址两张稀疏光照表。
+- [植被 Painter 作者工作流与事务设计](./unity-vegetation-painter-authoring-transaction-workflow.md) - Prototype 刷新与 SceneAsset 编译的作者流程。
+- [历史 Quest 3S BRG 与普通 GO 系统观察](./quest-vegetation-brg-performance-lighting-validation.md) - 旧设备数据及其不可外推边界。
+- [Bakery SH 与 Toon 光照对齐](./bakery-sh-toon-lighting-liltoon-alignment.md) - Ar/Ag/Ab 和方向性光照的相邻经验。
 
 ### 验证记录
 
-- [2026-08-26] Bakery 1.98 的历史 Bake 支持“投影代理→清理尝试→L2 Probe→8/20 B 逐株编译→BRG 消费”主链；零残留硬门禁、Bake 世代绑定、失败恢复、Domain Reload、升级兼容和目标设备表现仍未验证。
+- [2026-09-03] 依据冻结提交与模块 tree 静态核对代理生命周期、Probe 恢复、采样、两种压缩格式和 Shader 解码；本文状态表示机制说明当前有效，不表示真实 Bake、异常恢复或设备性能已经公开验证。
+- [2026-09-03] 将历史 288 株案例降为不可公开复核的内部观察；因缺少随文证据包，不再用于支撑“✅ 已验证”或宽泛端到端结论。
+- **尚未验证**：Full Render 的 Scene/Bake 世代身份与部分写入故障夹具、清理零残留、多 Scene 完整闭环、Bake 中 Domain Reload 恢复、Bakery 升级兼容、代理合并峰值和当前光照布局的 Quest 表现。
 
 ---

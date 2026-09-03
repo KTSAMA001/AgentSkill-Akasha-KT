@@ -1,20 +1,37 @@
-# Unity 大规模植被解析查询：Heap–Shape 两级懒建 BVH 的设计、复杂度、性能证据与正确性前提
+# Unity 大规模植被解析查询：分组（Heap）–解析碰撞形状（Shape）两级懒建包围体层次结构（BVH）的设计、复杂度、性能证据与正确性前提
 
 **标签**：#unity #architecture #physics #performance
 **来源**：工程实践抽象 - 分区式解析碰撞查询与扁平 BVH 索引设计
 **收录日期**：2026-08-26
-**更新日期**：2026-08-26
-**状态**：⚠️ 待验证
-**可信度**：⭐⭐⭐（索引机制、功能回归和单次 Windows Editor 微基准有直接证据；生产数据的外层 Bounds 前提尚未满足，冷建与设备端性能未验证）
-**适用版本**：Unity 2022.3 LTS；静态或低频变更的 AABB 宽相位、Sphere/Capsule/Box 解析查询
+**更新日期**：2026-09-03
+**状态**：✅ 已验证
+**可信度**：⭐⭐⭐（本文“✅ 已验证”仅指两级懒建 BVH 宽相位、稳定排序、失效重建、Rebase 平移、现有 Sphere 合成世界中的 Raycast/OverlapCapsule/SweepCapsule 夹具、预热后单目标 Overlap 零托管分配，以及一次 Windows Editor 单层 AABB 微基准；它不表示 Capsule/Box 窄相位全组合、生产 QueryWorld 集成、冷建与退化负载、多 Cell 整世界或 Quest 已通过。）
+**适用版本**：Unity 2022.3 LTS；静态或低频变更的轴对齐包围盒（Axis-Aligned Bounding Box，AABB）宽相位，以及 Sphere、Capsule、Box 解析查询
 
 ---
+
+### 阅读约定：核心术语
+
+- **Heap**：本文特指 QueryWorld 中注册的一组查询数据，是本系统的逻辑分组，不是程序内存中的“堆”。一个 Heap 拥有一个外层查询 Bounds，并包含若干 Shape。
+- **Shape**：用于解析查询的碰撞几何元素；本文支持 Sphere（球）、Capsule（胶囊）和 Box（盒）。
+- **运行时 Cell**：可独立加载、卸载和 Rebase 的运行时空间分区。每个运行时 Cell 独立拥有一份 QueryWorld。
+- **QueryWorld**：所属运行时 Cell 的解析查询数据与入口；它保存 Heap、Shape 和派生索引并接收玩法查询，不等同于 Unity PhysX 世界，也不依赖 Collider Proxy 是否激活。
+- **解析查询**：直接用 Sphere、Capsule、Box 的数学表示计算 Raycast、Overlap 或 Sweep，不先创建 Unity Collider GameObject。它负责可重复的玩法命中判断，但不会产生 PhysX 接触或触发器事件。
+- **宽相位与窄相位**：宽相位用便宜的包围盒测试排除明显不可能命中的元素，允许保留多余候选；窄相位再对候选执行具体几何求交。宽相位若漏掉真实候选，就会造成后续无法修复的假阴性。
+- **AABB**：边与世界坐标轴对齐的保守包围盒。AABB 和 BVH 在本文中只负责宽相位候选筛选；最终是否命中仍由精确的解析窄相位判断。
+- **BVH**：把元素包围盒按层次组织起来的空间索引；查询可以通过节点的合并 AABB 跳过整批不相交元素。本文的 BVH 最终保存为扁平节点数组。
+- **OBB（Oriented Bounding Box）**：允许旋转的有向盒；本文中的 Box 窄相位按 OBB 处理，其宽相位仍使用能够完整包含它的 AABB。
+- **Purpose / Purpose Mask**：Shape 的用途分类位及查询需要的用途位集合，例如交互或武器命中；节点保存子树全部用途的按位 OR，用于整棵子树剪枝。
+- **StableGuid**：一株实例在所属 SceneAsset 内的稳定身份；当前编译器和编辑事务会拒绝同一 SceneAsset 内跨 Heap 的空值或重复值。它不保证跨运行时 Cell 全局唯一。
+- **Floating Origin**：为控制大世界坐标精度而周期性移动世界原点的机制。**Rebase** 指其中一次坐标重定位操作；本文约定把同一个 `-delta` 同步应用到 Heap、Shape、缓存 AABB 和已构建节点。它不表示完整渲染、查询和 PhysX 协调已经接通。
 
 ### 概要
 
 当一个 QueryWorld 已经按 Heap 分区、每个 Heap 又包含多个解析碰撞 Shape 时，可以用两级混合 BVH 取代大集合的全量线性宽相位：顶层先筛 Heap，候选 Heap 内再筛 Shape，小集合继续线性扫描；树只在第一次真正需要时构建，增删使顶层索引失效，Floating Origin 则平移已有 Bounds 和节点而不改变拓扑。游戏逻辑显式向 QueryWorld 发起查询；兴趣源只驱动 ColliderStreamer，不参与 BVH 的候选生成或可见性判断。
 
 这套设计的价值不是把所有查询宣布为 `O(log n)`，而是让高频、局部、稀疏查询在良好分布和预热后避开大部分候选。其正确性有一个不可妥协的前提：**外层 Query Heap Bounds 必须完整包含该 Heap 的全部 Query Shape Bounds**。参考实现当前复用了不含碰撞体的视觉 Bounds，因此可能产生确定性假阴性；修复该包含关系并建立门禁之前，不应把它直接作为生产查询方案。
+
+本文所称“已验证”只覆盖两级 BVH 宽相位及第九节列出的现有合成夹具。现有功能夹具的目标 Shape 均为 Sphere，因此不能据此宣称 Capsule 或 Box 窄相位的全部组合已经验证；它也不表示生产集成、退化负载、多 Cell 整世界或 Quest 性能已经通过。
 
 ### 内容
 
@@ -26,7 +43,7 @@
 - 第 `i` 个 Heap 有 `S_i` 个 Sphere、Capsule 或 Box；
 - 每个 Heap 和 Shape 都有世界空间 AABB；
 - 每个 Shape 带 Purpose 位掩码，用于区分交互、武器命中等查询用途；
-- `StableGuid` 表示实例在所属场景资产内的稳定身份，供结果去重和确定性收尾使用；
+- `StableGuid` 在一个 SceneAsset 的全部 Heap 范围内唯一，编译器与编辑事务会拒绝该范围内的空值或重复值。每个 VegetationCellPhysicsRuntime 从自身管理器的一份 SceneAsset 创建一个 QueryWorld，因此该 QueryWorld 内可以按 StableGuid 去重；跨运行时 Cell 汇总时不能假定它全局唯一，调用方必须同时携带运行时 Cell 身份；
 - BVH 只负责产生候选，真正命中仍由解析窄相位决定。
 
 玩法调用 Raycast、Overlap 或 Sweep 时，先选择要查询的运行时 Cell，再把查询几何、Purpose Mask 和距离等条件交给该 Cell 的 QueryWorld。Collider Proxy 是否激活不会改变解析查询可见的数据；需要 PhysX 接触语义时才进入独立的 Collider 流送路径。
@@ -81,7 +98,7 @@ Purpose OR 是空间之外的第二种剪枝：当节点的用途集合与查询
 4. 创建 Shape 索引容器，但不立即构建 Shape 树。
 5. 使当前运行时 Cell 的顶层 Heap 索引失效。
 
-Shape AABB 缓存在注册阶段形成，因此单个 Heap 的注册时间与空间为 `O(S_i)`。这一步并不等于建树：少于 64 个 Shape 时会始终线性；大集合也要等该 Heap 第一次成为查询候选才构建 Shape BVH。
+Shape AABB 缓存在注册阶段形成，因此单个 Heap 的注册时间与空间为 `O(S_i)`。当前实现的 `TreeThreshold = 64`、`LeafSize = 8`：少于 64 个 Shape 时会始终线性；大集合也要等该 Heap 第一次成为查询候选才构建 Shape BVH。顶层 Heap 集合同样在小于阈值时线性扫描，达到阈值后才于首次查询惰性建树。
 
 除统一的 Floating Origin 刚性平移外，Shape 的位置、尺寸、类型或 Purpose 发生变化时不能原地改写已缓存记录。调用方必须把它作为 Heap 替换：重新校验并生成该 Heap 的 Shape 缓存与懒建 Shape 索引，同时使顶层 Heap 索引失效。移除 Heap 时，其 Shape 缓存与派生索引一并释放。
 
@@ -127,6 +144,14 @@ Shape AABB 缓存在注册阶段形成，因此单个 Heap 的注册时间与空
   → Cell 卸载释放整份查询世界
 ```
 
+##### 3.5 构建失败与回退
+
+注册表、Shape 记录和缓存 AABB 是权威数据；Heap BVH 与 Shape BVH 都只是可丢弃的派生索引。生产接入时，首次懒建和失效后重建应先在局部临时容器中完成全部排序、节点生成与有限值检查，只有完整成功后才能一次性发布新索引，不能让查询看到半棵树。
+
+若有效输入上的构建因分配、排序或其它运行时异常失败，应丢弃本次临时索引，并对当前权威数据回退到等价线性宽相位：顶层构建失败时线性枚举当前 Heap，某个 Shape BVH 构建失败时只线性枚举该 Heap 的 Shape。注册表已经变化后不得继续使用旧树，因为旧树对应的是上一数据世代。为避免每次查询重复触发同一冷建尖峰，失败世代应保持在线性模式，直到注册表世代再次变化、显式预热或外层明确请求重试。
+
+NaN、Infinity 或不合法尺寸属于输入错误，应按第 8.3 节拒绝对应注册、替换、查询或 Rebase，不能把受污染数据交给线性回退继续运行。上述内容是生产接入建议；现有验证记录没有绑定构建异常注入与回退路径，因此不属于页首已验证范围。
+
 #### 四、查询如何穿过两级索引
 
 ##### Raycast
@@ -141,7 +166,7 @@ Shape AABB 缓存在注册阶段形成，因此单个 Heap 的注册时间与空
 1. 先构造胶囊的包围 AABB。
 2. 顶层 BVH 产生候选 Heap，并用线段到 Heap AABB 的距离补充粗筛。
 3. Shape BVH 产生候选 Shape。
-4. 解析接触测试后按 StableGuid 去重并排序。
+4. 解析接触测试后，在当前单 Cell QueryWorld 内按 StableGuid 去重并排序。若玩法把多个 Cell 的结果汇总，必须由外层使用 `(RuntimeCellIdentity, StableGuid)` 作为实例键；当前 `VegetationQueryHit` 不携带 Cell 身份，调用方须在逐 Cell 发起查询时一并保存来源 Cell。
 
 Overlap 的宽相位之外还包含最终结果排序；若返回 `R` 个结果，这一部分为 `O(R log R)`。
 
@@ -238,7 +263,9 @@ QueryHeapBounds ⊇ union(all QueryShapeBounds in the Heap)
 
 ##### 8.2 Shape 级结果稳定性
 
-同一实例的多个 Shape 共享 StableGuid。Overlap 按 StableGuid 去重时会保留先命中的 Shape；线性和 BVH 的候选顺序不同，跨过阈值后可能改变 ShapeType、接触点或法线，即使实例集合相同。Ray/Sweep 在身份、Heap 和距离完全并列时也需要 Shape 级稳定收尾。若玩法消费接触细节，应引入 ShapeId 或显式优先级，而不是只验证实例身份。
+同一实例的多个 Shape 共享 StableGuid。在当前单 Cell QueryWorld 内，Overlap 可以按 StableGuid 去重；跨运行时 Cell 汇总时必须按 `(RuntimeCellIdentity, StableGuid)` 去重和排序，不能只比较 StableGuid。这里的 `RuntimeCellIdentity` 是调用方为本次运行时 Cell 分配并保证唯一的身份，不宣称源码已有同名字段；如果同一 SceneAsset 被实例化为多个运行时 Cell，它们也必须使用不同的 RuntimeCellIdentity。
+
+去重会保留先命中的 Shape；线性和 BVH 的候选顺序不同，跨过阈值后可能改变 ShapeType、接触点或法线，即使实例集合相同。Ray/Sweep 在实例键、Heap 和距离完全并列时也需要 Shape 级稳定收尾。若玩法消费接触细节，应引入 ShapeId 或显式优先级；ShapeId 用于区分同一实例内的 Shape，不能替代跨 Cell 实例键。
 
 ##### 8.3 输入、容差与并发
 
@@ -253,7 +280,7 @@ QueryHeapBounds ⊇ union(all QueryShapeBounds in the Heap)
 
 ##### 9.1 功能夹具与稳态分配
 
-在 65 个 Heap、每 Heap 64 个 Sphere 的合成世界中，Raycast、单命中 OverlapCapsule 与 SweepCapsule 能命中唯一目标；Heap 替换、移除和顶层索引平移后仍能保持目标同步；完全并列的不同实例以稳定身份收尾。
+在 65 个 Heap、每 Heap 64 个 Sphere 的合成世界中，Raycast、单命中 OverlapCapsule 与 SweepCapsule 能命中唯一目标；Heap 替换、移除和顶层索引平移后仍能保持目标同步；完全并列的不同实例以稳定身份收尾。该夹具用于验证 Heap/Shape 宽相位索引、三种公共查询入口及索引生命周期；由于目标 Shape 全部是 Sphere，它不构成 Capsule 或 Box 窄相位全组合的直接证据。本文也没有为该夹具提供随机输入下与逐 Shape 线性 oracle 的完整结果对照，相关要求仍保留在工程采用前提中。
 
 同一规模下，预热 16 次后连续执行 256 次单目标 Overlap，当前 Windows Editor 线程记录的托管分配增量为 `0 B`。该结果不覆盖冷建、重建、多命中容器扩容、Ray/Sweep、多个运行时 Cell 或 Quest。
 
@@ -268,13 +295,17 @@ QueryHeapBounds ⊇ union(all QueryShapeBounds in the Heap)
 | 冷建树 | 先用一次全覆盖查询完成，不计时 |
 | 热身 | BVH 与简化线性扫描各 32 次 |
 | 测量 | 固定顺序先 BVH 后线性，各连续 2048 次 |
-| 单次聚合结果 | BVH `25,223` ticks；线性 `1,391,980` ticks；线性/BVH = `55.1869` |
+| 单次聚合结果 | BVH `25,223` ticks；线性 `1,391,980` ticks；本次聚合线性/BVH 约为 `55.2` |
 
-精确结果 `55.1869×` 只描述该夹具的一次聚合观测。线性对照只做 AABB 相交计数，不是完整 QueryWorld；测量也不包含两级 Heap→Shape 路径、解析窄相位、首次建树、增删重建或跨 Cell 调度。数据分布是一维、等间距、低重叠，查询只命中一个元素，明显有利于树索引。
+约 `55.2×` 只描述该夹具的一次固定顺序聚合观测。线性对照只做 AABB 相交计数，不是完整 QueryWorld；测量也不包含两级 Heap→Shape 路径、解析窄相位、首次建树、增删重建或跨 Cell 调度。数据分布是一维、等间距、低重叠，查询只命中一个元素，明显有利于树索引。
 
-实验没有记录 CPU 型号、Stopwatch 频率、独立重复、方差、P50/P95/P99 或随机交错顺序；执行地点是 Windows Unity Editor，不是 Android Player、Quest、ARM 或 IL2CPP。长期门禁只应要求索引路径不劣于等价线性扫描，不能把某个固定倍率设成性能合同。
+本实验没有记录 CPU 型号、Stopwatch 频率、独立重复、方差、随机交错顺序，也没有保存逐次的完整 QueryWorld 端到端耗时样本，因此不能从现有聚合 ticks 推导 P50/P95/P99。执行地点是 Windows Unity Editor，不是 Android Player、Quest、ARM 或 IL2CPP。长期门禁只应要求索引路径不劣于等价线性扫描，不能把某个固定倍率设成性能合同。
 
-因此唯一可推广的结论是：**在已预热、局部稀疏且分布理想的合成 AABB 夹具中，树索引显著避开了全量扫描。**
+本文后续所称 **P50/P95/P99**，统一指某一种公共 QueryWorld 查询（Raycast、OverlapCapsule 或 SweepCapsule）从接收输入到生成最终结果的单次端到端耗时样本分布中，第 50、95 和 99 百分位，单位为 `μs/次`；三种查询必须分别统计。每组结果必须声明一个固定负载的测量窗口，并报告该窗口覆盖的连续帧数 `F` 与有效查询次数 `N`，不能只写百分位而不写窗口和样本量。
+
+冷态与热态必须分开：冷态样本是每次重新创建查询世界、首次懒建或失效后重建所触发的首个查询，应通过多个独立冷启动或重建循环采集；热态样本要求相关树已构建、复用容器容量稳定，且窗口内不发生注册、替换、移除或重建。不得把两类样本混入同一百分位。若另行评估“一帧内全部查询的总成本”，应作为独立统计对象以 `ms/帧` 报告，不能与 `μs/次` 混用。本文不预设 `F`、`N` 或通过阈值；具体项目必须随验收结果一并声明。
+
+因此，现有性能证据唯一支持的结论是：**在已预热、局部稀疏且分布理想的这一次合成 AABB 夹具中，观察到树路径使用的聚合 ticks 少于简化线性扫描。** 该结果不表示已经建立统计显著性，也不能推导固定倍率或目标设备收益。
 
 #### 十、适用与不适用条件
 
@@ -297,17 +328,25 @@ QueryHeapBounds ⊇ union(all QueryShapeBounds in the Heap)
 - 需要并发查询与修改；
 - 试图直接推出多 Cell 整世界或 Quest 性能结论。
 
-#### 十一、采用检查清单
+#### 十一、工程采用前提
+
+以下项目需要采用方在自己的目标项目、数据分布和设备环境中取得直接证据。`[ ]` 只表示本文没有绑定该目标环境的通过证据，不是当前项目进度，也不表示该项已经执行并失败。
 
 - [ ] 查询范围、Shape AABB 与外层 Query Heap Bounds 是否逐层保守包含真实查询轨迹、真实 Shape 和全部所属 Shape？
 - [ ] 线性与 BVH 两条阈值路径是否返回相同实例集合与稳定的 Shape 级结果？
 - [ ] 阈值和叶容量是否根据目标数据分布做过交叉实验，而不是照抄 64/8？
 - [ ] 是否分别测量冷建、增删重建、预热稳态和最坏重叠？
 - [ ] 是否记录活动 Cell 数、Heap/Shape 分布、查询范围、命中率和每帧查询数？
-- [ ] 是否在目标 Player、CPU 架构和 XR 运行时上采集 P50/P95/P99，而不只看单次 Editor ticks？
+- [ ] 是否在目标 Player、CPU 架构和 XR 运行时上，按第 9.2 节口径分别采集冷态和热态的 QueryWorld 单次端到端耗时 P50/P95/P99（`μs/次`），并报告每个窗口的连续帧数和有效查询次数？如另测每帧总查询成本，是否以 `ms/帧` 独立报告？
 - [ ] Rebase 是否以同一世代同步渲染、解析查询和 PhysX 代理？
 - [ ] 注册、替换、查询和 Rebase 是否都拒绝非有限输入，并覆盖擦边、极大坐标、长射线和重复 Rebase？
 - [ ] 是否接受查询与修改的单线程所有权，或另行实现并验证并发协议？
+
+### 结论
+
+两级懒建 BVH 适合静态或低频替换、预热后高频且局部稀疏的解析查询；它优化的是 Heap 与 Shape 的宽相位候选生成，不改变解析窄相位，也不消除最坏线性退化。现有合成夹具支持索引构建、失效、平移和特定预热路径，但没有证明 Capsule/Box 窄相位全组合、构建失败回退或目标设备性能。
+
+生产采用前必须先保证 Query Heap Bounds 完整包含全部 Query Shape Bounds，再以等价线性结果为 oracle，分别验证目标 Shape、冷建、重建、退化分布、多 Cell 调度和设备端冷/热查询成本。
 
 ### 相关记录
 
@@ -316,6 +355,8 @@ QueryHeapBounds ⊇ union(all QueryShapeBounds in the Heap)
 
 ### 验证记录
 
-- [2026-08-26] 合成夹具表明两级索引能在预热、理想稀疏 AABB 查询中避开大部分全量扫描，并覆盖 Heap 替换、移除与 Rebase 同步；Query Heap Bounds 包含性、冷建、退化分布、多 Cell 和 Quest 性能仍未验证。
+- [2026-08-26] Windows Editor 合成夹具覆盖 Heap/Shape 两级惰性索引、Heap 替换与移除后的失效重建、HeapGuid 稳定排序、Rebase 同步，以及预热后单目标 Overlap 路径 `0 B` 托管分配。现有功能夹具的目标 Shape 均为 Sphere；4,096 个稀疏 AABB 的单次 Editor 微基准只表明该次树路径聚合 ticks 少于简化线性扫描，不构成生产性能合同。
+- [2026-09-02] 源码复核确认参考实现仍使用 `TreeThreshold = 64`、`LeafSize = 8`：小集合线性扫描，大集合在首次查询时建树。该复核只确认算法选择和参数，不证明这些阈值适合其它数据分布，也不替代第九节未覆盖的集成、退化负载与目标设备验证。
+- **未验证边界**：集成层仍把主要来自视觉范围的 `heap.WorldBoundsAtBake` 注册为 Query Heap Bounds，尚未保证包含全部 Query Shape；因此算法夹具通过不等于完整查询链可生产采用。Capsule/Box 窄相位全组合、构建异常回退、冷建、退化分布、多 Cell 世界级负载和 Quest 性能仍未验证。
 
 ---

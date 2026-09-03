@@ -1,37 +1,43 @@
 # Unity 植被多运行时 Cell 物理查询与 Collider 流送架构
 
 **标签**：#unity #architecture #physics #performance
-**来源**：工程实践抽象 - Unity 植被解析查询与 Collider 工作集流送
+**来源**：匿名参考实现源码分析；Git 提交 `f0fef16849cfb8945e9928e5219a140ee250fcf4`，模块 tree `4700f76e0b087fe3935c06e660ee732bbf55c87a`
 **收录日期**：2026-08-25
-**更新日期**：2026-08-26
-**状态**：⚠️ 待验证
-**可信度**：⭐⭐⭐（生命周期、状态机、Streamer 保守 Bounds、子组件 Rebase 入口与历史 Windows Editor A/B 有实现证据；Query Heap 包含性、Cell 级坐标世代广播和异常卸载强保证尚未闭环，冷池、Quest 与全局预算仍未验证）
+**更新日期**：2026-09-03
+**状态**：📘 有效
+**可信度**：⭐⭐⭐（冻结源码静态链路可复核；未绑定异常注入、完整运行回归或设备测量）
 **适用版本**：Unity 2022.3 LTS、PhysX、Additive Scene；其它 Unity 版本需复核物理同步与场景生命周期
 
 ---
 
 ### 概要
 
-大规模植被物理不应只有“为全部植物创建 Collider”和“完全没有碰撞”两个选项。可复用的拆分方式是：每个运行时 Cell 常驻一个轻量 QueryWorld，供游戏逻辑显式发起 Raycast、Overlap 和 Sweep；兴趣源只驱动 ColliderStreamer，让附近实例从对象池取得真实 PhysX Collider 代理。多个运行时 Cell 可以共享同一批兴趣源，但必须分别拥有查询数据、代理池、半径、预算和卸载生命周期。
+大规模植被物理不应只有“为全部植物创建 Collider”和“完全没有碰撞”两个选项。本文研究三个问题：如何让玩法查询不依赖真实 Collider 是否驻留；如何让多个 Additive Scene（在主场景运行时叠加加载、可独立卸载的场景）中的运行时 Cell 共享兴趣源而保持所有权隔离；以及这些选择对固定步、查询与常驻内存意味着什么。参考实现的基本答案是：每个运行时 Cell 常驻一个轻量 QueryWorld，供游戏逻辑显式发起 Raycast、Overlap 和 Sweep；这些查询直接对数学形状求交，不进入 PhysX 模拟。兴趣源只驱动 ColliderStreamer，让附近实例临时获得真实 PhysX Collider 代理，并在离开范围后复用这些代理而非反复创建、销毁 GameObject。
 
-> **生产采用警告**：参考实现把只覆盖视觉几何的 Heap Bounds 同时用于物理粗筛，未保证它包含全部 Query Shape。外伸的 Sphere、Capsule 或 Box 可能在 Heap 级被提前拒绝，形成确定性假阴性。使用该查询链前必须生成独立 Query Heap Bounds，或在注册时聚合全部 Query Shape Bounds，并建立包含性门禁。
+本文不试图证明 Quest 性能、不设计完整世界级调度器，也不把渲染剔除、解析查询和 PhysX 代理合并成一套半径。对“当前实现”的判断来自冻结源码的静态调用链；文中提到的测试代码只提供复现入口，没有与本文绑定的运行报告。文章因此只说明参考实现的现状、生产必须补齐的正确性契约，以及不影响当前正确性的可选扩展，不给出设备性能倍率或完整回归通过结论。
 
-> **坐标迁移警告**：QueryWorld 与 ColliderStreamer 已分别提供增量平移入口，但当前 Cell 物理编排器没有把一次 Floating Origin 事件原子转发给两者。接入方必须补齐同世代协调；否则解析查询、真实 Collider、兴趣源和渲染可能永久错位。
-
-本文的 **运行时 Cell** 指“一个场景管理器 + 一份场景植被资产 + 一套独立渲染/物理资源”；资产内部包含多个 **Heap**。Heap 是空间粗筛单元，不是独立 Scene、GameObject 或 BRG Batch。
-
-本文运行时术语统一如下：
+#### 术语与身份约定
 
 - **SceneAsset**：一个运行时 Cell 的作者数据资产，包含 Prototype 槽位和多个 Heap。
+- **运行时 Cell**：一个场景管理器、一份 SceneAsset 和一套独立渲染/物理资源组成的可加载单元；同一 SceneAsset 被加载两次时形成两个不同运行时 Cell。
+- **Heap**：SceneAsset 内的空间粗筛单元，不是程序内存中的“堆”，也不是独立 Scene、GameObject 或渲染批次。Heap 的逻辑分区由作者数据决定，运行时查询与 Collider 流送都按它先做粗筛。
+- **HeapGuid**：Heap 在所属 SceneAsset 内的持久 128 位身份，用于注册、替换、注销与调试；它不代替实例 StableGuid。
 - **Prototype**：一种植物的共享渲染与碰撞描述；实例用本 SceneAsset 内的 PrototypeId 指向它。
-- **StableGuid**：实例在一个 SceneAsset 内的持久身份；QueryWorld、ColliderStreamer 与作者工具用它关联同一株植物。
-- **Query Shape**：由 Prototype 碰撞描述和实例变换得到的解析 Sphere、Capsule 或 Box；不包括 ConvexMesh。
+- **StableGuid**：实例在一个 SceneAsset 内的持久 128 位身份；QueryWorld、ColliderStreamer 与作者工具用它关联同一株植物。它在该 SceneAsset 的全部 Heap 之间必须唯一且非空；跨运行时 Cell 时还需和 RuntimeCellIdentity 组合。
+- **RuntimeCellIdentity**：一次加载期间区分运行时 Cell 的临时身份。同一 SceneAsset 同时加载两次或卸载后重载时必须取得不同身份；它不写入存档。本文用它描述跨 Cell 查询尚需补齐的契约，不宣称当前源码已有同名字段。
+- **QueryWorld**：一个运行时 Cell 常驻的解析查询数据与入口；它保存 Heap、Query Shape 和派生空间索引。所谓“解析查询”是直接用数学几何计算命中，不创建 Collider、不进入 PhysX 模拟，也不会产生刚体接触或触发事件。
+- **对象池（ProxyPool）**：预先保留或回收可复用 Collider 代理的容器，目的是避免实例每次靠近、离开时都创建和销毁 GameObject。
+- **ColliderStreamer**：一个运行时 Cell 的真实 Collider 工作集控制器；它根据兴趣源、半径、状态机和预算向对象池借还 Proxy。
+- **Query Shape**：由 Prototype 碰撞描述和实例变换得到的解析 Sphere、Capsule 或有向 Box；它是不创建 Unity Collider 也能计算命中的数学几何，不包括 ConvexMesh。
+- **BatchRendererGroup（BRG）**：Unity 面向大量实例的批量渲染接口；本文只把它当作相邻的渲染路径，不讨论其内部绘制命令。
+- **ActiveHeapMask**：渲染路径中标记哪些 Heap 参加当前渲染剔除的掩码；它不控制 QueryWorld 是否可查，也不证明 Collider Proxy 已激活。
+- **AllResident**：ColliderStreamer 的对照驻留模式；忽略兴趣范围和流式激活上限，让所属 Cell 的 Collider 实例全部进入激活流程。它用于小场景或 A/B，不是大场景默认值。
 - **Purpose / Purpose Mask**：作者可多选的碰撞用途位标志。查询传入用途掩码，只让至少共享一个用途位的 Heap/Shape 成为候选；BVH 节点保存子树所有 Shape 用途的按位 OR，用于整棵子树提前拒绝。它不是 Unity Layer。
 - **Proxy**：从按 Shape 类型分池的对象池取得、承载一个真实 Unity Collider 的运行 GameObject。对进入 Streamer 的实例，映射是 `1 实例 → N 个 Collider Shape → 激活时 N 个 Proxy`；状态机与激活候选按实例推进，但代理容量按 Shape 数增长。
 - **激活预算**：`maxActivationsPerFixedUpdate` 计的是本运行时 Cell 每固定步最多新激活的**实例数**，不是 Proxy/Collider 数。一个获批实例会在同次 `Activate` 中为其全部 N 个 Shape 取得 N 个 Proxy，所以单步新增 Proxy 上限还取决于候选实例的 Shape 数；AllResident 会跳过该实例预算。
 - **DesiredReferenceCount**：本固定步内，有多少有效兴趣源让实例进入各自运行时 Cell 的 LoadRadius；大于零表示未激活实例可以竞争新激活预算。
 - **RetainReferenceCount**：本固定步内，有多少有效兴趣源让已激活实例仍位于各自运行时 Cell 的 UnloadRadius；大于零表示已有代理应继续保留。由于 `UnloadRadius >= LoadRadius`，Desired 引用同时也是 Retain 引用。
-- **OriginOffsetDelta**：累计原点从 `O_old` 变为 `O_new` 时的增量 `delta = O_new - O_old`。缓存的运行时世界坐标统一变为 `worldNew = worldOld - delta`；作者局部坐标、StableGuid 与 Heap 身份不变。
+- **Floating Origin（浮动原点）**：当世界坐标太大、浮点精度开始下降时，把玩家附近的运行对象整体移回坐标原点附近，同时保存一个累计偏移表示其绝对位置。它解决的是大世界数值精度问题；一次迁移必须让查询、真实 Collider、兴趣源和渲染使用同一个偏移世代。
 
 ### 内容
 
@@ -59,7 +65,7 @@ QueryWorld 避免为了偶发查询让数千个 GameObject/Collider 常驻；Col
 
 **物理加载半径和卸载半径不属于兴趣源。** 它们属于每个运行时 Cell 的 ColliderStreamer。一个玩家同时经过多个 Additive Scene 时，各运行时 Cell 可以使用不同密度、碰撞复杂度和预算，而不会被共享源上的一个半径覆盖。卸载半径必须不小于加载半径，以形成空间滞回。
 
-高速源用“当前位置到预测位置”的线段参与 Heap 与实例 Bounds 距离测试，降低快速运动跨过加载球造成的碰撞迟到。预测只提前移动工作集，不会让静态 Collider 跟随 Shader 中的草叶形变。
+高速源用“当前位置到预测位置”的线段参与 Heap 与实例 Bounds 距离测试，目的是降低快速运动跨过加载球时 Collider 迟到的概率。本文没有给出高速穿越场景的对照数据，因此这属于设计意图，不是已经量化验证的效果；预测也不会让静态 Collider 跟随 Shader 中的草叶形变。
 
 当前没有跨 Cell 的统一快照世代：多个 Streamer 会各自捕获同一批源，通常位于同一个物理帧，但不能据此证明它们读到不可分割的同一版本。需要严格多 Cell 一致性时，应由外层固定步协调器发布带 Tick/坐标世代的单份快照，全部 Cell 只读消费。每次被评估的实例都会从零重新聚合 Desired/Retain 计数，不允许把上一固定步的引用数累加到下一步。
 
@@ -69,7 +75,7 @@ QueryWorld 避免为了偶发查询让数千个 GameObject/Collider 常驻；Col
 
 | 对象 | 创建与所有者 | 注册键 / 状态 | 查询与销毁责任 |
 |---|---|---|---|
-| Cell 物理编排器 | 每个运行时 Cell 的管理器对象独占一个 | 保存已加载管理器、Cell Transform、实际注册到 Streamer 的 HeapGuid 列表；非空 QueryWorld 本身就是加载句柄 | 编排加载、失败回滚和卸载；对游戏逻辑暴露解析查询入口 |
+| Cell 物理编排器 | 每个运行时 Cell 的管理器对象独占一个 | 保存已加载管理器、Cell Transform、成功返回后才记录的 Streamer HeapGuid 列表；非空 QueryWorld 本身就是加载句柄 | 编排成功加载与正常卸载；异常时只能按已取得的所有权记录尽力回滚，并对游戏逻辑暴露解析查询入口 |
 | QueryWorld | 由编排器先在加载局部变量中创建，全部 Heap 成功后才发布 | 以 HeapGuid 保存解析 Shape 与粗筛 Bounds | 执行 Raycast/Overlap/Sweep；由编排器释放 |
 | ColliderStreamer | 同一 GameObject 上的独立组件，每运行时 Cell 独占 | 以 HeapGuid 保存 PhysX 实例状态，另持有固定步预算和半径 | 推进状态机、向 ProxyPool 取还代理；编排器按实际注册列表反注册，Streamer 管理自己的池生命周期 |
 | ProxyPool | ColliderStreamer 创建并独占 | 按 Collider 类型复用 Proxy | ColliderStreamer 激活/归还；Streamer 销毁时释放 |
@@ -77,42 +83,92 @@ QueryWorld 避免为了偶发查询让数千个 GameObject/Collider 常驻；Col
 ```mermaid
 flowchart TD
     A[运行时 Cell 进入加载状态] --> B[Cell 物理编排器验证管理器、SceneAsset、Streamer 同对象所有权]
-    B --> C[在局部变量创建 QueryWorld]
-    C --> D[遍历 SceneAsset 内 Heap]
+    B --> C[在加载局部变量中创建 QueryWorld]
+    C --> D[读取下一个 SceneAsset Heap]
     D --> E[读取实例、Prototype 与运行时 Cell Transform]
+
     E --> F[构建世界空间解析 Query Shapes]
     E --> G[构建世界空间 Collider Instance 描述]
+
     F --> H{Query Shape 非空?}
     H -- 是 --> I[以 HeapGuid 加入局部 QueryWorld]
-    H -- 否 --> J[不占 Query Heap 槽位]
+    H -- 否 --> J[Query 路完成：不占 Query Heap 槽位]
+    I --> QD[Query 路完成]
+    J --> QD
+
     G --> K{Collider 描述非空?}
     K -- 是 --> L[注册到本运行时 Cell Streamer并记录 HeapGuid]
-    K -- 否 --> M[不占 Streamer Heap 槽位]
-    I --> R{仍有未处理 Heap?}
-    J --> R
-    L --> R
-    M --> R
+    K -- 否 --> M[Streamer 路完成：不占 Streamer Heap 槽位]
+    L --> SD[Streamer 路完成]
+    M --> SD
+
+    QD --> Z{{AND 汇合：当前 Heap 两路均正常完成}}
+    SD --> Z
+    Z --> R{仍有未处理 Heap?}
     R -- 是 --> D
-    R -- 否；两路均无异常 --> N[发布 QueryWorld 为运行时 Cell 加载句柄]
-    R -- 任一路异常 --> X[按实际注册列表逆序回滚；不发布]
+    R -- 否 --> N[发布 QueryWorld 为运行时 Cell 加载句柄]
+
+    E -. 读取或变换异常 .-> X[当前仅能逆序回滚已成功返回的注册；Dispose 局部 QueryWorld；不发布]
+    F -. 构建异常 .-> X
+    G -. 构建异常 .-> X
+    I -. 加入异常 .-> X
+    L -. 注册异常；本次部分写入归属未闭环 .-> X
 ```
+
+图中的 AND 汇合只表示推进条件，不要求 Query 与 Streamer 两路并行执行：实现可以串行，但只有当前 Heap 的两路都正常完成后，才能读取下一 Heap 或发布 QueryWorld。图中的虚线异常回滚是**生产设计契约**，不是当前实现已经具备强异常安全的证明。
+
+当前调用方只在 `RegisterHeap` 正常返回后，才把 HeapGuid 加入回滚列表；异常捕获因此只能可靠识别此前已经成功返回的注册。当前 `RegisterHeap` 又会先移除同 Guid 的旧 Heap，再复制与校验描述，随后逐项写入实例表，最后才写入 Heap 表。这个顺序不提供“抛出时外部状态完全不变”的强保证：替换注册在后续校验失败时已经失去旧数据，极端分配或写入异常也可能发生在部分实例已进入表、但方法尚未返回的窗口。现有加载回滚既拿不到该次未返回注册的所有权凭据，也没有失败注入证据证明这一窗口必然为空。因此，加载异常的所有权闭环仍是未验证的生产门禁。
+
+生产实现可以选择以下两种闭环方式之一，不需要同时维护两套：
+
+1. **让 `RegisterHeap` 具备强异常保证。** 先在局部临时对象中完成描述复制、StableGuid 冲突检查、Bounds 聚合和完整 HeapEntry 构建；全部成功后再以单一提交点替换旧 Heap 并发布实例索引。提交前抛出必须保持旧状态不变，提交后返回即表示调用方取得完整 Heap 所有权。若提交动作本身包含多个容器写入，还要有内部补偿，不能把半成品暴露给调用方。
+2. **显式注册事务或租约。** `BeginRegisterHeap` 在任何可见写入前返回不可复用的事务令牌；后续每一步变更都记入令牌，`Commit` 后才生成正式注册凭据。异常时调用方保留该令牌并请求 `Rollback`；回滚未确认完成时，Cell 必须停在 `CleanupFailed` 并保存原 Streamer 与令牌，不能清空所有权记录或发布 Unloaded。
+
+无论采用哪一种，QueryWorld 都只能在全部 Query Heap 与 Collider Heap 成功提交后发布；失败测试必须分别注入到旧 Heap 移除前、实例表部分写入后和 Heap 表发布前，证明最终状态不是完整旧版本就是完整新版本，而不会出现无主实例或丢失重试依据。
 
 物理运行组件必须和渲染管理器、ColliderStreamer 位于同一个 GameObject，并只读取该管理器绑定的 SceneAsset。它不允许跨 Additive Scene 绑定其它运行时 Cell 的组件，也不允许两个运行时 Cell 共享同一个 Streamer。这个门禁让卸载时能够精确反注册自己创建的 Heap 和代理。
 
 空运行时 Cell、只含查询形状的运行时 Cell、只含 PhysX 形状的运行时 Cell 都是合法状态。加载态应由 QueryWorld 句柄和所有权记录判断，不能用“注册 Collider Heap 数量大于零”判断，否则空工作集会在 Update 中被反复重建。
 
-两条路径对外层 Bounds 的处理并不相同。QueryWorld 当前直接接受传入的 Heap Bounds，因而存在本文开头所述包含性缺口；ColliderStreamer 则先让每个 Collider Instance Bounds 聚合其全部 Shape（包括 ConvexMesh），再把注册 Bounds 与全部 Instance Bounds 取并集，形成自己的保守 Streamer Heap Bounds。完全 Inactive 的 Streamer Heap 粗筛只有在这条包含链保持成立时才不会漏掉需要激活的代理：
+两条路径的调用点都传入同一份变换后 `heap.WorldBoundsAtBake`，但注册后的处理不同。QueryWorld 直接采用传入 Bounds，因此存在包含性缺口；ColliderStreamer 的 `RegisterHeapInternal` 会调用保守聚合，把注册 Bounds 与全部 Collider Instance Bounds 取并集，而每个 Instance Bounds 已聚合该实例全部 Collider Shape（包括 ConvexMesh）。因此当前成立的是：
 
 ```text
 ColliderInstanceBounds ⊇ union(all Collider Shape Bounds of the instance)
 StreamerHeapBounds ⊇ union(all ColliderInstanceBounds in the Heap)
 ```
 
-##### 查询索引的接口边界
+而 `QueryHeapBounds ⊇ union(all QueryShapeBounds in the Heap)` 尚未满足。正确修复应为 QueryWorld 单独聚合 Query Heap Bounds，不把碰撞外伸范围合并回渲染 Bounds，也不让视觉剔除范围承担查询正确性。
 
-每个 QueryWorld 可以独立维护 Heap–Shape 两级查询索引，但索引不读取兴趣源，也不依赖 Collider Proxy 是否激活。游戏逻辑显式选择要查询的运行时 Cell 和 QueryWorld；若要查询整个世界，外层还需枚举当前活动 Cell。
+##### 查询索引与跨 Cell 结果边界
+
+每个 QueryWorld 可以独立维护 Heap–Shape 两级查询索引，但索引不读取兴趣源，也不依赖 Collider Proxy 是否激活。游戏逻辑显式选择要查询的运行时 Cell 和 QueryWorld；若只查询单个 Cell，结果保持该 QueryWorld 的本地语义。
+
+若一次玩法查询需要覆盖多个运行时 Cell，外层查询协调器必须完成以下合并契约：
+
+1. 在查询开始时捕获一份稳定的活动 Cell 集合；查询窗口内必须通过主线程顺序、只读租约或等价所有权协议，保证所访问的 QueryWorld 不会被卸载并 Dispose。
+2. 每条结果必须同时携带 `RuntimeCellIdentity` 与 `StableGuid`。StableGuid 只在所属 SceneAsset 内稳定，跨 Cell 去重或排序不能只使用 StableGuid。
+3. Raycast 与 Sweep 从各 Cell 的有效结果中选择全局最近命中。距离统一使用运行时世界空间米值；若项目约定 `1 Unity unit != 1 m`，协调器必须先换算到同一物理单位。候选 Distance 必须有限且不小于零，NaN、Infinity 或负值使该 Cell 查询失败，不能进入排序。
+
+   生产合并采用固定绝对容差 `ε = 0.0001 m`，并用两阶段选择避免分桶改变最近语义，也避免把带容差的成对比较器直接交给排序算法：
+
+   1. 对全部有效候选只比较原始 Distance，取得严格数值最小值 `d_min`。
+   2. 构造并列集合 `T = { hit | hit.Distance - d_min <= ε }`。集合外候选无论身份多小都不能获胜；集合内距离按契约视为不可区分，再按 `RuntimeCellIdentity` 升序、StableGuid 的 `(High, Low)` 升序选择唯一实例。
+
+   例如 `d_min = 2.00000 m` 时，`2.00005 m` 在容差内，可以由身份键收尾；`2.00011 m` 超出容差，即使 RuntimeCellIdentity 更小也不能胜出。若项目尺度或玩法精度不接受 `0.0001 m`，必须在 API 版本层明确修改这一个常量并重做边界测试，不能由各 Cell 使用不同容差。
+4. Overlap 先合并各 Cell 结果，再以 `(RuntimeCellIdentity, StableGuid)` 去重并稳定排序；相同 StableGuid 出现在不同 Cell 时仍表示不同实例。
+5. Cell 在查询快照之外新增或卸载，只影响下一次查询；外层不得继续消费已经解除所有权的 QueryWorld 引用。`RuntimeCellIdentity` 在 QueryWorld 发布为 Loaded 时产生，在其 Dispose 后退休；同一 SceneAsset 重载也取得新身份，防止迟到结果被误认成新 Cell。
 
 BVH 只改变 Heap 与 Shape 候选的生成方式，不替代 Sphere、Capsule 和 OBB 的解析窄相位；ConvexMesh 仍只进入 PhysX 路径。索引构建、更新、复杂度、微基准和正确性前提见[两级懒建 BVH 查询专题](./unity-vegetation-two-level-lazy-bvh-query.md)。
+
+当前单 Cell QueryWorld 对 Raycast 距离并列和 Sweep 比例并列仍使用浮点精确相等判断，且 `VegetationQueryHit` 不携带 RuntimeCellIdentity；上述跨 Cell 两阶段最近命中算法因此是协调器必须补齐并验证的生产契约，不是当前公共 API 已经实现的行为。尤其不能把 Sweep 的 `0.0001` 世界单位接触判定容差直接当作跨 Cell 结果排序已经完成的证据：一个决定“几何是否接触”，另一个只定义多个有效命中的规范次序。若调用方需要同一实例内多个 Shape 的接触细节也具有全序，还必须增加稳定 ShapeId；当前实例键只能保证实例级合并顺序。
+
+这套合并还依赖明确的确定性身份契约。冻结实现中的 `SerializableGuid` 由无符号 64 位 `High` 与 `Low` 两段组成，规范顺序是先比较 `High`、相等时再比较 `Low`；需要跨语言传输时，应把 `High`、`Low` 各按大端序写成 8 字节后做无符号字典序比较，不能改用受格式或语言区域影响的字符串顺序，也不能假定 .NET `Guid.ToByteArray()` 的混合字段布局等价。编译器会拒绝 SceneAsset 内空值或跨 Heap 重复的 StableGuid，ColliderStreamer 也拒绝自身已注册实例的重复身份；QueryWorld 允许同一实例的多个 Query Shape 共用 StableGuid，并在 Overlap 中按实例合并，这不等于修复重复实例。若资产绕过编译器进入运行时，当前加载链尚未证明会在发布前独立拒绝重复实例，因此运行时身份校验仍属于采用门禁。
+
+##### 两个兴趣源、两个 Cell 的最小例子
+
+假设玩家和载具各注册为一个全局兴趣源，同时加载 Cell A 与 Cell B。两个 Cell 的 Streamer 都读取这两份位置/速度快照，但分别使用自己的加载半径、卸载半径和激活预算；玩家进入 A 的加载范围只会让 A 的候选实例竞争 A 的预算，载具进入 B 同理。卸载 B 时只归还 B 的 Proxy 并释放 B 的 QueryWorld，A 的代理与查询数据不应变化。
+
+玩法若发起一次覆盖 A、B 的 Raycast，外层先持有两个 QueryWorld 的查询租约并分别取得单 Cell 命中，再按前述算法合并。假设 A 返回 `2.00000 m`，B 返回 `2.00011 m`，则 A 必须胜出；若 B 改为 `2.00005 m`，两者进入 `0.0001 m` 并列集合，才由 RuntimeCellIdentity 和 StableGuid 收尾。兴趣源决定 Proxy 工作集，不参与这次 QueryWorld 命中排序。
 
 #### 四、Streamed 固定步与状态机
 
@@ -140,7 +196,7 @@ stateDiagram-v2
 6. 推进离开范围的 Cooldown，把到期代理归还对象池。
 7. 本固定步若有代理变换或增删，统一调用一次 `Physics.SyncTransforms`。
 
-一个实例含多个 Shape 时，激活必须表现为实例级事务：任意一次 Proxy 获取或配置失败，都归还本次已经取得的全部 Proxy，使实例回到 Desired，再由上层按失败政策重试或终止；不能留下“部分 Shape 已激活”的 Active 实例。
+架构契约要求一个实例含多个 Shape 时，激活表现为实例级事务：任意一次 Proxy 获取或配置失败，都应归还本次已经取得的全部 Proxy，使实例回到 Desired，再由上层按失败政策重试或终止；不能留下“部分 Shape 已激活”的 Active 实例。本文没有绑定该失败注入路径的直接证据，因此把它列为生产接入必须满足的契约，不把本段文字本身当作已验证证明。
 
 多来源聚合的当前精确规则是：每个来源都用其 `Position → PredictedPosition` 预测线段到实例 Bounds 的平方距离；距离不超过 LoadRadius 时同时增加 Desired 与 Retain，距离只在 LoadRadius 与 UnloadRadius 之间时只增加 Retain。候选取所有 Desired 来源中的最高 Priority；同一最高 Priority 下取最小平方距离，并记录是否存在任一 Desired 高速来源。全 Cell 候选最终按“有高速引用优先 → Priority 降序 → 平方距离升序 → StableGuid 升序”排列。一个实例只产生一个候选，不会按来源重复占用预算；StableGuid 负责完全同键时的确定性收尾。
 
@@ -181,9 +237,25 @@ flowchart LR
     Q --> BQ
 ```
 
-同一个兴趣源会注册到全部已启用 ColliderStreamer，所以玩家跨越运行时 Cell 边界时不需要把源从 A 手工搬到 B。兴趣源只更新 Proxy 工作集；需要跨 Cell 查询时，游戏逻辑显式调用各 Cell 的 QueryWorld。每个运行时 Cell 只处理自己的 Heap 和实例，查询结果、代理池、加载半径和预算不会合并。Additive Scene B 卸载后只释放 B 的物理与渲染资源，A 的计数和代理应保持不变。
+兴趣源只向全局注册表登记一次；每个已启用 ColliderStreamer 在自己的固定步捕获该注册表快照，所以玩家跨越运行时 Cell 边界时不需要把源从 A 手工搬到 B。兴趣源只更新 Proxy 工作集；需要跨 Cell 查询时，游戏逻辑显式调用各 Cell 的 QueryWorld。每个运行时 Cell 只处理自己的 Heap 和实例，查询结果、代理池、加载半径和预算不会合并。Additive Scene B 卸载后只释放 B 的物理与渲染资源，A 的计数和代理应保持不变。
 
 这种隔离简化了所有权和故障恢复，但有一个重要的容量边界：激活预算和 `Physics.SyncTransforms` 次数是**每运行时 Cell**的。若同时加载很多运行时 Cell，总激活量上限接近各运行时 Cell 预算之和，且多个 Streamer 可能各自同步一次。系统目前没有跨运行时 Cell 全局物理调度器，不能把单运行时 Cell 配置直接当作整世界预算。
+
+##### 多 Cell 流送的成本模型
+
+以下复杂度是由第四节处理顺序推导出的保守成本模型，不是设备实测。设活动运行时 Cell 数为 `C`；Cell `c` 本步捕获的有效兴趣源数为 `R_c`，注册 Heap 数为 `H_c`，进入逐实例状态推进的实例数为 `I_c`，需要排序的 Desired 候选数为 `D_c`，本步实际取得或归还的 Proxy 数为 `P_c`。`I_c` 包含进入范围的 Heap，也包含因为仍有 Desired、Active 或 Cooldown 状态而必须继续推进的 Heap；AllResident 时还会覆盖全部实例。按逐源距离测试表达，Streamer 在一个固定步中的保守托管侧上界为：
+
+```text
+O(Σ_c (H_c + I_c + R_c × H_c + R_c × I_c + D_c log D_c + P_c))
+
+等价写法：O(Σ_c ((R_c + 1) × (H_c + I_c) + D_c log D_c + P_c))
+```
+
+其中 `H_c + I_c` 是不能被兴趣源数量相乘项吞掉的基础成本：即使 `R_c = 0`，固定步仍会遍历全部已注册 Heap；完全 Inactive 的 Heap 可以在粗筛后跳过实例，但仍有实时状态的 Heap 必须逐实例把 Desired 清空、推进 Cooldown 并归还到期 Proxy，所以此时仍有 `O(H_c + I_c + D_c log D_c + P_c)`。若所有 Heap 都完全 Inactive，则 `I_c = D_c = P_c = 0`，仍保留 `O(H_c)` 的 Heap 状态检查。上式把 Heap–兴趣源测试写成最坏的 `R_c × H_c`；已有实时状态或 AllResident 的 Heap会提前进入逐实例阶段，实际不一定完成全部源–Heap 距离测试。
+
+`maxActivationsPerFixedUpdate` 只限制新激活实例数，不限制 Heap/实例扫描、引用聚合或候选排序；一个获批实例包含多个 Shape 时，`P_c` 也可能大于获批实例数。AllResident 又会跳过该实例激活上限，因此不能用单 Cell 的激活预算推导整世界 CPU 或 Proxy 峰值。`Physics.SyncTransforms` 和 PhysX 模拟成本还取决于本步脏变换、活动 Collider 和接触负载，不包含在上述托管侧表达式中。
+
+每个 Cell 的常驻内存与已注册实例/Shape 描述、状态记录、候选与复用容器历史最大容量、已借出 Proxy 和对象池历史高水位近似线性相关；整世界成本是所有活动 Cell 的总和。这个推导不能替代对 `C`、`R_c`、`I_c`、`D_c` 和对象池首次（冷启动）扩容的目标环境测量。
 
 #### 六、Floating Origin 与世界空间世代
 
@@ -215,7 +287,7 @@ Streamer 侧的唯一释放所有者是 `UnregisterHeap`：成功路径中，它
 
 当前参考实现的成功路径符合唯一释放所有者规则，但异常路径还没有上述强保证：编排器会继续尝试其它 Heap，之后无条件清空所有权记录。若某次反注册在完成前抛出，可能失去重试依据。因此异常卸载仍是生产阻断项，不能用“已调用 UnregisterHeap”代替零残留证明。
 
-满足强清理契约后，运行时 Cell 加载失败与正常卸载应共用以下顺序，并按成功注册列表逆序清理：
+只有先采用第三节的一种注册闭环、使加载方能够识别本次完整或部分注册所有权，并同时满足本节的强清理契约后，运行时 Cell 加载失败与正常卸载才可以共用以下顺序，并按可证明的注册记录逆序清理：
 
 1. 向**实际完成注册的 Streamer**逐一请求强清理，而不是读取可能已被 Inspector 改写的新引用；每个成功结果才从所有权列表移除对应 HeapGuid。
 2. 记录失败项并继续尝试其余 Heap；失败项、原 Streamer 引用和诊断必须保留在 `CleanupFailed` 状态，不能被全量清空。
@@ -227,45 +299,59 @@ Streamer 侧的唯一释放所有者是 `UnregisterHeap`：成功路径中，它
 
 #### 八、查询索引的性能边界
 
-限制真实 PhysX 工作集不会自动减少 QueryWorld 常驻的解析 Shape 数，也不能证明查询已经加速。查询索引的性能问题由独立专题说明；本篇只要求索引产生候选、解析窄相位给出精确结果，并且查询始终不受 Collider Proxy 激活状态影响。完整算法、性能证据与不可推广边界见[两级懒建 BVH 查询专题](./unity-vegetation-two-level-lazy-bvh-query.md)。
+限制真实 PhysX 工作集不会自动减少 QueryWorld 常驻的解析 Shape 数，也不能证明查询已经加速。当前 QueryWorld 使用 Heap–Shape 两级混合索引：顶层先筛 Heap，候选 Heap 内再筛 Shape；每一级少于 64 项时线性扫描，达到 64 项时在第一次查询时懒建扁平包围体层次结构（Bounding Volume Hierarchy，BVH）。BVH 只产生 AABB 粗筛候选，最终命中仍由 Sphere、Capsule 或有向 Box 的解析窄相位决定。
 
-#### 九、历史 Collider 常驻与流送 A/B 性能证据
+设单个 QueryWorld 有 `H` 个 Heap，第 `i` 个 Heap 有 `S_i` 个 Shape；`K_H` 是一次查询的候选 Heap 数，`K_i` 是候选 Heap `i` 的 Shape 候选数，`K_S = ΣK_i`。预热完成、分布良好且查询局部稀疏时，查询边界可摘要为：
 
-以下数字只是一组历史 Windows Editor A/B 证据，不是 Quest、目标设备、当前源码身份或完整游戏帧预算。每组历史夹具在同一合成输入内比较 AllResident 与 Streamed 驻留政策；保存材料没有源码树或程序集指纹，因而只能作为受控条件内的历史关联。基准使用 Intel Core i7-12700、RTX 3060、独立 Local PhysicsScene、50 Hz 固定步、5/7 米加载/卸载半径、16 个动态 Kinematic 探针和 120 个稳态样本。运行时核心包含流送固定步、动态探针更新、`Physics.SyncTransforms` 与 `PhysicsScene.Simulate`；表中给出 120 个稳态样本的 P95。GC 只统计这一核心范围，不能代表整进程。
+```text
+顶层：H < 64  → O(H)
+      H >= 64 → O(log H + K_H)
 
-| 实例 | Collider Shape（1 Shape → 1 Proxy） | AllResident 活跃 Proxy | Streamed 活跃 Proxy | Proxy 减少 | 运行时核心 P95：常驻 / 流送 | 核心 GC B/步 |
-|---:|---:|---:|---:|---:|---:|---:|
-| 1024 | 2198 | 2198 | 560 | 74.5% | 0.5719 / 0.5214 ms | 0 / 0 |
-| 4096 | 7324 | 7324 | 560 | 92.4% | 1.9911 / 0.5276 ms | 0 / 0 |
-| 8192 | 13788 | 13788 | 560 | 95.9% | 5.0894 / 0.4887 ms | 0 / 0 |
-| 16384 | 27576 | 27576 | 560 | 98.0% | 7.4740 / 0.4842 ms | 0 / 0 |
-| 32768 | 54042 | 54042 | 560 | 99.0% | 14.8610 / 0.5051 ms | 0 / 0 |
+Heap i 内：S_i < 64  → O(S_i)
+           S_i >= 64 → O(log S_i + K_i)
 
-该观察支持“限制真实 PhysX 工作集能显著降低大规模常驻代理成本”，不支持“所有设备都固定维持 0.5 ms”。原实验没有覆盖 Quest、ARM PhysX、Android IL2CPP、XR Runtime、热降频、冷池首次扩容或整进程内存。
+总成本 = 顶层宽相位 + Σ(候选 Heap 的 Shape 宽相位) + 解析窄相位(K_S)
+```
 
-#### 十、采用边界与尚未实测风险
+这不是所有输入下的 `O(log n)` 保证。全覆盖查询、巨型或高度重叠 Bounds、长 Ray/Sweep 和退化空间分布仍可能访问全部 Heap 与 Shape，最坏回到 `O(H + ΣS_i)`；Overlap 还要按返回实例数排序，Sweep 对每个 Shape 候选最多执行 64 次保守推进。达到阈值后的首次查询还要支付懒建成本；当前中位数构建在每层对子区间重新排序，单棵树的保守构建上界是 `O(n log² n)`，不能混入稳态查询数字。
 
-1. **Query Heap Bounds 包含性是生产门禁。** 外层 Query Heap Bounds 必须保守包含全部 Query Shape；视觉 Bounds 若排除外伸碰撞体，就不能直接承担查询粗筛。修复方案、阈值两侧回归和 Shape 级稳定性要求见[两级懒建 BVH 查询专题](./unity-vegetation-two-level-lazy-bvh-query.md)。
-2. **对象池首次扩容可能产生尖峰。** 稳态池复用不能证明冷池首激活没有峰值。可以按场景预算预热或分帧加载，并明确“碰撞尚未就绪”时的玩法策略，但效果必须另测。
-3. **已有内容的半径迁移需要逐项验证。** 将半径归到每运行时 Cell Streamer 后，旧序列化数据、Inspector 和外部 API 仍可能保留旧语义，不能仅凭新字段位置推断迁移完成。
-4. **Floating Origin 仍缺 Cell 级协调闭环。** 两个物理子组件能分别平移，不等于协调器已保证同一 delta、同一世代、有限值校验和失败恢复；接入前必须补齐第六节协议。
-5. **异常卸载仍缺强清理保证。** 成功路径的 Proxy 归还职责清楚，但反注册中途抛出时，当前编排器可能清空仍需重试的所有权记录；补齐 `CleanupFailed` 与强清理结果之前，不能把异常卸载视为零残留。
+QueryWorld 的常驻索引内存不会随 Proxy 卸载而下降。每个 Heap 至少保留 Shape 权威数组、每 Shape AABB 和用途掩码；树构建后还保留有序索引、扁平节点和遍历栈。顶层同样保留 Heap 注册表、稳定 Heap 数组、Heap AABB/用途数组和可选树；候选 List 与 Overlap 去重 HashSet 会保留历史最大容量。因此单 Cell 的常驻量级为 `O(H + ΣS_i)`，但包含多份线性辅助数组，不能只按 Shape 结构体大小估算字节数。`C` 个活动 Cell 的 QueryWorld 总量是各 Cell 之和；ColliderStreamer 的实例状态、已借出 Proxy 和池高水位是另一笔内存，不能与 QueryWorld 互相抵消。
 
-#### 十一、采用检查清单
+Heap 增删会使顶层索引失效，下一次查询重新分配并构建；冷建过程中节点列表与最终数组可能同时存在，旧托管数组也要等垃圾回收，因此瞬时峰值可能高于稳态 `O(H + ΣS_i)` 常数。生产测量应分别记录冷建/重建峰值、预热后单次查询分位数、活动 Cell 数、Heap/Shape 分布、查询范围和命中率。完整构建算法与微基准方法可继续阅读[两级懒建 BVH 查询专题](./unity-vegetation-two-level-lazy-bvh-query.md)，但本节已经给出理解本架构所需的复杂度和常驻内存边界。
 
-- [ ] QueryWorld 与 ColliderStreamer 从同一 StableGuid 和 Prototype 碰撞描述生成各自工作集；ConvexMesh 只进入 PhysX。
-- [ ] 兴趣源只向 ColliderStreamer 提供位置、预测运动和优先级；游戏逻辑显式调用 QueryWorld，查询不依赖 Proxy 是否激活。
-- [ ] 半径、预算、QueryWorld、Streamer 与代理池按运行时 Cell 隔离，且整世界容量按所有活动 Cell 汇总。
-- [ ] 状态机具有嵌套加载/卸载半径、Cooldown、确定性候选排序和固定步激活预算。
-- [ ] 多 Shape 激活中途失败会归还本次全部 Proxy，实例不会停在部分激活状态。
-- [ ] Collider Instance Bounds 保守包含实例全部 Shape，Streamer Heap Bounds 再保守包含全部 Instance Bounds。
-- [ ] `UnregisterHeap` 是 Streamer 侧 Proxy 归还与状态清理的唯一所有者；调用方不重复释放。
-- [ ] `UnregisterHeap` 具备可验证的强清理结果；失败项进入 `CleanupFailed` 并保留重试所有权，禁止无条件清空。
-- [ ] 运行时 Cell 卸载按实际注册记录清理 Collider Heap，全部成功后再 Dispose QueryWorld 并发布 Unloaded；外层资源句柄另行释放资产。
-- [ ] Floating Origin 以同一有限 delta 和坐标世代同步 QueryWorld、Streamer、兴趣源与渲染，且不会与 Cell Transform 位移重复施加。
-- [ ] Query Heap Bounds 保守包含全部 Query Shape，并完成[查询索引专题的采用检查](./unity-vegetation-two-level-lazy-bvh-query.md#十一采用检查清单)。
-- [ ] 统计整世界的代理总数、激活峰值、`Physics.SyncTransforms` 次数和冷池首次扩容，而不是只看单运行时 Cell。
-- [ ] 性能报告分别标注 Editor/设备、常驻/稳态、查询负载、固定步、样本数和原始统计量，不把单一合成微基准推广为完整系统或 Quest 结论。
+#### 九、证据与验证边界
+
+本文对当前实现的判断绑定顶部所列 Git 提交与模块 tree，主要入口为 `Runtime/Integration/VegetationCellPhysicsRuntime.cs`、`Runtime/Physics/VegetationColliderStreamer.cs`、`Runtime/Physics/VegetationQueryWorld.cs`、`Runtime/Core/SerializableGuid.cs` 和 `Editor/Compiler/VegetationSceneCompiler.cs`。这条静态源码链足以确认正常调用顺序、数据所有权、状态机和索引结构，不足以证明异常分配、异常注销或目标设备性能。文中标为“生产契约”或“可选扩展”的内容，也不会因为源码入口可追溯而自动成为已实现事实。
+
+可复现实验可以从 `VegetationCellPhysicsSmokeTests`、`VegetationMultiCellRenderPhysicsScenePlayModeTests`、`VegetationInterestSourceRegistrationPlayModeTests`、`VegetationQueryWorldTests` 和 `VegetationColliderStreamerTests` 建立，但在绑定冻结源码提交、测试程序集清单、原始结果文件及运行环境之前，本文不报告通过数量。
+
+若要把本文从“架构与当前实现说明”提升为生产验收证据，最小实验包必须同时冻结：源码提交、Unity/包版本、Player 或 Editor 平台、测试程序集与完整用例名、原始结果、失败注入点、场景/资产身份以及结果 SHA-256。物理性能还应分别测量 QueryWorld 查询、Streamer 托管更新、`Physics.SyncTransforms`、PhysX 模拟、对象池首次扩容和常驻内存；单一总帧时间无法判断是哪条路径产生收益或回归。
+
+#### 十、实现状态与采用门禁
+
+下面的“门禁”表示采用方在自己的版本、场景和设备中必须取得直接证据或补齐契约，并不是项目进度列表。当前实现已经具备的正常链路与仍会影响正确性、资源释放或容量判断的缺口统一列在这里，避免把源码存在、结构校验和生产验收混为一谈。
+
+| 主题 | 冻结实现能够支持的结论 | 采用前必须关闭的边界 |
+|---|---|---|
+| 解析查询与真实碰撞 | 每个 Cell 独立拥有 QueryWorld 与 ColliderStreamer；Sphere、Capsule、Box 可做不进入 PhysX 的解析查询，ConvexMesh 只进入 PhysX；兴趣源只决定代理工作集 | 验证两条路径来自同一 StableGuid 与 Prototype 碰撞描述；多 Shape 激活失败时必须完整归还本次 Proxy，不能留下部分激活实例 |
+| Query Heap Bounds | Streamer 会用全部 Collider Instance Bounds 保守扩张自己的 Heap Bounds；QueryWorld 则直接使用主要来自视觉范围的 `heap.WorldBoundsAtBake` | 为 QueryWorld 独立聚合全部有限 Query Shape 的 AABB，并逐 Shape 验证包含性；否则外伸视觉 Bounds 的 Shape 可能在 Heap 粗筛阶段形成假阴性。这一范围不能回写成渲染 Bounds |
+| 实例身份 | 编译器拒绝单一 SceneAsset 内空值或跨 Heap 重复 StableGuid；Streamer 也拒绝自身实例表中的重复身份 | 运行时发布 QueryWorld 或 Streamer 状态前仍须校验绕过编译器的资产；Overlap 去重不能代替输入身份校验 |
+| Heap 注册异常 | 调用方只记录成功返回的 HeapGuid；`RegisterHeap` 正常完成时所有权明确 | 采用内部原子注册或显式事务/租约，并在旧 Heap 移除前、实例表部分写入后、Heap 表发布前做失败注入；失败后必须保留回滚凭据，不能产生无主实例 |
+| 卸载与注销异常 | 正常路径由 `UnregisterHeap` 唯一负责归还 Proxy、清状态和移除 Heap，随后才释放 QueryWorld | 注销必须返回可验证的强清理结果；失败项进入 `CleanupFailed` 并保留原 Streamer 与 HeapGuid 供重试，不能无条件清空所有权记录或宣称 Unloaded |
+| 跨 Cell 身份与查询 | 每个 QueryWorld 具有单 Cell 查询语义；StableGuid 只在所属 SceneAsset 内稳定 | 只有玩法需要一次查询覆盖多个 Cell 时，才须增加稳定 Cell 快照、QueryWorld 租约、每加载世代唯一的 RuntimeCellIdentity、两阶段最近命中合并以及确定性身份全序；否则不得跨 Cell 复用裸 StableGuid 或已释放引用 |
+| Floating Origin | QueryWorld 与 Streamer 各自提供增量平移入口 | 使用 Floating Origin 的项目必须由外层以同一有限 delta 和坐标世代同步查询、Streamer、兴趣源与渲染，并证明不会与 Cell Transform 位移重复施加；不使用该能力时无需引入协调层 |
+| Cell 隔离与世界总成本 | 半径、固定步激活预算、QueryWorld、Streamer 和对象池按 Cell 独立；单 Cell 正常状态机与正常卸载职责可由源码链确认 | 容量与性能必须按全部活动 Cell 汇总，分别测量代理总数、Heap/实例扫描、候选排序、`Physics.SyncTransforms`、PhysX 模拟、QueryWorld 常驻索引和对象池冷启动峰值；稳态复用或单 Cell 预算不能代表整世界上限 |
+| 已有内容迁移 | 半径语义位于每个 Cell 的 Streamer，而不是兴趣源 | 若项目已有旧序列化内容、Inspector 或外部 API，须逐项确认它们没有继续承载旧半径语义；字段位置变化本身不是迁移证据 |
+
+其中 Query Heap Bounds 是当前会直接改变查询正确性的门禁：最低回归应覆盖 Sphere、Capsule、Box、旋转、正数统一缩放和各轴尺寸不同的合法 Box，并构造 Query Shape 外伸视觉 Bounds 的场景。Raycast、Overlap、Sweep 在只与外伸部分相交时仍应命中，越过真实 Shape 边界时不得命中；索引结果还应与逐 Shape 解析窄相位基准比较，实例集合与 StableGuid 必须一致，Raycast 和 Sweep 的距离、命中点、法线则在测试预先声明的数值容差内一致。运行时 Cell 根按当前契约仍拒绝非均匀缩放与剪切。
+
+对象池的冷启动也必须和稳态分开解释：池复用能够减少重复创建与销毁，却不能证明首次扩容没有尖峰。采用方可以按容量预热或分帧加载，但必须同时定义“碰撞尚未就绪”时玩法是否等待、降级或禁止进入，并在目标设备上测量该策略。
+
+### 结论
+
+QueryWorld 与 ColliderStreamer 的拆分，使解析查询不再依赖真实 Collider 是否驻留，并把高成本 PhysX 代理限制在每个运行时 Cell 的局部工作集内。当前源码能够说明正常加载、状态推进、解析查询与正常卸载的职责划分；本文没有可追溯的整轮或设备测量，因此不据此宣称完整 PlayMode、Quest 或整世界性能已经通过。
+
+因此，这套结构目前适合作为“解析查询与真实碰撞分层、每 Cell 独立所有权”的可复核参考实现，而不能直接等同于生产验收完成。采用判断应以第十节为唯一收口：先关闭会改变命中与资源所有权的正确性门禁，再按项目是否需要跨 Cell 查询或 Floating Origin 补齐条件契约，最后用目标场景和设备测量整世界容量与性能。
 
 ### 相关记录
 
@@ -276,6 +362,6 @@ Streamer 侧的唯一释放所有者是 `UnregisterHeap`：成功路径中，它
 
 ### 验证记录
 
-- [2026-08-26] 生命周期、状态机、Streamer 保守 Bounds、子组件 Origin delta 平移与历史 Windows Editor Collider A/B 支持按运行时 Cell 限制 PhysX 工作集；Query Heap Bounds 包含性、Cell 级坐标世代广播、异常卸载强清理、冷池首次扩容、Quest 与多 Cell 世界级预算仍未验证。
+- [2026-09-03] 证据快照：基于 Git 提交 `f0fef16849cfb8945e9928e5219a140ee250fcf4`、模块 tree `4700f76e0b087fe3935c06e660ee732bbf55c87a` 的静态源码链，确认正常加载、每 Cell 所有权、Streamed/AllResident 状态机、两级 QueryWorld 索引、正常卸载与两个局部 Rebase 入口；Query Heap Bounds 包含性、注册与注销异常注入、跨 Cell 查询协调器、Cell 级同世代 Floating Origin、对象池冷启动、完整自动化整轮、Quest 与多 Cell 世界级预算尚无本文绑定的直接证据。
 
 ---
